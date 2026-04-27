@@ -1,0 +1,1817 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Facade Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F3EE;
+  --surface: #FFFFFF;
+  --surface2: #F0EDE6;
+  --border: #E2DDD5;
+  --border-strong: #C8C2B8;
+  --text: #1A1814;
+  --text-2: #6B6560;
+  --text-3: #A09890;
+  --accent: #1C3A5E;
+  --accent-2: #2D5F96;
+  --accent-light: #E8EFF7;
+  --accent-mid: #B5CAE4;
+  --green: #2A5C3F;
+  --green-light: #E6F0EA;
+  --green-mid: #A8C9B4;
+  --amber: #7A4A10;
+  --amber-light: #F5EBD8;
+  --amber-mid: #E0B878;
+  --red: #8B2020;
+  --red-light: #F5E5E5;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+  --serif: 'DM Serif Display', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --sidebar-w: 240px;
+  --topbar-h: 58px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── LAYOUT ── */
+.app { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--accent);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+
+.sidebar-logo {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-logo .wordmark {
+  font-family: var(--serif);
+  font-size: 22px;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+.sidebar-logo .sub {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.nav-section {
+  padding: 18px 12px 4px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  font-weight: 500;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  margin: 1px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: rgba(255,255,255,0.65);
+  font-size: 13px;
+  font-weight: 400;
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  width: calc(100% - 16px);
+  text-align: left;
+}
+.nav-item:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+.nav-item.active { background: rgba(255,255,255,0.15); color: #fff; font-weight: 500; }
+.nav-item .icon {
+  width: 16px; height: 16px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.nav-item.active .icon { opacity: 1; }
+.nav-count {
+  margin-left: auto;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-family: var(--mono);
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 16px 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.db-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+}
+.db-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #4CAF50;
+  flex-shrink: 0;
+}
+
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  height: var(--topbar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar-title { font-family: var(--serif); font-size: 18px; color: var(--text); }
+.topbar-sep { color: var(--border-strong); }
+.topbar-sub { font-size: 13px; color: var(--text-2); }
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+
+.page { padding: 28px; flex: 1; }
+.page-hidden { display: none; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 400;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--surface2); border-color: var(--border-strong); }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn-primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+.btn-sm { padding: 5px 11px; font-size: 12px; }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-ghost:hover { background: var(--surface2); }
+.btn-danger { background: var(--red-light); color: var(--red); border-color: #E8C0C0; }
+.btn-danger:hover { background: #EDCECE; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.card-sm { padding: 14px 16px; }
+.card + .card { margin-top: 12px; }
+
+/* ── FORM ── */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border-color 0.12s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(45,95,150,0.08); }
+.form-group textarea { resize: vertical; min-height: 72px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* ── BADGES & PILLS ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge-blue { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-mid); }
+.badge-green { background: var(--green-light); color: var(--green); border: 1px solid var(--green-mid); }
+.badge-amber { background: var(--amber-light); color: var(--amber); border: 1px solid var(--amber-mid); }
+.badge-red { background: var(--red-light); color: var(--red); border: 1px solid #E0B0B0; }
+.badge-gray { background: var(--surface2); color: var(--text-2); border: 1px solid var(--border); }
+
+/* ── TAGS (multi-select chips) ── */
+.tag-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-2);
+  transition: all 0.1s;
+  user-select: none;
+}
+.tag:hover { border-color: var(--accent-mid); color: var(--accent); }
+.tag.sel { background: var(--accent-light); border-color: var(--accent-mid); color: var(--accent); font-weight: 500; }
+
+/* ── SCORE RING ── */
+.score-wrap { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+.score-wrap svg { width: 52px; height: 52px; }
+.score-num {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* ── TABLES ── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.data-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--surface2); cursor: pointer; }
+
+/* ── STAT CARDS ── */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.stat-val { font-size: 22px; font-weight: 500; font-family: var(--mono); color: var(--text); }
+.stat-lbl { font-size: 11px; color: var(--text-2); margin-top: 3px; }
+
+/* ── SPEC GRID ── */
+.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.spec-item { background: var(--surface2); border-radius: var(--radius); padding: 9px 11px; }
+.spec-key { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+.spec-val { font-size: 13px; font-weight: 500; color: var(--text); font-family: var(--mono); }
+
+/* ── MATCH CARD ── */
+.match-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-bottom: 14px;
+  transition: border-color 0.15s;
+}
+.match-card:hover { border-color: var(--border-strong); }
+.match-card.best { border: 2px solid var(--accent-2); }
+.match-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.match-title { font-family: var(--serif); font-size: 16px; }
+.match-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.match-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.lesson-list { list-style: none; }
+.lesson-list li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 12px;
+  color: var(--text-2);
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.4;
+}
+.lesson-list li:last-child { border-bottom: none; }
+.lesson-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-mid); flex-shrink: 0; margin-top: 5px; }
+.match-footer { display: flex; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+
+/* ── CONFIGURATOR ── */
+.config-step { display: none; }
+.config-step.active { display: block; }
+.step-header { margin-bottom: 20px; }
+.step-num { font-size: 11px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.step-q { font-family: var(--serif); font-size: 20px; color: var(--text); }
+.step-sub { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+.choice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.choice-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: all 0.12s;
+  text-align: left;
+}
+.choice-card:hover { border-color: var(--accent-mid); background: var(--accent-light); }
+.choice-card.sel { border: 2px solid var(--accent-2); background: var(--accent-light); }
+.choice-card .cc-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.choice-card .cc-sub { font-size: 11px; color: var(--text-2); line-height: 1.4; }
+.choice-card .cc-meta { font-size: 10px; color: var(--text-3); margin-top: 6px; font-family: var(--mono); }
+.sys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.sys-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: all 0.12s;
+}
+.sys-card:hover { border-color: var(--accent-mid); }
+.sys-card.sel { border: 2px solid var(--accent-2); background: var(--accent-light); }
+.sys-card.dimmed { opacity: 0.3; }
+.sys-card.dimmed:hover { opacity: 0.6; border-color: var(--border); }
+.sys-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.sys-desc { font-size: 11px; color: var(--text-2); line-height: 1.4; }
+.sys-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.stag { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--surface2); color: var(--text-2); border: 1px solid var(--border); }
+.stag.fit { background: var(--green-light); color: var(--green); border-color: var(--green-mid); }
+.config-q-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+  background: var(--surface);
+}
+.config-q-block h4 { font-size: 12px; font-weight: 500; color: var(--text-2); margin-bottom: 10px; }
+.config-q-block .sel-val { font-size: 11px; color: var(--green); font-weight: 500; margin-left: 6px; }
+.config-sys-group { margin-bottom: 20px; }
+.config-sys-label {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 0;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.sys-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-2); flex-shrink: 0; }
+.warn-note {
+  font-size: 12px;
+  color: var(--amber);
+  background: var(--amber-light);
+  border: 1px solid var(--amber-mid);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.config-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.crumbs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 24px; }
+.crumb {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  background: var(--surface);
+}
+.crumb.done { background: var(--accent-light); color: var(--accent); border-color: var(--accent-mid); }
+.crumb.active { background: var(--surface); color: var(--text); border-color: var(--border-strong); font-weight: 500; }
+.crumb-sep { color: var(--border-strong); font-size: 12px; }
+.progress-track { height: 2px; background: var(--border); border-radius: 2px; margin-bottom: 28px; }
+.progress-fill { height: 100%; background: var(--accent-2); border-radius: 2px; transition: width 0.3s; }
+
+/* ── SUMMARY PAGE ── */
+.summary-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+.summary-table td { padding: 9px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+.summary-table tr:last-child td { border-bottom: none; }
+.summary-table .sk { color: var(--text-2); width: 40%; font-size: 12px; }
+.summary-table .sv { font-weight: 500; text-align: right; }
+
+/* ── PROJECT DETAIL ── */
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.detail-title { font-family: var(--serif); font-size: 24px; }
+.detail-meta { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+.rating-stars { display: flex; gap: 2px; }
+.star { width: 12px; height: 12px; }
+.section-heading {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 20px 0 10px;
+}
+
+/* ── MODAL ── */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,24,20,0.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  width: 90%;
+  max-width: 640px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 201;
+}
+.modal-wide { max-width: 860px; }
+.modal-title { font-family: var(--serif); font-size: 20px; margin-bottom: 20px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.sys-q-head { margin-bottom: 14px; }
+.sys-q-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 4px; }
+.sys-q-name { font-family: var(--serif); font-size: 22px; color: var(--text); }
+.sys-q-sub { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+.sys-question {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  background: var(--surface);
+}
+.sys-question + .sys-question { margin-top: 12px; }
+.sys-question-title { font-size: 12px; font-weight: 500; color: var(--text-2); margin-bottom: 10px; }
+.sys-question-note { font-size: 12px; color: var(--text-3); margin-top: 8px; }
+.sys-option-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.sys-option-card {
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+.sys-option-card:hover { border-color: var(--accent-mid); background: var(--accent-light); }
+.sys-option-card.sel { border-color: var(--accent-2); background: var(--accent-light); }
+.sys-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 10px;
+  line-height: 1.2;
+}
+.sys-chip-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.sys-suggest-grid,
+.config-suggestions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.sys-suggest-card,
+.config-suggestion-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 10px 12px;
+}
+.sys-suggest-name,
+.config-suggestion-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.sys-suggest-sub,
+.config-suggestion-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+.config-suggestions { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
+.config-suggestions-head { font-size: 12px; font-weight: 500; color: var(--text-2); margin-bottom: 8px; }
+.sys-answer-list { display: grid; gap: 8px; margin-top: 8px; }
+.sys-answer-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.sys-answer-row:last-child { border-bottom: none; }
+.sys-answer-k { color: var(--text-2); }
+.sys-answer-v { font-weight: 500; text-align: right; }
+
+/* ── NOTIFICATION ── */
+.notif {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--text);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  z-index: 999;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.2s;
+  pointer-events: none;
+  max-width: 320px;
+}
+.notif.show { opacity: 1; transform: translateY(0); }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-2);
+}
+.empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+.empty-title { font-family: var(--serif); font-size: 18px; color: var(--text); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; color: var(--text-2); }
+
+/* ── MISC ── */
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+.text-muted { color: var(--text-2); }
+.text-mono { font-family: var(--mono); }
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.mt-4 { margin-top: 4px; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="wordmark">Company</div>
+      <div class="sub">Facade Playbook</div>
+    </div>
+    <div class="nav-section">Configure</div>
+    <button class="nav-item active" data-page="configurator" onclick="showPage('configurator',this)">
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+      New project
+    </button>
+    <div class="nav-section">Database</div>
+    <button class="nav-item" data-page="projects" onclick="showPage('projects',this)">
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h8"/></svg>
+      All projects
+      <span class="nav-count" id="nc-projects">0</span>
+    </button>
+    <button class="nav-item" data-page="subcontractors" onclick="showPage('subcontractors',this)">
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 13c0-2.76 2.24-5 5-5"/><circle cx="12" cy="10" r="2.5"/><path d="M9.5 13.5a2.5 2.5 0 015 0"/></svg>
+      Subcontractors
+      <span class="nav-count" id="nc-subs">0</span>
+    </button>
+    <div class="nav-section">Actions</div>
+    <button class="nav-item" onclick="openAddProjectModal()">
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
+      Add project
+    </button>
+    <button class="nav-item" onclick="exportDB()">
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 12h10"/></svg>
+      Export JSON
+    </button>
+    <div class="sidebar-bottom">
+      <div class="db-status">
+        <div class="db-dot"></div>
+        <span id="db-status-text">Loading…</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <span class="topbar-title" id="tb-title">New project</span>
+      <span class="topbar-sep">·</span>
+      <span class="topbar-sub" id="tb-sub">Facade system configurator</span>
+      <div class="topbar-actions" id="tb-actions"></div>
+    </div>
+
+    <!-- PAGE: CONFIGURATOR -->
+    <div class="page" id="page-configurator">
+
+      <div class="progress-track"><div class="progress-fill" id="cfg-progress" style="width:14%"></div></div>
+
+      <div class="crumbs" id="cfg-crumbs"></div>
+
+      <!-- Step 0: Project type -->
+      <div class="config-step active" id="cstep-0">
+        <div class="step-header">
+          <div class="step-num">Step 1 of 7</div>
+          <div class="step-q">What is the project type?</div>
+        </div>
+        <div class="choice-grid">
+          <div class="choice-card" onclick="pick('type','residential',this)">
+            <div class="cc-title">Residential</div>
+            <div class="cc-sub">Apartments, towers, villas, serviced residences</div>
+          </div>
+          <div class="choice-card" onclick="pick('type','commercial',this)">
+            <div class="cc-title">Commercial</div>
+            <div class="cc-sub">Office, hospitality, retail-led development</div>
+          </div>
+          <div class="choice-card" onclick="pick('type','mixed',this)">
+            <div class="cc-title">Mixed-use</div>
+            <div class="cc-sub">Combination of residential and commercial</div>
+          </div>
+        </div>
+        <div class="config-nav"><span></span></div>
+      </div>
+
+      <!-- Step 1: Budget -->
+      <div class="config-step" id="cstep-1">
+        <div class="step-header">
+          <div class="step-num">Step 2 of 7</div>
+          <div class="step-q">What is the facade budget tier?</div>
+        </div>
+        <div class="choice-grid">
+          <div class="choice-card" onclick="pick('budget','standard',this)">
+            <div class="cc-title">Standard</div>
+            <div class="cc-sub">Cost-led, proven systems</div>
+            <div class="cc-meta">AED 800–1,200 / m²</div>
+          </div>
+          <div class="choice-card" onclick="pick('budget','medium',this)">
+            <div class="cc-title">Premium</div>
+            <div class="cc-sub">Quality with value balance</div>
+            <div class="cc-meta">AED 1,200–2,000 / m²</div>
+          </div>
+          <div class="choice-card" onclick="pick('budget','high',this)">
+            <div class="cc-title">Landmark</div>
+            <div class="cc-sub">Performance and architectural expression</div>
+            <div class="cc-meta">AED 2,000+ / m²</div>
+          </div>
+        </div>
+        <div class="config-nav">
+          <button class="btn" onclick="prevStep()">← Back</button>
+          <span></span>
+        </div>
+      </div>
+
+      <!-- Step 2: Zones -->
+      <div class="config-step" id="cstep-2">
+        <div class="step-header">
+          <div class="step-num">Step 3 of 7</div>
+          <div class="step-q">Which facade zones are in scope?</div>
+          <div class="step-sub">Select all that apply</div>
+        </div>
+        <div class="tag-group mb-24" id="zone-tags">
+          <span class="tag" data-v="tower" onclick="toggleZone(this)">Tower shaft</span>
+          <span class="tag" data-v="podium" onclick="toggleZone(this)">Podium</span>
+          <span class="tag" data-v="crown" onclick="toggleZone(this)">Crown / top</span>
+          <span class="tag" data-v="retail" onclick="toggleZone(this)">Retail frontage</span>
+          <span class="tag" data-v="carpark" onclick="toggleZone(this)">Car park screen</span>
+          <span class="tag" data-v="amenity" onclick="toggleZone(this)">Amenity deck</span>
+          <span class="tag" data-v="roof" onclick="toggleZone(this)">Roof / parapet</span>
+        </div>
+        <div class="config-nav">
+          <button class="btn" onclick="prevStep()">← Back</button>
+          <button class="btn btn-primary" onclick="nextStep()" id="s2-next" disabled>See systems →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Systems -->
+      <div class="config-step" id="cstep-3">
+        <div class="step-header">
+          <div class="step-num">Step 4 of 7</div>
+          <div class="step-q">Select facade systems</div>
+          <div class="step-sub">Ranked by fit to your type, budget and zones. Select all systems you intend to use.</div>
+        </div>
+        <div class="sys-grid" id="sys-grid"></div>
+        <div class="config-nav">
+          <button class="btn" onclick="prevStep()">← Back</button>
+          <button class="btn btn-primary" onclick="nextStep()" id="s3-next" disabled>Configure →</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Configure -->
+      <div class="config-step" id="cstep-4">
+        <div class="step-header">
+          <div class="step-num">Step 5 of 7</div>
+          <div class="step-q">Configure each system</div>
+          <div class="step-sub">Answer a few questions to narrow options</div>
+        </div>
+        <div id="config-questions"></div>
+        <div class="config-nav">
+          <button class="btn" onclick="prevStep()">← Back</button>
+          <button class="btn btn-primary" onclick="nextStep()" id="s4-next" disabled>Find matches →</button>
+        </div>
+      </div>
+
+      <!-- Step 5: Matches -->
+      <div class="config-step" id="cstep-5">
+        <div class="step-header">
+          <div class="step-num">Step 6 of 7</div>
+          <div class="step-q">Comparable past projects</div>
+          <div class="step-sub">From the project database — ranked by similarity</div>
+        </div>
+        <div id="matches-output"></div>
+        <div class="config-nav">
+          <button class="btn" onclick="prevStep()">← Back</button>
+          <button class="btn btn-primary" onclick="nextStep()">Review summary →</button>
+        </div>
+      </div>
+
+      <!-- Step 6: Summary -->
+      <div class="config-step" id="cstep-6">
+        <div class="step-header">
+          <div class="step-num">Step 7 of 7</div>
+          <div class="step-q">Project configuration summary</div>
+        </div>
+        <div id="summary-output"></div>
+        <div class="config-nav mt-16">
+          <button class="btn" onclick="prevStep()">← Back</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="resetConfig()">Start new</button>
+            <button class="btn btn-primary" onclick="openSaveModal()">Save to database →</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PAGE: PROJECTS -->
+    <div class="page page-hidden" id="page-projects">
+      <div class="flex-between mb-24">
+        <div>
+          <h2 style="font-family:var(--serif);font-size:22px">Project database</h2>
+          <p class="text-muted mt-4" style="font-size:13px">All facade projects</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="proj-search" placeholder="Search projects…" style="width:220px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--sans);font-size:13px;outline:none" oninput="renderProjectsTable()">
+          <button class="btn btn-primary" onclick="openAddProjectModal()">+ Add project</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table" id="projects-table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Type</th>
+              <th>Location</th>
+              <th>Floors</th>
+              <th>Systems</th>
+              <th>Budget</th>
+              <th>Cost /m²</th>
+              <th>Year</th>
+            </tr>
+          </thead>
+          <tbody id="projects-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGE: PROJECT DETAIL -->
+    <div class="page page-hidden" id="page-detail">
+      <div id="detail-content"></div>
+    </div>
+
+    <!-- PAGE: SUBCONTRACTORS -->
+    <div class="page page-hidden" id="page-subcontractors">
+      <div class="flex-between mb-24">
+        <div>
+          <h2 style="font-family:var(--serif);font-size:22px">Subcontractor register</h2>
+          <p class="text-muted mt-4" style="font-size:13px">Approved facade subcontractors</p>
+        </div>
+      </div>
+      <div id="subs-content"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: ADD / EDIT PROJECT -->
+<div class="modal-backdrop" id="modal-add">
+  <div class="modal">
+    <div class="modal-title" id="modal-add-title">Add new project</div>
+    <div class="form-row mb-16">
+      <div class="form-group"><label>Project name</label><input id="f-name" type="text" placeholder="e.g. Al Reef Tower D"></div>
+      <div class="form-group"><label>Location</label><input id="f-location" type="text" placeholder="Abu Dhabi / Dubai"></div>
+    </div>
+    <div class="form-row-3 mb-16">
+      <div class="form-group"><label>Project type</label>
+        <select id="f-type"><option value="residential">Residential</option><option value="commercial">Commercial</option><option value="mixed">Mixed-use</option></select>
+      </div>
+      <div class="form-group"><label>Budget tier</label>
+        <select id="f-budget"><option value="standard">Standard</option><option value="medium">Premium</option><option value="high">Landmark</option></select>
+      </div>
+      <div class="form-group"><label>Year completed</label><input id="f-year" type="number" placeholder="2024"></div>
+    </div>
+    <div class="form-row mb-16">
+      <div class="form-group"><label>Floors</label><input id="f-floors" type="number" placeholder="28"></div>
+      <div class="form-group"><label>Facade area (m²)</label><input id="f-area" type="number" placeholder="14800"></div>
+    </div>
+    <div class="form-row mb-16">
+      <div class="form-group"><label>Cost per m² (AED)</label><input id="f-cost" type="number" placeholder="1050"></div>
+      <div class="form-group"><label>Subcontractor</label><input id="f-sub" type="text" placeholder="e.g. Al Ghurair Glass"></div>
+    </div>
+    <div class="form-group mb-16">
+      <label>Facade systems used</label>
+      <div class="tag-group" id="modal-sys-tags">
+        <span class="tag" data-v="stick_cw" onclick="this.classList.toggle('sel')">Stick CW</span>
+        <span class="tag" data-v="unitised_cw" onclick="this.classList.toggle('sel')">Unitised CW</span>
+        <span class="tag" data-v="window_wall" onclick="this.classList.toggle('sel')">Window wall</span>
+        <span class="tag" data-v="rainscreen" onclick="this.classList.toggle('sel')">Rainscreen</span>
+        <span class="tag" data-v="precast_panel" onclick="this.classList.toggle('sel')">Precast</span>
+        <span class="tag" data-v="gfrc_panel" onclick="this.classList.toggle('sel')">GFRC</span>
+        <span class="tag" data-v="double_skin" onclick="this.classList.toggle('sel')">Double-skin</span>
+        <span class="tag" data-v="louvre_screen" onclick="this.classList.toggle('sel')">Louvre screen</span>
+      </div>
+    </div>
+    <div class="form-group mb-16">
+      <label>Zones</label>
+      <div class="tag-group" id="modal-zone-tags">
+        <span class="tag" data-v="tower" onclick="this.classList.toggle('sel')">Tower</span>
+        <span class="tag" data-v="podium" onclick="this.classList.toggle('sel')">Podium</span>
+        <span class="tag" data-v="crown" onclick="this.classList.toggle('sel')">Crown</span>
+        <span class="tag" data-v="retail" onclick="this.classList.toggle('sel')">Retail</span>
+        <span class="tag" data-v="carpark" onclick="this.classList.toggle('sel')">Car park</span>
+        <span class="tag" data-v="amenity" onclick="this.classList.toggle('sel')">Amenity</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Lessons learned (one per line)</label>
+      <textarea id="f-lessons" placeholder="Key lessons from this project…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-add')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProject()">Save project</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SAVE CONFIG -->
+<div class="modal-backdrop" id="modal-save">
+  <div class="modal">
+    <div class="modal-title">Save configuration as project</div>
+    <div class="form-group">
+      <label>Project name</label>
+      <input id="save-name" type="text" placeholder="e.g. New Reem Island Tower">
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Location</label><input id="save-location" type="text" placeholder="Abu Dhabi"></div>
+      <div class="form-group"><label>Floors</label><input id="save-floors" type="number" placeholder="30"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-save')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveConfigAsProject()">Save to database</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SYSTEM QUESTIONS -->
+<div class="modal-backdrop" id="modal-system">
+  <div class="modal modal-wide">
+    <div class="modal-title" id="system-modal-title">System questions</div>
+    <div id="system-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-system')">Close</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-system')">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ── DATA ──
+let DB = { meta:{}, projects:[], subcontractor_register:[], facade_systems:[] };
+let CFG = { step:0, type:null, budget:null, zones:[], systems:[], configs:{}, activeSystem:null };
+
+let SYSTEM_INFO = {};
+let FOLLOW_UPS = {};
+let SYSTEM_OPTIONS = {};
+let SYSTEM_SUGGESTIONS = {};
+let WARNINGS = {};
+
+const BUDGET_LABELS = { standard:'Standard', medium:'Premium', high:'Landmark' };
+const TYPE_LABELS = { residential:'Residential', commercial:'Commercial', mixed:'Mixed-use' };
+
+// ── INIT ──
+async function init() {
+  try {
+    const resp = await fetch('projects.json');
+    DB = await resp.json();
+    syncSystemData();
+    notify(`Database loaded â€” ${DB.projects.length} projects`);
+  } catch(e) {
+    notify('Could not load projects.json â€” using empty database');
+    DB = { meta:{organisation:'Company'}, projects:[], subcontractor_register:[], facade_systems:[] };
+    syncSystemData();
+  }
+  document.getElementById('db-status-text').textContent = `${DB.projects.length} projects loaded`;
+  document.getElementById('nc-projects').textContent = DB.projects.length;
+  document.getElementById('nc-subs').textContent = DB.subcontractor_register.length;
+  renderSystemTagInputs();
+  bindSystemModalEvents();
+  renderProjectsTable();
+  renderCrumbs();
+}
+
+function syncSystemData() {
+  const systems = Array.isArray(DB.facade_systems) && DB.facade_systems.length
+    ? DB.facade_systems
+    : Object.entries(DB.system_catalogue||{}).map(([id,sys])=>({
+        id,
+        name: sys.label || id,
+        options: []
+      }));
+  SYSTEM_INFO = {};
+  FOLLOW_UPS = {};
+  SYSTEM_OPTIONS = {};
+  SYSTEM_SUGGESTIONS = {};
+  WARNINGS = {};
+  systems.forEach((sys, idx) => {
+    if(!sys) return;
+    const id = sys.id || slugify(sys.name || sys.label || `system-${idx+1}`);
+    const label = sys.name || sys.label || id;
+    const options = Array.isArray(sys.options) ? sys.options : [];
+    const questionOptions = Array.isArray(sys.question_options) ? sys.question_options : [];
+    const facadeOptions = Array.isArray(sys.options) ? sys.options : [];
+    SYSTEM_INFO[id] = {
+      label,
+      desc: sys.desc || sys.description || (options.length ? `${options.length} options available` : ''),
+      zones: sys.zones || sys.suitable_zones || [],
+      types: sys.types || sys.suitable_types || [],
+      budgets: sys.budgets || (sys.min_budget ? [sys.min_budget] : [])
+    };
+    FOLLOW_UPS[id] = (sys.questions || sys.follow_ups || []).map(q => ({
+      id: q.id,
+      q: q.q || q.label || q.question || q.id,
+      note: q.note || ''
+    }));
+    SYSTEM_OPTIONS[id] = questionOptions.map(opt => normalizeSystemOption(opt, id));
+    SYSTEM_SUGGESTIONS[id] = facadeOptions.map(opt => normalizeFacadeOption(opt, id));
+    WARNINGS[id] = sys.warnings || {};
+  });
+}
+
+function normalizeSystemOption(opt, systemId) {
+  if(typeof opt === 'string') {
+    return { question_id:'option', label: opt, tags:{} };
+  }
+  return {
+    question_id: opt.question_id || opt.question || opt.qid || 'option',
+    label: opt.label || opt.name || opt.title || '',
+    tags: opt.tags || opt.when || {},
+    note: opt.note || ''
+  };
+}
+
+function normalizeFacadeOption(opt, systemId) {
+  if(typeof opt === 'string') {
+    return { label: opt, tags: {}, note: '', systemId };
+  }
+  return {
+    label: opt.label || opt.name || opt.title || '',
+    tags: opt.tags || opt.when || {},
+    note: opt.note || '',
+    systemId
+  };
+}
+
+function renderSystemTagInputs(selected = []) {
+  const container = document.getElementById('modal-sys-tags');
+  if(!container) return;
+  const selectedSet = new Set(selected);
+  const systems = Array.isArray(DB.facade_systems) ? DB.facade_systems : [];
+  container.innerHTML = systems.map((sys, idx) => {
+    const id = sys.id || slugify(sys.name || sys.label || `system-${idx+1}`);
+    const label = sys.name || sys.label || id;
+    return `
+    <span class="tag${selectedSet.has(id) ? ' sel' : ''}" data-v="${id}" onclick="this.classList.toggle('sel')">${label}</span>
+  `;
+  }).join('') || '<span class="text-muted">No facade systems available</span>';
+}
+
+function slugify(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function scoreOptionAgainstAnswers(option, answers, ignoreKey = null) {
+  const tags = option.tags || {};
+  const entries = Object.entries(tags).filter(([k]) => k !== ignoreKey);
+  if(!entries.length) return { score: 0, matched: [] };
+  const matched = [];
+  let score = 0;
+  entries.forEach(([key, required]) => {
+    const current = answers[key];
+    if(!current) return;
+    const allowed = Array.isArray(required) ? required : [required];
+    if(allowed.includes(current)) {
+      score += 1;
+      matched.push(`${key}: ${current}`);
+    }
+  });
+  return { score, matched };
+}
+
+function getQuestionOptions(systemId, questionId, answers) {
+  const pool = (SYSTEM_OPTIONS[systemId] || []).filter(o => o.question_id === questionId);
+  const scored = pool.map(opt => {
+    const match = scoreOptionAgainstAnswers(opt, answers, questionId);
+    return { ...opt, score: match.score, matched: match.matched };
+  });
+  const anyMatch = scored.some(o => o.score > 0);
+  const filtered = anyMatch ? scored.filter(o => o.score > 0) : scored;
+  return filtered.sort((a,b)=> b.score - a.score || a.label.localeCompare(b.label));
+}
+
+function getSuggestedOptions(systemId, answers) {
+  const pool = SYSTEM_SUGGESTIONS[systemId] || [];
+  const scored = pool.map(opt => {
+    const match = scoreOptionAgainstAnswers(opt, answers);
+    return { ...opt, score: match.score, matched: match.matched };
+  });
+  const anyMatch = scored.some(o => o.score > 0);
+  const filtered = anyMatch ? scored.filter(o => o.score > 0) : scored;
+  return filtered.sort((a,b)=> b.score - a.score || a.label.localeCompare(b.label));
+}
+
+// ── NAVIGATION ──
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('page-hidden'));
+  document.getElementById('page-'+id).classList.remove('page-hidden');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const titles = { configurator:'New project', projects:'Project database', subcontractors:'Subcontractors', detail:'Project detail' };
+  const subs   = { configurator:'Facade system configurator', projects:`${DB.projects.length} projects`, subcontractors:'Approved contractor register', detail:'' };
+  document.getElementById('tb-title').textContent = titles[id]||id;
+  document.getElementById('tb-sub').textContent   = subs[id]||'';
+  document.getElementById('tb-actions').innerHTML = '';
+  if(id==='projects') renderProjectsTable();
+  if(id==='subcontractors') renderSubcontractors();
+}
+
+// ── CONFIGURATOR ──
+function renderCrumbs() {
+  const steps = ['Type','Budget','Zones','Systems','Configure','Matches','Summary'];
+  document.getElementById('cfg-crumbs').innerHTML = steps.map((s,i)=>
+    `${i>0?'<span class="crumb-sep">›</span>':''}
+     <span class="crumb ${i<CFG.step?'done':i===CFG.step?'active':''}">${s}</span>`
+  ).join('');
+  document.getElementById('cfg-progress').style.width = ((CFG.step+1)/7*100)+'%';
+}
+
+function pick(key, val, el) {
+  CFG[key] = val;
+  el.closest('.choice-grid').querySelectorAll('.choice-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  if(key === 'type' || key === 'budget') {
+    nextStep();
+  }
+}
+
+function toggleZone(el) {
+  el.classList.toggle('sel');
+  CFG.zones = Array.from(document.querySelectorAll('#zone-tags .tag.sel')).map(t=>t.dataset.v);
+  document.getElementById('s2-next').disabled = CFG.zones.length === 0;
+}
+
+function nextStep() {
+  if(CFG.step === 3) buildConfigQuestions();
+  if(CFG.step === 4) buildMatches();
+  if(CFG.step === 5) buildSummary();
+  document.getElementById('cstep-'+CFG.step).classList.remove('active');
+  CFG.step++;
+  document.getElementById('cstep-'+CFG.step).classList.add('active');
+  if(CFG.step === 3) buildSystemCards();
+  renderCrumbs();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function prevStep() {
+  document.getElementById('cstep-'+CFG.step).classList.remove('active');
+  CFG.step--;
+  document.getElementById('cstep-'+CFG.step).classList.add('active');
+  renderCrumbs();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetConfig() {
+  CFG = { step:0, type:null, budget:null, zones:[], systems:[], configs:{}, activeSystem:null };
+  document.querySelectorAll('.config-step').forEach((s,i)=>{ s.classList.toggle('active', i===0); });
+  document.querySelectorAll('.choice-card').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('#zone-tags .tag').forEach(t=>t.classList.remove('sel'));
+  document.querySelectorAll('[id^="s"][id$="-next"]').forEach(b=>b.disabled=true);
+  renderCrumbs();
+}
+
+function buildSystemCards() {
+  const grid = document.getElementById('sys-grid');
+  const ranked = Object.entries(SYSTEM_INFO).map(([id,s])=>{
+    const hasFitMeta = (s.types||[]).length || (s.budgets||[]).length || (s.zones||[]).length;
+    let score = hasFitMeta ? 0 : 1;
+    if((s.types||[]).includes(CFG.type)) score+=2;
+    if((s.budgets||[]).includes(CFG.budget)) score+=2;
+    if(CFG.zones.some(z=>(s.zones||[]).includes(z))) score+=2;
+    return {id,s,score,hasFitMeta};
+  }).sort((a,b)=>b.score-a.score);
+
+  grid.innerHTML = ranked.map(({id,s,score,hasFitMeta})=>{
+    const isSel = CFG.systems.includes(id);
+    const answered = Object.keys(CFG.configs[id]||{}).length;
+    const totalQs = (FOLLOW_UPS[id]||[]).length;
+    const isDim = hasFitMeta && score===0 && !isSel;
+    const tags = [
+      hasFitMeta && score>=2 ? `<span class="stag fit">Type match</span>` : '',
+      hasFitMeta && score>=4 ? `<span class="stag fit">Budget fit</span>` : '',
+      hasFitMeta && score>=6 ? `<span class="stag fit">Zone fit</span>` : '',
+      totalQs ? `<span class="stag">${answered}/${totalQs} answered</span>` : `<span class="stag">Options available</span>`
+    ].filter(Boolean).join('') || '<span class="stag">Override</span>';
+    return `<div class="sys-card${isSel?' sel':''}${isDim?' dimmed':''}" id="sc-${id}" onclick="toggleSystem('${id}')">
+      <div class="sys-name">${s.label}</div>
+      <div class="sys-desc">${s.desc}</div>
+      <div class="sys-tags">${tags}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('s3-next').disabled = CFG.systems.length===0;
+}
+
+function toggleSystem(id) {
+  const idx = CFG.systems.indexOf(id);
+  if(idx>=0) {
+    CFG.systems.splice(idx,1);
+    if(CFG.activeSystem===id) closeModal('modal-system');
+  } else {
+    CFG.systems.push(id);
+    openSystemQuestions(id);
+  }
+  const card = document.getElementById('sc-'+id);
+  if(card) card.classList.toggle('sel', CFG.systems.includes(id));
+  document.getElementById('s3-next').disabled = CFG.systems.length===0;
+}
+
+function openSystemQuestions(id) {
+  CFG.activeSystem = id;
+  if(!CFG.configs[id]) CFG.configs[id] = {};
+  renderSystemQuestions(id);
+  document.getElementById('modal-system').classList.add('open');
+}
+
+function renderSystemQuestions(id) {
+  const questions = FOLLOW_UPS[id] || [];
+  const answers = CFG.configs[id] || {};
+  const idx = questions.findIndex(q => !answers[q.id]);
+  const body = document.getElementById('system-modal-body');
+  const title = document.getElementById('system-modal-title');
+  if(!questions.length) {
+    title.textContent = SYSTEM_INFO[id]?.label || id;
+    const suggestions = getSuggestedOptions(id, answers);
+    body.innerHTML = `
+      <div class="card">
+        <div class="empty">
+          <div class="empty-title">All questions completed</div>
+          <div class="empty-sub">You can close this panel or open it again to revise answers.</div>
+        </div>
+        <div class="sys-question" style="margin-top:16px">
+          <div class="sys-question-title">Suggested facade options</div>
+          ${suggestions.length ? `
+            <div class="sys-suggest-grid">
+              ${suggestions.slice(0, 8).map(opt => {
+                const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
+                return `<div class="sys-suggest-card">
+                  <div class="sys-suggest-name">${opt.label}</div>
+                  <div class="sys-suggest-sub">${opt.note || 'Matches your current answers'}</div>
+                  ${chips ? `<div class="sys-chip-row">${chips}</div>` : ''}
+                </div>`;
+              }).join('')}
+            </div>
+            ${suggestions.length > 8 ? `<div class="sys-question-note">Showing 8 of ${suggestions.length} matched options.</div>` : ''}
+          ` : `<div class="sys-question-note">Answer more questions to narrow the facade options.</div>`}
+        </div>
+      </div>`;
+    return;
+  }
+
+  if(idx < 0) {
+    title.textContent = SYSTEM_INFO[id]?.label || id;
+    const suggestions = getSuggestedOptions(id, answers);
+    body.innerHTML = `
+      <div class="sys-q-head">
+        <div class="sys-q-kicker">Complete</div>
+        <div class="sys-q-name">${SYSTEM_INFO[id]?.label || id}</div>
+        <div class="sys-q-sub">${SYSTEM_INFO[id]?.desc || ''}</div>
+      </div>
+      <div class="sys-question">
+        <div class="sys-question-title">Selected answers</div>
+        <div class="sys-answer-list">
+          ${questions.map(q => `<div class="sys-answer-row"><div class="sys-answer-k">${q.q}</div><div class="sys-answer-v">${answers[q.id] || '—'}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="sys-question">
+        <div class="sys-question-title">Suggested facade options</div>
+        ${suggestions.length ? `
+          <div class="sys-suggest-grid">
+            ${suggestions.slice(0, 8).map(opt => {
+              const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
+              return `<div class="sys-suggest-card">
+                <div class="sys-suggest-name">${opt.label}</div>
+                <div class="sys-suggest-sub">${opt.note || 'Matches your current answers'}</div>
+                ${chips ? `<div class="sys-chip-row">${chips}</div>` : ''}
+              </div>`;
+            }).join('')}
+          </div>
+          ${suggestions.length > 8 ? `<div class="sys-question-note">Showing 8 of ${suggestions.length} matched options.</div>` : ''}
+        ` : `<div class="sys-question-note">Answer more questions to narrow the facade options.</div>`}
+      </div>
+    `;
+    return;
+  }
+
+  const q = questions[idx];
+  const suggestions = getSuggestedOptions(id, answers);
+
+  title.textContent = SYSTEM_INFO[id]?.label || id;
+  const total = questions.length;
+  const done = questions.filter(x => answers[x.id]).length;
+  const options = getQuestionOptions(id, q.id, answers);
+
+  body.innerHTML = `
+    <div class="sys-q-head">
+      <div class="sys-q-kicker">Step ${done+1} of ${total}</div>
+      <div class="sys-q-name">${q.q}</div>
+      <div class="sys-q-sub">${SYSTEM_INFO[id]?.desc || ''}</div>
+    </div>
+    <div class="sys-question">
+      <div class="sys-question-title">${q.q}</div>
+      <div class="sys-option-grid">
+        ${options.map(opt => {
+          const label = opt.label || opt.name || opt;
+          const sel = answers[q.id] === label;
+          const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
+          return `<button type="button" class="sys-option-card${sel ? ' sel' : ''}" data-system="${id}" data-question="${q.id}" data-value="${String(label).replace(/"/g,'&quot;')}">
+            <div style="font-weight:500">${label}</div>
+            ${chips?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${chips}</div>`:''}
+          </button>`;
+        }).join('')}
+      </div>
+      ${q.note ? `<div class="sys-question-note">${q.note}</div>` : ''}
+    </div>
+    <div class="sys-question">
+      <div class="sys-question-title">Suggested facade options</div>
+      ${suggestions.length ? `
+        <div class="sys-suggest-grid">
+          ${suggestions.slice(0, 8).map(opt => {
+            const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
+            return `<div class="sys-suggest-card">
+              <div class="sys-suggest-name">${opt.label}</div>
+              <div class="sys-suggest-sub">${opt.note || 'Matches your current answers'}</div>
+              ${chips ? `<div class="sys-chip-row">${chips}</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+        ${suggestions.length > 8 ? `<div class="sys-question-note">Showing 8 of ${suggestions.length} matched options.</div>` : ''}
+      ` : `<div class="sys-question-note">Answer more questions to narrow the facade options.</div>`}
+    </div>
+    <div class="sys-answer-list">
+      ${(questions.slice(0, idx).map(prev => `<div class="sys-answer-row"><div class="sys-answer-k">${prev.q}</div><div class="sys-answer-v">${answers[prev.id] || '—'}</div></div>`).join(''))}
+    </div>
+  `;
+}
+
+function setSystemAnswer(sid, qid, val) {
+  if(!CFG.configs[sid]) CFG.configs[sid] = {};
+  CFG.configs[sid][qid] = val;
+  renderSystemQuestions(sid);
+  checkConfigComplete();
+}
+
+function bindSystemModalEvents() {
+  const body = document.getElementById('system-modal-body');
+  if(!body || body.dataset.bound === '1') return;
+  body.dataset.bound = '1';
+  body.addEventListener('click', e => {
+    const btn = e.target.closest('.sys-option-card');
+    if(!btn) return;
+    e.preventDefault();
+    setSystemAnswer(btn.dataset.system, btn.dataset.question, btn.dataset.value);
+  });
+}
+
+function buildConfigQuestions() {
+  const container = document.getElementById('config-questions');
+  if(!CFG.configs) CFG.configs={};
+  container.innerHTML = CFG.systems.map(sid=>{
+    const qs = FOLLOW_UPS[sid]||[];
+    const suggestions = getSuggestedOptions(sid, CFG.configs[sid]||{});
+    if(!CFG.configs[sid]) CFG.configs[sid]={};
+    return `<div class="config-sys-group">
+      <div class="config-sys-label"><span class="sys-dot"></span>${SYSTEM_INFO[sid]?.label||sid}</div>
+      ${qs.map(q=>{
+        const cur = CFG.configs[sid][q.id]||'';
+        const opts = getQuestionOptions(sid, q.id, CFG.configs[sid]);
+        return `<div class="config-q-block">
+          <h4>${q.q}${cur?`<span class="sel-val">— ${cur}</span>`:''}</h4>
+          <div class="tag-group">${opts.map(o=>`<span class="tag${cur===(o.label||o.name||o)?' sel':''}" onclick="setConfig('${sid}','${q.id}','${(o.label||o.name||o).replace(/'/g,'\\\'')}',this,event)">${o.label||o.name||o}</span>`).join('')}</div>
+        </div>`;
+      }).join('')}
+      <div class="config-suggestions">
+        <div class="config-suggestions-head">Suggested options</div>
+        ${suggestions.length ? `
+          <div class="config-suggestions-grid">
+            ${suggestions.slice(0, 6).map(opt => {
+              const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
+              return `<div class="config-suggestion-card">
+                <div class="config-suggestion-name">${opt.label}</div>
+                <div class="config-suggestion-sub">${opt.note || 'Matches your current answers'}</div>
+                ${chips ? `<div class="sys-chip-row">${chips}</div>` : ''}
+              </div>`;
+            }).join('')}
+          </div>
+          ${suggestions.length > 6 ? `<div class="sys-question-note">Showing 6 of ${suggestions.length} matched options.</div>` : ''}
+        ` : `<div class="sys-question-note">Answer the system questions to see ranked suggestions.</div>`}
+      </div>
+    </div>`;
+  }).join('');
+  checkConfigComplete();
+}
+
+function setConfig(sid,qid,val,el,evt) {
+  if(!CFG.configs[sid]) CFG.configs[sid]={};
+  CFG.configs[sid][qid] = val;
+  el.closest('.tag-group').querySelectorAll('.tag').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel');
+  el.closest('.config-q-block').querySelector('h4').innerHTML =
+    `${FOLLOW_UPS[sid].find(q=>q.id===qid).q}<span class="sel-val">— ${val}</span>`;
+
+  // check warnings
+  const warn = WARNINGS[sid]?.[qid]?.[val];
+  const block = el.closest('.config-q-block');
+  let note = block.nextElementSibling;
+  if(note && note.classList.contains('warn-note')) note.remove();
+  if(warn) {
+    const n = document.createElement('div');
+    n.className='warn-note';
+    n.textContent=warn;
+    block.after(n);
+  }
+  checkConfigComplete();
+}
+
+function checkConfigComplete() {
+  const done = CFG.systems.every(sid=>{
+    const qs = FOLLOW_UPS[sid]||[];
+    return qs.every(q=>CFG.configs[sid]&&CFG.configs[sid][q.id]);
+  });
+  document.getElementById('s4-next').disabled = !done;
+}
+
+// ── MATCHING ──
+function scoreMatch(proj) {
+  let score=0, max=0;
+  // type
+  max+=3;
+  if(proj.type===CFG.type) score+=3;
+  // budget
+  max+=3;
+  if(proj.budget_tier===CFG.budget) score+=3; else if(Math.abs(['standard','medium','high'].indexOf(proj.budget_tier)-['standard','medium','high'].indexOf(CFG.budget))===1) score+=1;
+  // systems
+  const projSystems = (proj.systems||[]).map(s=>s.system);
+  CFG.systems.forEach(sid=>{
+    max+=3;
+    if(projSystems.includes(sid)) score+=3;
+  });
+  // zones
+  const projZones = proj.zones||[];
+  CFG.zones.forEach(z=>{ max+=1; if(projZones.includes(z)) score+=1; });
+  return max>0 ? Math.round(score/max*100) : 0;
+}
+
+function buildMatches() {
+  const scored = DB.projects.map(p=>({...p,score:scoreMatch(p)}))
+    .filter(p=>p.score>0)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,3);
+
+  const out = document.getElementById('matches-output');
+  if(!scored.length) {
+    out.innerHTML=`<div class="empty"><div class="empty-icon">◎</div><div class="empty-title">No matches found</div><div class="empty-sub">Add past projects to the database to see comparisons here.</div></div>`;
+    return;
+  }
+  out.innerHTML = scored.map((p,i)=>matchCard(p,i===0)).join('');
+}
+
+function matchCard(p,isBest) {
+  const projSystems = (p.systems||[]).map(s=>s.system);
+  const sysLabels = (p.systems||[]).map(s=>s.system_label||SYSTEM_INFO[s.system]?.label||s.system);
+  const firstSys = (p.systems||[])[0]||{};
+  const specs = [
+    firstSys.manufacturer ? ['Manufacturer', firstSys.manufacturer] : null,
+    firstSys.product ? ['Product', firstSys.product] : null,
+    firstSys.module_width_mm ? ['Module width', firstSys.module_width_mm+'mm'] : null,
+    firstSys.glazing_spec ? ['Glazing', firstSys.glazing_spec] : null,
+    firstSys.u_value ? ['U-value', firstSys.u_value+' W/m²K'] : null,
+    firstSys.shgc ? ['SHGC', firstSys.shgc] : null,
+    p.cost_per_m2_aed ? ['Cost /m²', 'AED '+p.cost_per_m2_aed.toLocaleString()] : null,
+    (p.subcontractors||[]).length ? ['Subcontractor', p.subcontractors[0].name] : null,
+  ].filter(Boolean);
+
+  const lessons = (p.lessons_learned||[]).slice(0,3);
+  const circumference = 2*Math.PI*22;
+  const offset = circumference*(1-p.score/100);
+  const scoreColor = p.score>=75?'#2D5F96':p.score>=50?'#BA7517':'#C94A4A';
+
+  return `<div class="match-card${isBest?' best':''}">
+    ${isBest?`<div style="margin-bottom:6px"><span class="badge badge-blue">Best match</span></div>`:''}
+    <div class="match-head">
+      <div>
+        <div class="match-title">${p.name}</div>
+        <div class="match-sub">${p.location} · ${TYPE_LABELS[p.type]||p.type} · ${p.floors} floors · ${p.year_completed}</div>
+      </div>
+      <div class="score-wrap">
+        <svg viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="22" fill="none" stroke="var(--border)" stroke-width="4"/>
+          <circle cx="24" cy="24" r="22" fill="none" stroke="${scoreColor}" stroke-width="4"
+            stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
+            stroke-linecap="round" transform="rotate(-90 24 24)"/>
+        </svg>
+        <div class="score-num">${p.score}%</div>
+      </div>
+    </div>
+    <div class="match-meta">
+      ${sysLabels.map(l=>`<span class="badge ${projSystems.some(s=>CFG.systems.includes(s))?'badge-green':'badge-gray'}">${l}</span>`).join('')}
+      <span class="badge ${p.type===CFG.type?'badge-green':'badge-gray'}">${TYPE_LABELS[p.type]||p.type}</span>
+      <span class="badge ${p.budget_tier===CFG.budget?'badge-green':'badge-amber'}">${BUDGET_LABELS[p.budget_tier]||p.budget_tier}</span>
+    </div>
+    ${specs.length?`<div class="spec-grid">${specs.map(([k,v])=>`<div class="spec-item"><div class="spec-key">${k}</div><div class="spec-val">${v}</div></div>`).join('')}</div>`:''}
+    ${lessons.length?`<div class="section-heading">Lessons learned</div>
+    <ul class="lesson-list">${lessons.map(l=>`<li><span class="lesson-dot"></span>${l}</li>`).join('')}</ul>`:''}
+    <div class="match-footer">
+      <button class="btn btn-primary btn-sm" onclick="showProjectDetail('${p.id}')">View full record →</button>
+      ${(p.subcontractors||[]).length?`<button class="btn btn-sm">${p.subcontractors[0].name} · ${'★'.repeat(p.subcontractors[0].rating||3)}</button>`:''}
+    </div>
+  </div>`;
+}
+
+function buildSummary() {
+  const sysRows = CFG.systems.map(sid=>{
+    const cfg = CFG.configs[sid]||{};
+    const qs = FOLLOW_UPS[sid]||[];
+    return `<tr>
+      <td class="sk">${SYSTEM_INFO[sid]?.label||sid}</td>
+      <td class="sv" style="font-size:12px;font-weight:400">${qs.map(q=>`${q.q}: <strong>${cfg[q.id]||'—'}</strong>`).join(' &nbsp;·&nbsp; ')}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('summary-output').innerHTML = `
+    <div class="card mb-16">
+      <table class="summary-table">
+        <tr><td class="sk">Project type</td><td class="sv">${TYPE_LABELS[CFG.type]||CFG.type}</td></tr>
+        <tr><td class="sk">Budget tier</td><td class="sv">${BUDGET_LABELS[CFG.budget]||CFG.budget}</td></tr>
+        <tr><td class="sk">Zones</td><td class="sv">${CFG.zones.join(', ')}</td></tr>
+        ${sysRows}
+      </table>
+    </div>
+    <div class="card" style="background:var(--accent-light);border-color:var(--accent-mid)">
+      <div style="font-size:13px;color:var(--accent);font-weight:500;margin-bottom:6px">Ready to save</div>
+      <div style="font-size:12px;color:var(--text-2);line-height:1.6">
+        Save this configuration to the Company database. Once saved, it will appear in future project matches and can be used as a reference for similar projects.
+      </div>
+    </div>`;
+}
+
+// ── PROJECTS TABLE ──
+function renderProjectsTable() {
+  const q = (document.getElementById('proj-search')?.value||'').toLowerCase();
+  const filtered = DB.projects.filter(p=>!q||p.name.toLowerCase().includes(q)||p.location.toLowerCase().includes(q));
+  const tbody = document.getElementById('projects-tbody');
+  if(!tbody) return;
+  if(!filtered.length) {
+    tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-2)">No projects found</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(p=>{
+    const sys = (p.systems||[]).map(s=>s.system_label||SYSTEM_INFO[s.system]?.label||s.system).join(', ');
+    return `<tr onclick="showProjectDetail('${p.id}')">
+      <td><strong style="font-size:13px">${p.name}</strong><div style="font-size:11px;color:var(--text-3);margin-top:2px">${p.id}</div></td>
+      <td><span class="badge badge-gray">${TYPE_LABELS[p.type]||p.type}</span></td>
+      <td>${p.location}</td>
+      <td class="text-mono">${p.floors}</td>
+      <td style="font-size:12px">${sys}</td>
+      <td><span class="badge ${p.budget_tier==='high'?'badge-blue':p.budget_tier==='medium'?'badge-amber':'badge-gray'}">${BUDGET_LABELS[p.budget_tier]||p.budget_tier}</span></td>
+      <td class="text-mono">${p.cost_per_m2_aed?'AED '+p.cost_per_m2_aed.toLocaleString():'—'}</td>
+      <td class="text-mono">${p.year_completed||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function showProjectDetail(id) {
+  const p = DB.projects.find(x=>x.id===id);
+  if(!p) return;
+  const content = document.getElementById('detail-content');
+  const sys = (p.systems||[]);
+  content.innerHTML = `
+    <div style="margin-bottom:16px">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('projects');renderProjectsTable()">← All projects</button>
+    </div>
+    <div class="detail-header">
+      <div>
+        <div class="detail-title">${p.name}</div>
+        <div class="detail-meta">${p.id} · ${p.location} · ${p.year_completed} · ${p.floors} floors</div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <span class="badge badge-gray">${TYPE_LABELS[p.type]||p.type}</span>
+          <span class="badge ${p.budget_tier==='high'?'badge-blue':p.budget_tier==='medium'?'badge-amber':'badge-gray'}">${BUDGET_LABELS[p.budget_tier]||p.budget_tier}</span>
+          ${(p.zones||[]).map(z=>`<span class="badge badge-gray">${z}</span>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="openEditModal('${p.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProject('${p.id}')">Delete</button>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val">${p.floors}</div><div class="stat-lbl">Floors</div></div>
+      <div class="stat-card"><div class="stat-val">${p.facade_area_m2?p.facade_area_m2.toLocaleString():'—'}</div><div class="stat-lbl">Facade m²</div></div>
+      <div class="stat-card"><div class="stat-val">${p.cost_per_m2_aed?'AED '+p.cost_per_m2_aed.toLocaleString():'—'}</div><div class="stat-lbl">Cost per m²</div></div>
+      <div class="stat-card"><div class="stat-val">${sys.length}</div><div class="stat-lbl">Systems</div></div>
+    </div>
+
+    ${sys.map(s=>`
+      <div class="section-heading">${s.system_label||SYSTEM_INFO[s.system]?.label||s.system} — ${s.zone}</div>
+      <div class="card card-sm mb-16">
+        <div class="spec-grid">
+          ${s.manufacturer?`<div class="spec-item"><div class="spec-key">Manufacturer</div><div class="spec-val">${s.manufacturer}</div></div>`:''}
+          ${s.product?`<div class="spec-item"><div class="spec-key">Product</div><div class="spec-val">${s.product}</div></div>`:''}
+          ${s.module_width_mm?`<div class="spec-item"><div class="spec-key">Module width</div><div class="spec-val">${s.module_width_mm} mm${s.module_width_note?' ('+s.module_width_note+')':''}</div></div>`:''}
+          ${s.floor_height_mm?`<div class="spec-item"><div class="spec-key">Floor height</div><div class="spec-val">${s.floor_height_mm} mm</div></div>`:''}
+          ${s.glazing_spec?`<div class="spec-item"><div class="spec-key">Glazing</div><div class="spec-val">${s.glazing_spec}</div></div>`:''}
+          ${s.u_value?`<div class="spec-item"><div class="spec-key">U-value</div><div class="spec-val">${s.u_value} W/m²K</div></div>`:''}
+          ${s.shgc?`<div class="spec-item"><div class="spec-key">SHGC</div><div class="spec-val">${s.shgc}</div></div>`:''}
+          ${s.acoustic_rw_db?`<div class="spec-item"><div class="spec-key">Acoustic Rw</div><div class="spec-val">${s.acoustic_rw_db} dB</div></div>`:''}
+          ${s.fire_class?`<div class="spec-item"><div class="spec-key">Fire class</div><div class="spec-val">${s.fire_class}</div></div>`:''}
+          ${s.wind_pressure_pa?`<div class="spec-item"><div class="spec-key">Wind pressure</div><div class="spec-val">${s.wind_pressure_pa.toLocaleString()} Pa</div></div>`:''}
+          ${s.frame_finish?`<div class="spec-item"><div class="spec-key">Frame finish</div><div class="spec-val">${s.frame_finish}</div></div>`:''}
+          ${s.frame_colour?`<div class="spec-item"><div class="spec-key">Frame colour</div><div class="spec-val">${s.frame_colour}</div></div>`:''}
+        </div>
+      </div>
+    `).join('')}
+
+    ${(p.subcontractors||[]).length?`
+      <div class="section-heading">Subcontractors</div>
+      <div class="card card-sm mb-16">
+        ${p.subcontractors.map(s=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:13px;font-weight:500">${s.name}</div>
+              <div style="font-size:11px;color:var(--text-2);margin-top:2px">${s.package} — ${s.notes}</div>
+            </div>
+            <div style="font-size:14px;color:var(--amber)">${'★'.repeat(s.rating||0)}${'☆'.repeat(5-(s.rating||0))}</div>
+          </div>`).join('')}
+      </div>`:''}
+
+    ${(p.lessons_learned||[]).length?`
+      <div class="section-heading">Lessons learned</div>
+      <div class="card card-sm">
+        <ul class="lesson-list">${p.lessons_learned.map(l=>`<li><span class="lesson-dot"></span>${l}</li>`).join('')}</ul>
+      </div>`:''}
+  `;
+  showPage('detail');
+}
+
+// ── SUBCONTRACTORS ──
+function renderSubcontractors() {
+  const tiers = ['premium','standard','budget'];
+  const tierLabel = {premium:'Premium',standard:'Standard',budget:'Budget'};
+  const tierBadge = {premium:'badge-blue',standard:'badge-green',budget:'badge-amber'};
+  document.getElementById('subs-content').innerHTML = tiers.map(tier=>{
+    const subs = (DB.subcontractor_register||[]).filter(s=>s.tier===tier);
+    if(!subs.length) return '';
+    return `<div class="section-heading">${tierLabel[tier]} tier</div>
+    <div class="card mb-16" style="padding:0;overflow:hidden">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Specialities</th><th>Tier</th><th>Contact</th></tr></thead>
+        <tbody>${subs.map(s=>`
+          <tr>
+            <td><strong>${s.name}</strong></td>
+            <td>${(s.speciality||[]).map(x=>SYSTEM_INFO[x]?.label||x).map(x=>`<span class="badge badge-gray" style="margin-right:4px">${x}</span>`).join('')}</td>
+            <td><span class="badge ${tierBadge[s.tier]}">${tierLabel[s.tier]}</span></td>
+            <td style="font-size:12px;color:var(--text-2)">${s.contact||'—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+// ── ADD / EDIT PROJECT ──
+let editingId = null;
+function openAddProjectModal() {
+  editingId = null;
+  document.getElementById('modal-add-title').textContent = 'Add new project';
+  ['f-name','f-location','f-year','f-floors','f-area','f-cost','f-sub','f-lessons'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('f-type').value='residential';
+  document.getElementById('f-budget').value='standard';
+  renderSystemTagInputs();
+  document.querySelectorAll('#modal-zone-tags .tag').forEach(t=>t.classList.remove('sel'));
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function openEditModal(id) {
+  const p = DB.projects.find(x=>x.id===id);
+  if(!p) return;
+  editingId = id;
+  document.getElementById('modal-add-title').textContent = 'Edit project';
+  document.getElementById('f-name').value = p.name||'';
+  document.getElementById('f-location').value = p.location||'';
+  document.getElementById('f-year').value = p.year_completed||'';
+  document.getElementById('f-floors').value = p.floors||'';
+  document.getElementById('f-area').value = p.facade_area_m2||'';
+  document.getElementById('f-cost').value = p.cost_per_m2_aed||'';
+  document.getElementById('f-type').value = p.type||'residential';
+  document.getElementById('f-budget').value = p.budget_tier||'standard';
+  document.getElementById('f-sub').value = (p.subcontractors||[])[0]?.name||'';
+  document.getElementById('f-lessons').value = (p.lessons_learned||[]).join('\n');
+  const projSys = (p.systems||[]).map(s=>s.system);
+  renderSystemTagInputs(projSys);
+  document.querySelectorAll('#modal-sys-tags .tag').forEach(t=>t.classList.toggle('sel',projSys.includes(t.dataset.v)));
+  document.querySelectorAll('#modal-zone-tags .tag').forEach(t=>t.classList.toggle('sel',(p.zones||[]).includes(t.dataset.v)));
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function saveProject() {
+  const name = document.getElementById('f-name').value.trim();
+  if(!name) { notify('Project name is required'); return; }
+  const systems = Array.from(document.querySelectorAll('#modal-sys-tags .tag.sel')).map(t=>({ system:t.dataset.v, zone:'tower', system_label:SYSTEM_INFO[t.dataset.v]?.label||t.dataset.v }));
+  const zones = Array.from(document.querySelectorAll('#modal-zone-tags .tag.sel')).map(t=>t.dataset.v);
+  const lessons = document.getElementById('f-lessons').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const subName = document.getElementById('f-sub').value.trim();
+
+  if(editingId) {
+    const idx = DB.projects.findIndex(p=>p.id===editingId);
+    if(idx>=0) {
+      DB.projects[idx] = { ...DB.projects[idx],
+        name, location:document.getElementById('f-location').value,
+        year_completed:parseInt(document.getElementById('f-year').value)||null,
+        floors:parseInt(document.getElementById('f-floors').value)||null,
+        facade_area_m2:parseInt(document.getElementById('f-area').value)||null,
+        cost_per_m2_aed:parseInt(document.getElementById('f-cost').value)||null,
+        type:document.getElementById('f-type').value,
+        budget_tier:document.getElementById('f-budget').value,
+        systems, zones, lessons_learned:lessons,
+        subcontractors:subName?[{package:'Facade',name:subName,rating:4,notes:''}]:DB.projects[idx].subcontractors
+      };
+      notify('Project updated');
+    }
+  } else {
+    const newId = 'ABC-'+String(DB.projects.length+1).padStart(3,'0');
+    DB.projects.push({
+      id:newId, name,
+      location:document.getElementById('f-location').value,
+      year_completed:parseInt(document.getElementById('f-year').value)||null,
+      floors:parseInt(document.getElementById('f-floors').value)||null,
+      facade_area_m2:parseInt(document.getElementById('f-area').value)||null,
+      cost_per_m2_aed:parseInt(document.getElementById('f-cost').value)||null,
+      type:document.getElementById('f-type').value,
+      budget_tier:document.getElementById('f-budget').value,
+      systems, zones, lessons_learned:lessons,
+      subcontractors:subName?[{package:'Facade',name:subName,rating:4,notes:''}]:[],
+      tags:[]
+    });
+    notify('Project added to database');
+  }
+  document.getElementById('nc-projects').textContent = DB.projects.length;
+  document.getElementById('db-status-text').textContent = `${DB.projects.length} projects loaded`;
+  closeModal('modal-add');
+  renderProjectsTable();
+}
+
+function deleteProject(id) {
+  if(!confirm('Delete this project? This cannot be undone.')) return;
+  DB.projects = DB.projects.filter(p=>p.id!==id);
+  document.getElementById('nc-projects').textContent = DB.projects.length;
+  notify('Project deleted');
+  showPage('projects');
+  renderProjectsTable();
+}
+
+function openSaveModal() {
+  document.getElementById('save-name').value='';
+  document.getElementById('save-location').value='';
+  document.getElementById('save-floors').value='';
+  document.getElementById('modal-save').classList.add('open');
+}
+
+function saveConfigAsProject() {
+  const name = document.getElementById('save-name').value.trim();
+  if(!name) { notify('Project name required'); return; }
+  const systems = CFG.systems.map(sid=>({ system:sid, zone:'tower', system_label:SYSTEM_INFO[sid]?.label||sid }));
+  const newId = 'ABC-'+String(DB.projects.length+1).padStart(3,'0');
+  DB.projects.push({
+    id:newId, name,
+    location:document.getElementById('save-location').value||'',
+    floors:parseInt(document.getElementById('save-floors').value)||null,
+    type:CFG.type, budget_tier:CFG.budget,
+    zones:CFG.zones, systems, lessons_learned:[], subcontractors:[], tags:[],
+    year_completed:new Date().getFullYear()
+  });
+  document.getElementById('nc-projects').textContent = DB.projects.length;
+  document.getElementById('db-status-text').textContent = `${DB.projects.length} projects loaded`;
+  closeModal('modal-save');
+  notify('Project saved to database');
+}
+
+// ── EXPORT ──
+function exportDB() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'projects.json';
+  a.click();
+  notify('Database exported as projects.json');
+}
+
+// ── UTILS ──
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function notify(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+// close modals on backdrop click
+document.querySelectorAll('.modal-backdrop').forEach(bd=>{
+  bd.addEventListener('click', e=>{ if(e.target===bd) bd.classList.remove('open'); });
+});
+
+init();
+</script>
+</body>
+</html>
+
