@@ -11,11 +11,11 @@ window.FACADE_DB = {
       "name": "Al Reef Downtown Tower C",
       "location": "Abu Dhabi",
       "year_completed": 2021,
-      "type": "residential",
+      "type": "residential_apartment",
       "floors": 28,
       "gfa_m2": 42000,
       "facade_area_m2": 14800,
-      "budget_tier": "standard",
+      "budget_tier": "bronze",
       "cost_per_m2_aed": 1050,
       "zones": [
         "tower",
@@ -97,11 +97,11 @@ window.FACADE_DB = {
       "name": "Bloom Living Cordoba Block B",
       "location": "Abu Dhabi",
       "year_completed": 2022,
-      "type": "residential",
+      "type": "residential_apartment",
       "floors": 12,
       "gfa_m2": 18500,
       "facade_area_m2": 7200,
-      "budget_tier": "standard",
+      "budget_tier": "bronze",
       "cost_per_m2_aed": 980,
       "zones": [
         "tower",
@@ -187,15 +187,15 @@ window.FACADE_DB = {
       "name": "Saadiyat Grove Residential Plot 4",
       "location": "Abu Dhabi",
       "year_completed": 2023,
-      "type": "residential",
+      "type": "residential_apartment",
       "floors": 18,
       "gfa_m2": 28000,
       "facade_area_m2": 10500,
-      "budget_tier": "medium",
+      "budget_tier": "silver",
       "cost_per_m2_aed": 1320,
       "zones": [
         "tower",
-        "crown"
+        "roof_crown"
       ],
       "systems": [
         {
@@ -223,7 +223,7 @@ window.FACADE_DB = {
           "frame_colour": "RAL 7035"
         },
         {
-          "zone": "crown",
+          "zone": "roof_crown",
           "system": "unitised_cw",
           "system_label": "Unitised curtain wall (crown)",
           "manufacturer": "Reynaers",
@@ -283,12 +283,12 @@ window.FACADE_DB = {
       "floors": 35,
       "gfa_m2": 58000,
       "facade_area_m2": 22000,
-      "budget_tier": "medium",
+      "budget_tier": "silver",
       "cost_per_m2_aed": 1650,
       "zones": [
         "tower",
         "podium",
-        "crown"
+        "roof_crown"
       ],
       "systems": [
         {
@@ -349,17 +349,17 @@ window.FACADE_DB = {
       "name": "Yas Bay Waterfront Mixed-Use Block A",
       "location": "Abu Dhabi",
       "year_completed": 2023,
-      "type": "mixed",
+      "type": "mixed_use",
       "floors": 22,
       "gfa_m2": 38000,
       "facade_area_m2": 16000,
-      "budget_tier": "high",
+      "budget_tier": "platinum",
       "cost_per_m2_aed": 2200,
       "zones": [
         "tower",
         "podium",
-        "retail",
-        "amenity"
+        "lobby",
+        "amenity_deck"
       ],
       "systems": [
         {
@@ -387,7 +387,7 @@ window.FACADE_DB = {
           "frame_colour": "RAL 9003"
         },
         {
-          "zone": "amenity",
+          "zone": "amenity_deck",
           "system": "louvre_screen",
           "system_label": "Louvre / screen",
           "manufacturer": "Hunter Douglas",
@@ -441,7 +441,7 @@ window.FACADE_DB = {
       "floors": 10,
       "gfa_m2": 12000,
       "facade_area_m2": 4800,
-      "budget_tier": "standard",
+      "budget_tier": "bronze",
       "cost_per_m2_aed": 890,
       "zones": [
         "tower"
@@ -504,15 +504,15 @@ window.FACADE_DB = {
       "name": "Mohamed Bin Zayed City Villa Community",
       "location": "Abu Dhabi",
       "year_completed": 2021,
-      "type": "residential",
+      "type": "residential_villa",
       "floors": 3,
       "gfa_m2": 45000,
       "facade_area_m2": 28000,
-      "budget_tier": "standard",
+      "budget_tier": "bronze",
       "cost_per_m2_aed": 750,
       "zones": [
         "podium",
-        "amenity"
+        "amenity_deck"
       ],
       "systems": [
         {
@@ -528,7 +528,7 @@ window.FACADE_DB = {
           "frame_colour": "N/A"
         },
         {
-          "zone": "amenity",
+          "zone": "amenity_deck",
           "system": "precast_panel",
           "system_label": "Precast concrete panel",
           "manufacturer": "Emirates Precast",
@@ -583,11 +583,11 @@ window.FACADE_DB = {
       "floors": 45,
       "gfa_m2": 72000,
       "facade_area_m2": 30000,
-      "budget_tier": "high",
+      "budget_tier": "gold",
       "cost_per_m2_aed": 2800,
       "zones": [
         "tower",
-        "crown",
+        "roof_crown",
         "podium"
       ],
       "systems": [
@@ -616,7 +616,7 @@ window.FACADE_DB = {
           "frame_colour": "RAL 9010"
         },
         {
-          "zone": "crown",
+          "zone": "roof_crown",
           "system": "double_skin",
           "system_label": "Double-skin facade",
           "manufacturer": "Bespoke",
@@ -665,8 +665,8 @@ window.FACADE_DB = {
         "unitised_cw",
         "double_skin"
       ],
-      "tier": "premium",
-      "min_budget": "medium",
+      "tier": "gold",
+      "min_budget": "silver",
       "contact": "enquiries@permasteelisa-gulf.com"
     },
     {
@@ -675,8 +675,8 @@ window.FACADE_DB = {
         "stick_cw",
         "unitised_cw"
       ],
-      "tier": "standard",
-      "min_budget": "standard",
+      "tier": "silver",
+      "min_budget": "bronze",
       "contact": "info@facadearabia.com"
     },
     {
@@ -685,8 +685,8 @@ window.FACADE_DB = {
         "stick_cw",
         "window_wall"
       ],
-      "tier": "standard",
-      "min_budget": "standard",
+      "tier": "silver",
+      "min_budget": "bronze",
       "contact": "facades@alghurairglass.com"
     },
     {
@@ -695,8 +695,8 @@ window.FACADE_DB = {
         "stick_cw",
         "window_wall"
       ],
-      "tier": "standard",
-      "min_budget": "standard",
+      "tier": "silver",
+      "min_budget": "bronze",
       "contact": "info@emiratesglass.com"
     },
     {
@@ -705,8 +705,8 @@ window.FACADE_DB = {
         "unitised_cw",
         "stick_cw"
       ],
-      "tier": "standard",
-      "min_budget": "standard",
+      "tier": "silver",
+      "min_budget": "bronze",
       "contact": "info@gcw.ae"
     },
     {
@@ -715,8 +715,8 @@ window.FACADE_DB = {
         "rainscreen",
         "louvre_screen"
       ],
-      "tier": "standard",
-      "min_budget": "standard",
+      "tier": "silver",
+      "min_budget": "bronze",
       "contact": "info@almasah.ae"
     },
     {
@@ -725,8 +725,8 @@ window.FACADE_DB = {
         "precast_panel",
         "gfrc_panel"
       ],
-      "tier": "standard",
-      "min_budget": "standard",
+      "tier": "silver",
+      "min_budget": "bronze",
       "contact": "info@emiratesprecast.ae"
     },
     {
@@ -735,98 +735,113 @@ window.FACADE_DB = {
         "window_wall",
         "stick_cw"
       ],
-      "tier": "budget",
-      "min_budget": "standard",
+      "tier": "bronze",
+      "min_budget": "bronze",
       "contact": "info@alnoorglass.ae"
     }
   ],
   "system_catalogue": {
     "stick_cw": {
       "label": "Stick curtain wall",
-      "min_budget": "standard",
+      "min_budget": "bronze",
       "suitable_zones": [
         "tower",
         "podium",
-        "retail"
+        "lobby",
+        "balcony"
       ],
       "suitable_types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     "unitised_cw": {
       "label": "Unitised curtain wall",
-      "min_budget": "medium",
+      "min_budget": "silver",
       "suitable_zones": [
         "tower",
-        "crown"
+        "roof_crown",
+        "penthouse",
+        "lobby",
+        "skylight"
       ],
       "suitable_types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     "window_wall": {
       "label": "Window wall",
-      "min_budget": "standard",
+      "min_budget": "bronze",
       "suitable_zones": [
-        "tower"
+        "tower",
+        "balcony",
+        "penthouse",
+        "lobby"
       ],
       "suitable_types": [
-        "residential",
-        "mixed"
+        "residential_apartment",
+        "mixed_use"
       ]
     },
     "rainscreen": {
       "label": "Rainscreen cladding",
-      "min_budget": "standard",
+      "min_budget": "bronze",
       "suitable_zones": [
         "podium",
-        "carpark",
-        "amenity",
-        "crown"
+        "carpark_screen",
+        "amenity_deck",
+        "feature_wall",
+        "roof",
+        "canopy"
       ],
       "suitable_types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     "precast_panel": {
       "label": "Precast concrete panel",
-      "min_budget": "standard",
+      "min_budget": "bronze",
       "suitable_zones": [
         "podium",
-        "carpark",
-        "amenity"
+        "carpark_screen",
+        "feature_wall",
+        "canopy"
       ],
       "suitable_types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     "gfrc_panel": {
       "label": "GFRC panel",
-      "min_budget": "medium",
+      "min_budget": "silver",
       "suitable_zones": [
         "podium",
-        "crown",
-        "amenity"
+        "roof_crown",
+        "feature_wall",
+        "canopy",
+        "fin"
       ],
       "suitable_types": [
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     "double_skin": {
       "label": "Double-skin facade",
-      "min_budget": "high",
+      "min_budget": "gold",
       "suitable_zones": [
         "tower",
-        "crown"
+        "roof_crown",
+        "penthouse",
+        "skylight",
+        "bridge"
       ],
       "suitable_types": [
         "commercial"
@@ -834,17 +849,22 @@ window.FACADE_DB = {
     },
     "louvre_screen": {
       "label": "Louvre / screen",
-      "min_budget": "standard",
+      "min_budget": "bronze",
       "suitable_zones": [
         "tower",
         "podium",
-        "carpark",
-        "amenity"
+        "carpark_screen",
+        "amenity_deck",
+        "feature_wall",
+        "mep_screen",
+        "canopy",
+        "roof",
+        "fin"
       ],
       "suitable_types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     }
   },
@@ -883,18 +903,18 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "tower",
               "podium",
-              "amenity",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -926,18 +946,18 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "amenity",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -972,18 +992,18 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "amenity",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -1014,18 +1034,18 @@ window.FACADE_DB = {
               "Full system replacement"
             ],
             "budget": [
-              "high"
+              "gold"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "amenity",
+              "roof_crown",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
-              "mixed"
+              "residential_apartment",
+              "mixed_use"
             ]
           }
         },
@@ -1056,18 +1076,18 @@ window.FACADE_DB = {
               "Full system replacement"
             ],
             "budget": [
-              "high"
+              "gold"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "amenity",
+              "roof_crown",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
-              "mixed"
+              "residential_apartment",
+              "mixed_use"
             ]
           }
         },
@@ -1099,18 +1119,18 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "tower",
               "podium",
-              "amenity",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         }
@@ -1410,21 +1430,19 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard",
-        "medium",
-        "high"
+        "bronze",
+        "silver",
+        "gold"
       ],
       "zones": [
-        "tower",
-        "podium",
-        "amenity",
+        "balcony",
         "roof",
-        "crown"
+        "amenity_deck"
       ],
       "types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     {
@@ -1475,17 +1493,18 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "podium",
-              "retail",
-              "amenity",
-              "roof"
+              "lobby",
+              "amenity_deck",
+              "roof",
+              "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -1536,19 +1555,19 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "amenity",
+              "roof_crown",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -1599,18 +1618,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "amenity",
+              "roof_crown",
+              "amenity_deck",
               "roof"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -1659,18 +1678,19 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "podium",
-              "retail",
-              "amenity",
-              "roof"
+              "lobby",
+              "amenity_deck",
+              "roof",
+              "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         }
@@ -2246,21 +2266,21 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard",
-        "medium"
+        "bronze",
+        "silver"
       ],
       "zones": [
         "podium",
-        "retail",
-        "amenity",
-        "roof",
-        "tower",
-        "crown"
+        "lobby",
+        "feature_wall",
+        "roof_crown",
+        "canopy",
+        "retail"
       ],
       "types": [
         "commercial",
-        "mixed",
-        "residential"
+        "mixed_use",
+        "residential_apartment"
       ]
     },
     {
@@ -2301,18 +2321,18 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "podium",
-              "carpark",
-              "amenity",
+              "carpark_screen",
+              "amenity_deck",
               "roof",
-              "crown"
+              "roof_crown"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -2348,18 +2368,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "amenity",
+              "roof_crown",
+              "amenity_deck",
               "roof"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -2395,18 +2415,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "amenity",
+              "roof_crown",
+              "amenity_deck",
               "roof"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -2442,17 +2462,17 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "podium",
-              "carpark",
-              "amenity",
+              "carpark_screen",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
-              "mixed"
+              "residential_apartment",
+              "mixed_use"
             ]
           }
         }
@@ -2849,21 +2869,20 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard",
-        "medium"
+        "bronze",
+        "silver"
       ],
       "zones": [
         "podium",
-        "carpark",
-        "amenity",
-        "roof",
-        "crown",
-        "tower"
+        "lobby",
+        "feature_wall",
+        "canopy",
+        "retail"
       ],
       "types": [
         "commercial",
-        "mixed",
-        "residential"
+        "mixed_use",
+        "residential_apartment"
       ]
     },
     {
@@ -2909,18 +2928,19 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "tower",
               "podium",
-              "retail",
-              "amenity"
+              "lobby",
+              "amenity_deck",
+              "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -2964,19 +2984,20 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "retail",
-              "amenity"
+              "roof_crown",
+              "lobby",
+              "amenity_deck",
+              "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -3020,19 +3041,20 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "retail",
-              "amenity"
+              "roof_crown",
+              "lobby",
+              "amenity_deck",
+              "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         }
@@ -3474,20 +3496,19 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard",
-        "medium"
+        "bronze",
+        "silver"
       ],
       "zones": [
-        "tower",
         "podium",
-        "retail",
-        "amenity",
-        "crown"
+        "balcony",
+        "roof_crown",
+        "amenity_deck"
       ],
       "types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     {
@@ -3525,19 +3546,20 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "podium",
-              "carpark",
-              "amenity",
+              "carpark_screen",
+              "amenity_deck",
               "roof",
+              "lobby",
               "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -3573,17 +3595,17 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "podium",
-              "carpark",
-              "amenity",
+              "carpark_screen",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
-              "mixed"
+              "residential_apartment",
+              "mixed_use"
             ]
           }
         }
@@ -3916,19 +3938,19 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard"
+        "bronze"
       ],
       "zones": [
-        "podium",
-        "carpark",
-        "amenity",
+        "canopy",
+        "bridge",
         "roof",
+        "lobby",
         "retail"
       ],
       "types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     {
@@ -3972,17 +3994,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "tower",
               "podium",
+              "lobby",
               "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4024,17 +4047,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "tower",
               "podium",
+              "lobby",
               "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4076,17 +4100,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
+              "roof_crown",
+              "lobby",
               "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4123,17 +4148,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "high"
+              "gold"
             ],
             "zones": [
               "tower",
-              "crown",
-              "retail",
-              "amenity"
+              "roof_crown",
+              "lobby",
+              "amenity_deck",
+              "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4172,17 +4198,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
+              "lobby",
               "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4222,17 +4249,18 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
+              "roof_crown",
+              "lobby",
               "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4272,17 +4300,18 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
+              "roof_crown",
+              "lobby",
               "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4319,18 +4348,19 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "high"
+              "gold"
             ],
             "zones": [
               "tower",
-              "crown",
-              "retail",
-              "amenity",
-              "roof"
+              "roof_crown",
+              "lobby",
+              "amenity_deck",
+              "roof",
+              "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4367,18 +4397,19 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "high"
+              "gold"
             ],
             "zones": [
               "tower",
-              "crown",
-              "retail",
-              "amenity",
-              "roof"
+              "roof_crown",
+              "lobby",
+              "amenity_deck",
+              "roof",
+              "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4415,18 +4446,19 @@ window.FACADE_DB = {
               "Local repair / patching"
             ],
             "budget": [
-              "high"
+              "gold"
             ],
             "zones": [
               "tower",
-              "crown",
-              "retail",
-              "amenity",
-              "roof"
+              "roof_crown",
+              "lobby",
+              "amenity_deck",
+              "roof",
+              "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4468,17 +4500,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "tower",
               "podium",
+              "lobby",
               "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4518,17 +4551,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
+              "roof_crown",
+              "lobby",
               "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4568,18 +4602,19 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "high"
+              "gold"
             ],
             "zones": [
               "tower",
-              "crown",
-              "retail",
-              "amenity",
-              "roof"
+              "roof_crown",
+              "lobby",
+              "amenity_deck",
+              "roof",
+              "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4622,17 +4657,18 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "carpark",
+              "carpark_screen",
+              "lobby",
               "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -4675,17 +4711,17 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "carpark",
+              "carpark_screen",
               "roof"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         }
@@ -5095,23 +5131,23 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard",
-        "medium",
-        "high"
+        "bronze",
+        "silver",
+        "gold"
       ],
       "zones": [
         "tower",
-        "podium",
-        "retail",
-        "crown",
-        "amenity",
-        "roof",
-        "carpark"
+        "roof_crown",
+        "penthouse",
+        "lobby",
+        "balcony",
+        "skylight",
+        "retail"
       ],
       "types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     {
@@ -5145,17 +5181,18 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "retail",
-              "amenity"
+              "lobby",
+              "amenity_deck",
+              "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -5187,19 +5224,20 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "tower",
               "podium",
-              "retail",
-              "amenity",
-              "carpark"
+              "lobby",
+              "amenity_deck",
+              "carpark_screen",
+              "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -5228,16 +5266,17 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "high"
+              "gold"
             ],
             "zones": [
               "tower",
-              "retail",
-              "podium"
+              "lobby",
+              "podium",
+              "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         }
@@ -5493,21 +5532,20 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "medium",
-        "standard",
-        "high"
+        "silver",
+        "bronze",
+        "gold"
       ],
       "zones": [
-        "tower",
-        "podium",
-        "retail",
-        "amenity",
-        "carpark"
+        "lobby",
+        "canopy",
+        "bridge",
+        "retail"
       ],
       "types": [
         "commercial",
-        "mixed",
-        "residential"
+        "mixed_use",
+        "residential_apartment"
       ]
     },
     {
@@ -5538,17 +5576,17 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "tower",
               "podium",
-              "amenity",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
-              "mixed"
+              "residential_apartment",
+              "mixed_use"
             ]
           }
         },
@@ -5577,17 +5615,17 @@ window.FACADE_DB = {
               "Panel swap-out"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "amenity",
+              "amenity_deck",
               "roof"
             ],
             "type": [
-              "residential",
-              "mixed"
+              "residential_apartment",
+              "mixed_use"
             ]
           }
         }
@@ -5772,18 +5810,17 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard",
-        "medium"
+        "bronze",
+        "silver"
       ],
       "zones": [
-        "tower",
-        "podium",
-        "amenity",
-        "roof"
+        "balcony",
+        "penthouse",
+        "amenity_deck"
       ],
       "types": [
-        "residential",
-        "mixed"
+        "residential_apartment",
+        "mixed_use"
       ]
     },
     {
@@ -5819,19 +5856,19 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "podium",
-              "carpark",
+              "carpark_screen",
               "roof",
-              "amenity",
+              "amenity_deck",
               "tower"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -5862,18 +5899,19 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "amenity",
+              "amenity_deck",
+              "lobby",
               "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         }
@@ -6180,21 +6218,22 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard",
-        "medium"
+        "bronze",
+        "silver"
       ],
       "zones": [
-        "podium",
-        "carpark",
+        "carpark_screen",
+        "mep_screen",
+        "feature_wall",
         "roof",
-        "amenity",
-        "tower",
-        "retail"
+        "fin",
+        "canopy",
+        "bridge"
       ],
       "types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     {
@@ -6234,18 +6273,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
-              "carpark",
+              "carpark_screen",
               "roof",
               "podium",
-              "amenity",
+              "amenity_deck",
               "tower"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -6282,18 +6321,18 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
-              "carpark",
+              "carpark_screen",
               "roof",
               "podium",
-              "amenity",
+              "amenity_deck",
               "tower"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         }
@@ -6584,18 +6623,18 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard"
+        "bronze"
       ],
       "zones": [
-        "carpark",
-        "roof",
+        "mep_screen",
+        "carpark_screen",
         "podium",
-        "amenity",
-        "tower"
+        "roof",
+        "feature_wall"
       ],
       "types": [
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     },
     {
@@ -6630,20 +6669,21 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "standard"
+              "bronze"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "retail",
-              "amenity",
-              "roof"
+              "roof_crown",
+              "lobby",
+              "amenity_deck",
+              "roof",
+              "retail"
             ],
             "type": [
-              "residential",
+              "residential_apartment",
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         },
@@ -6675,19 +6715,20 @@ window.FACADE_DB = {
               "Unit-by-unit replacement"
             ],
             "budget": [
-              "medium"
+              "silver"
             ],
             "zones": [
               "tower",
               "podium",
-              "crown",
-              "retail",
-              "amenity",
-              "roof"
+              "roof_crown",
+              "lobby",
+              "amenity_deck",
+              "roof",
+              "retail"
             ],
             "type": [
               "commercial",
-              "mixed"
+              "mixed_use"
             ]
           }
         }
@@ -6917,21 +6958,20 @@ window.FACADE_DB = {
         }
       ],
       "budgets": [
-        "standard",
-        "medium"
+        "bronze",
+        "silver"
       ],
       "zones": [
+        "fin",
+        "feature_wall",
+        "roof_crown",
         "tower",
-        "podium",
-        "crown",
-        "retail",
-        "amenity",
-        "roof"
+        "bridge"
       ],
       "types": [
-        "residential",
+        "residential_apartment",
         "commercial",
-        "mixed"
+        "mixed_use"
       ]
     }
   ]

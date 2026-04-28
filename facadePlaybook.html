@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Facade Playbook</title>
+<link rel="icon" type="image/png" href="src/fav.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -68,7 +69,18 @@ body {
 .sidebar-logo {
   padding: 22px 20px 18px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
+.sidebar-logo .brand-mark {
+  display: block;
+  width: 59px;
+  height: 59px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.sidebar-logo .brand-text { min-width: 0; }
 .sidebar-logo .wordmark {
   font-family: var(--serif);
   font-size: 22px;
@@ -612,8 +624,11 @@ body {
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="wordmark">Company</div>
-      <div class="sub">Facade Playbook</div>
+      <img class="brand-mark" src="src/icon.jpeg" alt="Company logo">
+      <div class="brand-text">
+        <div class="wordmark">Company</div>
+        <div class="sub">Facade Playbook</div>
+      </div>
     </div>
     <div class="nav-section">Configure</div>
     <button class="nav-item active" data-page="configurator" onclick="showPage('configurator',this)">
@@ -673,15 +688,19 @@ body {
           <div class="step-q">What is the project type?</div>
         </div>
         <div class="choice-grid">
-          <div class="choice-card" onclick="pick('type','residential',this)">
-            <div class="cc-title">Residential</div>
-            <div class="cc-sub">Apartments, towers, villas, serviced residences</div>
+          <div class="choice-card" onclick="pick('type','residential_apartment',this)">
+            <div class="cc-title">Residential Apartment</div>
+            <div class="cc-sub">Apartment towers, serviced residences and multi-family housing</div>
+          </div>
+          <div class="choice-card" onclick="pick('type','residential_villa',this)">
+            <div class="cc-title">Residential Villa</div>
+            <div class="cc-sub">Low-rise villas, townhouse clusters and villa communities</div>
           </div>
           <div class="choice-card" onclick="pick('type','commercial',this)">
             <div class="cc-title">Commercial</div>
             <div class="cc-sub">Office, hospitality, retail-led development</div>
           </div>
-          <div class="choice-card" onclick="pick('type','mixed',this)">
+          <div class="choice-card" onclick="pick('type','mixed_use',this)">
             <div class="cc-title">Mixed-use</div>
             <div class="cc-sub">Combination of residential and commercial</div>
           </div>
@@ -689,27 +708,32 @@ body {
         <div class="config-nav"><span></span></div>
       </div>
 
-      <!-- Step 1: Budget -->
+      <!-- Step 1: Quality -->
       <div class="config-step" id="cstep-1">
         <div class="step-header">
           <div class="step-num">Step 2 of 8</div>
-          <div class="step-q">What is the facade budget tier?</div>
+          <div class="step-q">What is the facade quality tier?</div>
         </div>
         <div class="choice-grid">
-          <div class="choice-card" onclick="pick('budget','standard',this)">
-            <div class="cc-title">Standard</div>
+          <div class="choice-card" onclick="pick('budget','bronze',this)">
+            <div class="cc-title">Bronze</div>
             <div class="cc-sub">Cost-led, proven systems</div>
-            <div class="cc-meta">AED 800–1,200 / m²</div>
+            <div class="cc-meta">AED 800–1,100 / m²</div>
           </div>
-          <div class="choice-card" onclick="pick('budget','medium',this)">
-            <div class="cc-title">Premium</div>
-            <div class="cc-sub">Quality with value balance</div>
-            <div class="cc-meta">AED 1,200–2,000 / m²</div>
+          <div class="choice-card" onclick="pick('budget','silver',this)">
+            <div class="cc-title">Silver</div>
+            <div class="cc-sub">Balanced quality and value</div>
+            <div class="cc-meta">AED 1,100–1,700 / m²</div>
           </div>
-          <div class="choice-card" onclick="pick('budget','high',this)">
-            <div class="cc-title">Landmark</div>
-            <div class="cc-sub">Performance and architectural expression</div>
-            <div class="cc-meta">AED 2,000+ / m²</div>
+          <div class="choice-card" onclick="pick('budget','gold',this)">
+            <div class="cc-title">Gold</div>
+            <div class="cc-sub">Performance-led, highly refined facade packages</div>
+            <div class="cc-meta">AED 1,700–2,500 / m²</div>
+          </div>
+          <div class="choice-card" onclick="pick('budget','platinum',this)">
+            <div class="cc-title">Platinum</div>
+            <div class="cc-sub">Signature, landmark-grade facade expression</div>
+            <div class="cc-meta">AED 2,500+ / m²</div>
           </div>
         </div>
         <div class="config-nav">
@@ -728,11 +752,20 @@ body {
         <div class="tag-group mb-24" id="zone-tags">
           <span class="tag" data-v="tower" onclick="toggleZone(this)">Tower</span>
           <span class="tag" data-v="podium" onclick="toggleZone(this)">Podium</span>
-          <span class="tag" data-v="crown" onclick="toggleZone(this)">Crown / top</span>
+          <span class="tag" data-v="roof_crown" onclick="toggleZone(this)">Roof Crown</span>
+          <span class="tag" data-v="penthouse" onclick="toggleZone(this)">Penthouse</span>
+          <span class="tag" data-v="lobby" onclick="toggleZone(this)">Lobby</span>
           <span class="tag" data-v="retail" onclick="toggleZone(this)">Retail</span>
-          <span class="tag" data-v="carpark" onclick="toggleZone(this)">Car park screen</span>
-          <span class="tag" data-v="amenity" onclick="toggleZone(this)">Amenity deck</span>
-          <span class="tag" data-v="roof" onclick="toggleZone(this)">Roof / parapet</span>
+          <span class="tag" data-v="canopy" onclick="toggleZone(this)">Canopy</span>
+          <span class="tag" data-v="bridge" onclick="toggleZone(this)">Bridge</span>
+          <span class="tag" data-v="carpark_screen" onclick="toggleZone(this)">Carpark Screen</span>
+          <span class="tag" data-v="mep_screen" onclick="toggleZone(this)">MEP Screen</span>
+          <span class="tag" data-v="balcony" onclick="toggleZone(this)">Balcony</span>
+          <span class="tag" data-v="roof" onclick="toggleZone(this)">Roof</span>
+          <span class="tag" data-v="skylight" onclick="toggleZone(this)">Skylight</span>
+          <span class="tag" data-v="amenity_deck" onclick="toggleZone(this)">Amenity Deck</span>
+          <span class="tag" data-v="feature_wall" onclick="toggleZone(this)">Feature Wall</span>
+          <span class="tag" data-v="fin" onclick="toggleZone(this)">Fin</span>
         </div>
         <div class="config-nav">
           <button class="btn" onclick="prevStep()">← Back</button>
@@ -835,7 +868,7 @@ body {
               <th>Location</th>
               <th>Floors</th>
               <th>Systems</th>
-              <th>Budget</th>
+              <th>Quality</th>
               <th>Cost /m²</th>
               <th>Year</th>
             </tr>
@@ -874,10 +907,10 @@ body {
     </div>
     <div class="form-row-3 mb-16">
       <div class="form-group"><label>Project type</label>
-        <select id="f-type"><option value="residential">Residential</option><option value="commercial">Commercial</option><option value="mixed">Mixed-use</option></select>
+        <select id="f-type"><option value="residential_apartment">Residential Apartment</option><option value="residential_villa">Residential Villa</option><option value="commercial">Commercial</option><option value="mixed_use">Mixed-use</option></select>
       </div>
-      <div class="form-group"><label>Budget tier</label>
-        <select id="f-budget"><option value="standard">Standard</option><option value="medium">Premium</option><option value="high">Landmark</option></select>
+      <div class="form-group"><label>Quality tier</label>
+        <select id="f-budget"><option value="bronze">Bronze</option><option value="silver">Silver</option><option value="gold">Gold</option><option value="platinum">Platinum</option></select>
       </div>
       <div class="form-group"><label>Year completed</label><input id="f-year" type="number" placeholder="2024"></div>
     </div>
@@ -907,10 +940,20 @@ body {
       <div class="tag-group" id="modal-zone-tags">
         <span class="tag" data-v="tower" onclick="this.classList.toggle('sel')">Tower</span>
         <span class="tag" data-v="podium" onclick="this.classList.toggle('sel')">Podium</span>
-        <span class="tag" data-v="crown" onclick="this.classList.toggle('sel')">Crown</span>
+        <span class="tag" data-v="roof_crown" onclick="this.classList.toggle('sel')">Roof Crown</span>
+        <span class="tag" data-v="penthouse" onclick="this.classList.toggle('sel')">Penthouse</span>
+        <span class="tag" data-v="lobby" onclick="this.classList.toggle('sel')">Lobby</span>
         <span class="tag" data-v="retail" onclick="this.classList.toggle('sel')">Retail</span>
-        <span class="tag" data-v="carpark" onclick="this.classList.toggle('sel')">Car park</span>
-        <span class="tag" data-v="amenity" onclick="this.classList.toggle('sel')">Amenity</span>
+        <span class="tag" data-v="canopy" onclick="this.classList.toggle('sel')">Canopy</span>
+        <span class="tag" data-v="bridge" onclick="this.classList.toggle('sel')">Bridge</span>
+        <span class="tag" data-v="carpark_screen" onclick="this.classList.toggle('sel')">Carpark Screen</span>
+        <span class="tag" data-v="mep_screen" onclick="this.classList.toggle('sel')">MEP Screen</span>
+        <span class="tag" data-v="balcony" onclick="this.classList.toggle('sel')">Balcony</span>
+        <span class="tag" data-v="roof" onclick="this.classList.toggle('sel')">Roof</span>
+        <span class="tag" data-v="skylight" onclick="this.classList.toggle('sel')">Skylight</span>
+        <span class="tag" data-v="amenity_deck" onclick="this.classList.toggle('sel')">Amenity Deck</span>
+        <span class="tag" data-v="feature_wall" onclick="this.classList.toggle('sel')">Feature Wall</span>
+        <span class="tag" data-v="fin" onclick="this.classList.toggle('sel')">Fin</span>
       </div>
     </div>
     <div class="form-group">
@@ -976,8 +1019,26 @@ const ACCESS_LABELS = {
   'internal access': 'Internal access'
 };
 
-const BUDGET_LABELS = { standard:'Standard', medium:'Premium', high:'Landmark' };
-const TYPE_LABELS = { residential:'Residential', commercial:'Commercial', mixed:'Mixed-use' };
+const BUDGET_LABELS = { bronze:'Bronze', silver:'Silver', gold:'Gold', platinum:'Platinum' };
+const TYPE_LABELS = { residential_apartment:'Residential Apartment', residential_villa:'Residential Villa', commercial:'Commercial', mixed_use:'Mixed-use' };
+const ZONE_LABELS = {
+  tower:'Tower',
+  podium:'Podium',
+  roof_crown:'Roof Crown',
+  penthouse:'Penthouse',
+  lobby:'Lobby',
+  retail:'Retail',
+  canopy:'Canopy',
+  bridge:'Bridge',
+  carpark_screen:'Carpark Screen',
+  mep_screen:'MEP Screen',
+  balcony:'Balcony',
+  roof:'Roof',
+  skylight:'Skylight',
+  amenity_deck:'Amenity Deck',
+  feature_wall:'Feature Wall',
+  fin:'Fin'
+};
 
 // ── INIT ──
 async function init() {
@@ -1035,15 +1096,15 @@ function syncSystemData() {
     const facadeOptions = Array.isArray(sys.options) ? sys.options : [];
     const explicitTypes = Array.isArray(sys.types) ? sys.types : (Array.isArray(sys.suitable_types) ? sys.suitable_types : []);
     const derivedTypes = [...new Set([...explicitTypes, ...facadeOptions.flatMap(opt => getOptionTypes(opt))].map(normalizeTypeValue).filter(Boolean))];
-    const derivedZones = [...new Set(facadeOptions.flatMap(opt => getOptionZones(opt)))];
+    const derivedZones = [...new Set(facadeOptions.flatMap(opt => getOptionZones(opt)).map(normalizeZoneValue).filter(Boolean))];
     const derivedAccess = [...new Set(facadeOptions.flatMap(opt => getOptionAccess(opt)))];
     SYSTEM_INFO[id] = {
       label,
       desc: sys.desc || sys.description || (options.length ? `${options.length} options available` : ''),
-      zones: sys.zones || sys.suitable_zones || derivedZones,
+      zones: (sys.zones || sys.suitable_zones || derivedZones).map(normalizeZoneValue).filter(Boolean),
       types: derivedTypes,
       access: derivedAccess,
-      budgets: sys.budgets || (sys.min_budget ? [sys.min_budget] : [])
+      budgets: (sys.budgets || (sys.min_budget ? [sys.min_budget] : [])).map(normalizeBudgetValue).filter(Boolean)
     };
     FOLLOW_UPS[id] = (sys.questions || sys.follow_ups || []).map(q => ({
       id: q.id,
@@ -1102,16 +1163,98 @@ function slugify(value) {
     .replace(/^_+|_+$/g, '');
 }
 
+function normalizeBudgetValue(value) {
+  const text = String(value || '').trim().toLowerCase();
+  if(!text) return '';
+  const aliases = {
+    bronze: 'bronze',
+    standard: 'bronze',
+    budget: 'bronze',
+    silver: 'silver',
+    medium: 'silver',
+    premium: 'silver',
+    gold: 'gold',
+    high: 'gold',
+    landmark: 'gold',
+    platinum: 'platinum'
+  };
+  return aliases[text] || text;
+}
+
 function budgetRank(tier) {
-  const order = { standard: 0, medium: 1, high: 2 };
-  return Object.prototype.hasOwnProperty.call(order, tier) ? order[tier] : -1;
+  const order = { bronze: 0, silver: 1, gold: 2, platinum: 3 };
+  const normalized = normalizeBudgetValue(tier);
+  return Object.prototype.hasOwnProperty.call(order, normalized) ? order[normalized] : -1;
 }
 
 function normalizeTypeValue(value) {
   const text = String(value || '').trim().toLowerCase();
   if(!text) return '';
-  if(text === 'mixed-use' || text === 'mixed use' || text === 'mixed') return 'mixed';
+  if(text === 'mixed-use' || text === 'mixed use' || text === 'mixed') return 'mixed_use';
+  if(text === 'residential' || text === 'residential apartment' || text === 'apartment' || text === 'residential_apartment') return 'residential_apartment';
+  if(text === 'villa' || text === 'residential villa' || text === 'residential_villa') return 'residential_villa';
   return text;
+}
+
+function normalizeZoneValue(value) {
+  const text = String(value || '').trim().toLowerCase();
+  if(!text) return '';
+  const normalized = text
+    .replace(/[\s-]+/g, '_')
+    .replace(/__+/g, '_');
+  const aliases = {
+    tower: 'tower',
+    podium: 'podium',
+    crown: 'roof_crown',
+    'roof_crown': 'roof_crown',
+    penthouse: 'penthouse',
+    lobby: 'lobby',
+    retail: 'retail',
+    canopy: 'canopy',
+    bridge: 'bridge',
+    carpark: 'carpark_screen',
+    'carpark_screen': 'carpark_screen',
+    car_park: 'carpark_screen',
+    car_park_screen: 'carpark_screen',
+    mep: 'mep_screen',
+    'mep_screen': 'mep_screen',
+    balcony: 'balcony',
+    roof: 'roof',
+    skylight: 'skylight',
+    pool: 'amenity_deck',
+    'pool_deck': 'amenity_deck',
+    'pool deck': 'amenity_deck',
+    amenity: 'amenity_deck',
+    'amenity_deck': 'amenity_deck',
+    'amenity deck': 'amenity_deck',
+    'feature_wall': 'feature_wall',
+    fin: 'fin',
+  };
+  return aliases[normalized] || normalized;
+}
+
+function getTypeLabel(value) {
+  const key = normalizeTypeValue(value);
+  return TYPE_LABELS[key] || value || '';
+}
+
+function getZoneLabel(value) {
+  const key = normalizeZoneValue(value);
+  return ZONE_LABELS[key] || value || '';
+}
+
+function getBudgetLabel(value) {
+  const key = normalizeBudgetValue(value);
+  return BUDGET_LABELS[key] || value || '';
+}
+
+function getBudgetBadgeClass(value) {
+  switch(normalizeBudgetValue(value)) {
+    case 'platinum': return 'badge-green';
+    case 'gold': return 'badge-blue';
+    case 'silver': return 'badge-amber';
+    default: return 'badge-gray';
+  }
 }
 
 function normalizeAccessValue(value) {
@@ -1163,9 +1306,9 @@ function getOptionZones(option) {
 }
 
 function optionFitsZone(option, selectedZones) {
-  const zones = Array.isArray(selectedZones) ? selectedZones : [];
+  const zones = Array.isArray(selectedZones) ? selectedZones.map(normalizeZoneValue).filter(Boolean) : [];
   if(!zones.length) return true;
-  const optionZones = getOptionZones(option);
+  const optionZones = getOptionZones(option).map(normalizeZoneValue).filter(Boolean);
   if(!optionZones.length) return true;
   return optionZones.some(zone => zones.includes(zone));
 }
@@ -1271,7 +1414,7 @@ function showPage(id, btn) {
 
 // ── CONFIGURATOR ──
 function renderCrumbs() {
-  const steps = ['Type','Budget','Zones','Systems','Access','Configure','Matches','Summary'];
+  const steps = ['Type','Quality','Zones','Systems','Access','Configure','Matches','Summary'];
   document.getElementById('cfg-crumbs').innerHTML = steps.map((s,i)=>
     `${i>0?'<span class="crumb-sep">›</span>':''}
      <span class="crumb ${i<CFG.step?'done':i===CFG.step?'active':''}">${s}</span>`
@@ -1378,13 +1521,16 @@ function toggleAccess(access) {
 
 function buildSystemCards() {
   const grid = document.getElementById('sys-grid');
+  const currentType = normalizeTypeValue(CFG.type);
+  const currentBudget = normalizeBudgetValue(CFG.budget);
+  const currentZones = (CFG.zones || []).map(normalizeZoneValue).filter(Boolean);
   const ranked = Object.entries(SYSTEM_INFO).map(([id,s])=>{
     const availableCount = getAvailableOptions(id).length;
     const hasFitMeta = (s.types||[]).length || (s.budgets||[]).length || (s.zones||[]).length;
     let score = hasFitMeta ? 0 : 1;
-    if((s.types||[]).includes(CFG.type)) score+=2;
-    if((s.budgets||[]).includes(CFG.budget)) score+=2;
-    if(CFG.zones.some(z=>(s.zones||[]).includes(z))) score+=2;
+    if((s.types||[]).map(normalizeTypeValue).includes(currentType)) score+=2;
+    if((s.budgets||[]).map(normalizeBudgetValue).includes(currentBudget)) score+=2;
+    if(currentZones.some(z=>(s.zones||[]).map(normalizeZoneValue).includes(z))) score+=2;
     return {id,s,score,hasFitMeta,availableCount};
   }).sort((a,b)=>b.score-a.score);
 
@@ -1397,7 +1543,7 @@ function buildSystemCards() {
     const isDim = hasFitMeta && score===0 && !isSel;
     const tags = [
       hasFitMeta && score>=2 ? `<span class="stag fit">Type match</span>` : '',
-      hasFitMeta && score>=4 ? `<span class="stag fit">Budget fit</span>` : '',
+      hasFitMeta && score>=4 ? `<span class="stag fit">Quality fit</span>` : '',
       hasFitMeta && score>=6 ? `<span class="stag fit">Zone fit</span>` : '',
       totalQs ? `<span class="stag">${answered}/${totalQs} answered</span>` : `<span class="stag">${availableCount} options available</span>`,
       answeredCount && recommendedCount && availableCount ? `<span class="stag">${recommendedCount} options recommended / ${availableCount} options available</span>` : ''
@@ -1637,12 +1783,15 @@ function scoreMatch(proj) {
   let score=0, max=0;
   // type
   max+=3;
-  if(proj.type===CFG.type) score+=3;
+  if(normalizeTypeValue(proj.type)===normalizeTypeValue(CFG.type)) score+=3;
   // budget
   max+=3;
-  if(proj.budget_tier===CFG.budget) score+=3; else if(Math.abs(['standard','medium','high'].indexOf(proj.budget_tier)-['standard','medium','high'].indexOf(CFG.budget))===1) score+=1;
+  const projBudgetRank = budgetRank(proj.budget_tier);
+  const selectedBudgetRank = budgetRank(CFG.budget);
+  if(projBudgetRank>=0 && projBudgetRank===selectedBudgetRank) score+=3; else if(projBudgetRank>=0 && selectedBudgetRank>=0 && Math.abs(projBudgetRank-selectedBudgetRank)===1) score+=1;
   // systems
   const projSystems = (proj.systems||[]).map(s=>s.system);
+  const projZones = (proj.zones||[]).map(normalizeZoneValue).filter(Boolean);
   CFG.systems.forEach(sid=>{
     max+=3;
     if(projSystems.includes(sid)) score+=3;
@@ -1654,8 +1803,7 @@ function scoreMatch(proj) {
     if(CFG.access.some(a => projAccess.includes(a))) score+=2;
   }
   // zones
-  const projZones = proj.zones||[];
-  CFG.zones.forEach(z=>{ max+=1; if(projZones.includes(z)) score+=1; });
+  CFG.zones.map(normalizeZoneValue).filter(Boolean).forEach(z=>{ max+=1; if(projZones.includes(z)) score+=1; });
   return max>0 ? Math.round(score/max*100) : 0;
 }
 
@@ -1698,7 +1846,7 @@ function matchCard(p,isBest) {
     <div class="match-head">
       <div>
         <div class="match-title">${p.name}</div>
-        <div class="match-sub">${p.location} · ${TYPE_LABELS[p.type]||p.type} · ${p.floors} floors · ${p.year_completed}</div>
+        <div class="match-sub">${p.location} · ${getTypeLabel(p.type)} · ${p.floors} floors · ${p.year_completed}</div>
       </div>
       <div class="score-wrap">
         <svg viewBox="0 0 48 48">
@@ -1712,8 +1860,8 @@ function matchCard(p,isBest) {
     </div>
     <div class="match-meta">
       ${sysLabels.map(l=>`<span class="badge ${projSystems.some(s=>CFG.systems.includes(s))?'badge-green':'badge-gray'}">${l}</span>`).join('')}
-      <span class="badge ${p.type===CFG.type?'badge-green':'badge-gray'}">${TYPE_LABELS[p.type]||p.type}</span>
-      <span class="badge ${p.budget_tier===CFG.budget?'badge-green':'badge-amber'}">${BUDGET_LABELS[p.budget_tier]||p.budget_tier}</span>
+      <span class="badge ${normalizeTypeValue(p.type)===normalizeTypeValue(CFG.type)?'badge-green':'badge-gray'}">${getTypeLabel(p.type)}</span>
+      <span class="badge ${normalizeBudgetValue(p.budget_tier)===normalizeBudgetValue(CFG.budget)?'badge-green':'badge-amber'}">${getBudgetLabel(p.budget_tier)}</span>
       ${(p.access_method||[]).length?`<span class="badge ${CFG.access.some(a=>(p.access_method||[]).map(normalizeAccessValue).includes(a))?'badge-green':'badge-gray'}">${(p.access_method||[]).join(' / ')}</span>`:''}
     </div>
     ${specs.length?`<div class="spec-grid">${specs.map(([k,v])=>`<div class="spec-item"><div class="spec-key">${k}</div><div class="spec-val">${v}</div></div>`).join('')}</div>`:''}
@@ -1739,9 +1887,9 @@ function buildSummary() {
   document.getElementById('summary-output').innerHTML = `
     <div class="card mb-16">
       <table class="summary-table">
-        <tr><td class="sk">Project type</td><td class="sv">${TYPE_LABELS[CFG.type]||CFG.type}</td></tr>
-        <tr><td class="sk">Budget tier</td><td class="sv">${BUDGET_LABELS[CFG.budget]||CFG.budget}</td></tr>
-        <tr><td class="sk">Zones</td><td class="sv">${CFG.zones.join(', ')}</td></tr>
+        <tr><td class="sk">Project type</td><td class="sv">${getTypeLabel(CFG.type)}</td></tr>
+        <tr><td class="sk">Quality tier</td><td class="sv">${getBudgetLabel(CFG.budget)}</td></tr>
+        <tr><td class="sk">Zones</td><td class="sv">${(CFG.zones||[]).map(getZoneLabel).join(', ')}</td></tr>
         <tr><td class="sk">Access & maintenance</td><td class="sv">${(CFG.access||[]).map(getAccessLabel).join(', ') || '—'}</td></tr>
         ${sysRows}
       </table>
@@ -1768,11 +1916,11 @@ function renderProjectsTable() {
     const sys = (p.systems||[]).map(s=>s.system_label||SYSTEM_INFO[s.system]?.label||s.system).join(', ');
     return `<tr onclick="showProjectDetail('${p.id}')">
       <td><strong style="font-size:13px">${p.name}</strong><div style="font-size:11px;color:var(--text-3);margin-top:2px">${p.id}</div></td>
-      <td><span class="badge badge-gray">${TYPE_LABELS[p.type]||p.type}</span></td>
+      <td><span class="badge badge-gray">${getTypeLabel(p.type)}</span></td>
       <td>${p.location}</td>
       <td class="text-mono">${p.floors}</td>
       <td style="font-size:12px">${sys}</td>
-      <td><span class="badge ${p.budget_tier==='high'?'badge-blue':p.budget_tier==='medium'?'badge-amber':'badge-gray'}">${BUDGET_LABELS[p.budget_tier]||p.budget_tier}</span></td>
+      <td><span class="badge ${getBudgetBadgeClass(p.budget_tier)}">${getBudgetLabel(p.budget_tier)}</span></td>
       <td class="text-mono">${p.cost_per_m2_aed?'AED '+p.cost_per_m2_aed.toLocaleString():'—'}</td>
       <td class="text-mono">${p.year_completed||'—'}</td>
     </tr>`;
@@ -1793,9 +1941,9 @@ function showProjectDetail(id) {
         <div class="detail-title">${p.name}</div>
         <div class="detail-meta">${p.id} · ${p.location} · ${p.year_completed} · ${p.floors} floors</div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          <span class="badge badge-gray">${TYPE_LABELS[p.type]||p.type}</span>
-          <span class="badge ${p.budget_tier==='high'?'badge-blue':p.budget_tier==='medium'?'badge-amber':'badge-gray'}">${BUDGET_LABELS[p.budget_tier]||p.budget_tier}</span>
-          ${(p.zones||[]).map(z=>`<span class="badge badge-gray">${z}</span>`).join('')}
+          <span class="badge badge-gray">${getTypeLabel(p.type)}</span>
+          <span class="badge ${getBudgetBadgeClass(p.budget_tier)}">${getBudgetLabel(p.budget_tier)}</span>
+          ${(p.zones||[]).map(z=>`<span class="badge badge-gray">${getZoneLabel(z)}</span>`).join('')}
         </div>
       </div>
       <div style="display:flex;gap:8px">
@@ -1812,7 +1960,7 @@ function showProjectDetail(id) {
     </div>
 
     ${sys.map(s=>`
-      <div class="section-heading">${s.system_label||SYSTEM_INFO[s.system]?.label||s.system} — ${s.zone}</div>
+      <div class="section-heading">${s.system_label||SYSTEM_INFO[s.system]?.label||s.system} — ${getZoneLabel(s.zone)}</div>
       <div class="card card-sm mb-16">
         <div class="spec-grid">
           ${s.manufacturer?`<div class="spec-item"><div class="spec-key">Manufacturer</div><div class="spec-val">${s.manufacturer}</div></div>`:''}
@@ -1855,9 +2003,9 @@ function showProjectDetail(id) {
 
 // ── SUBCONTRACTORS ──
 function renderSubcontractors() {
-  const tiers = ['premium','standard','budget'];
-  const tierLabel = {premium:'Premium',standard:'Standard',budget:'Budget'};
-  const tierBadge = {premium:'badge-blue',standard:'badge-green',budget:'badge-amber'};
+  const tiers = ['gold','silver','bronze'];
+  const tierLabel = {gold:'Gold',silver:'Silver',bronze:'Bronze'};
+  const tierBadge = {gold:'badge-blue',silver:'badge-amber',bronze:'badge-gray'};
   document.getElementById('subs-content').innerHTML = tiers.map(tier=>{
     const subs = (DB.subcontractor_register||[]).filter(s=>s.tier===tier);
     if(!subs.length) return '';
@@ -1884,8 +2032,8 @@ function openAddProjectModal() {
   editingId = null;
   document.getElementById('modal-add-title').textContent = 'Add new project';
   ['f-name','f-location','f-year','f-floors','f-area','f-cost','f-sub','f-lessons'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('f-type').value='residential';
-  document.getElementById('f-budget').value='standard';
+  document.getElementById('f-type').value='residential_apartment';
+  document.getElementById('f-budget').value='bronze';
   renderSystemTagInputs();
   document.querySelectorAll('#modal-zone-tags .tag').forEach(t=>t.classList.remove('sel'));
   document.getElementById('modal-add').classList.add('open');
@@ -1902,22 +2050,24 @@ function openEditModal(id) {
   document.getElementById('f-floors').value = p.floors||'';
   document.getElementById('f-area').value = p.facade_area_m2||'';
   document.getElementById('f-cost').value = p.cost_per_m2_aed||'';
-  document.getElementById('f-type').value = p.type||'residential';
-  document.getElementById('f-budget').value = p.budget_tier||'standard';
+  document.getElementById('f-type').value = normalizeTypeValue(p.type)||'residential_apartment';
+  document.getElementById('f-budget').value = normalizeBudgetValue(p.budget_tier)||'bronze';
   document.getElementById('f-sub').value = (p.subcontractors||[])[0]?.name||'';
   document.getElementById('f-lessons').value = (p.lessons_learned||[]).join('\n');
   const projSys = (p.systems||[]).map(s=>s.system);
+  const projZones = (p.zones||[]).map(normalizeZoneValue).filter(Boolean);
   renderSystemTagInputs(projSys);
   document.querySelectorAll('#modal-sys-tags .tag').forEach(t=>t.classList.toggle('sel',projSys.includes(t.dataset.v)));
-  document.querySelectorAll('#modal-zone-tags .tag').forEach(t=>t.classList.toggle('sel',(p.zones||[]).includes(t.dataset.v)));
+  document.querySelectorAll('#modal-zone-tags .tag').forEach(t=>t.classList.toggle('sel',projZones.includes(normalizeZoneValue(t.dataset.v))));
   document.getElementById('modal-add').classList.add('open');
 }
 
 function saveProject() {
   const name = document.getElementById('f-name').value.trim();
   if(!name) { notify('Project name is required'); return; }
-  const systems = Array.from(document.querySelectorAll('#modal-sys-tags .tag.sel')).map(t=>({ system:t.dataset.v, zone:'tower', system_label:SYSTEM_INFO[t.dataset.v]?.label||t.dataset.v }));
-  const zones = Array.from(document.querySelectorAll('#modal-zone-tags .tag.sel')).map(t=>t.dataset.v);
+  const zones = Array.from(document.querySelectorAll('#modal-zone-tags .tag.sel')).map(t=>normalizeZoneValue(t.dataset.v));
+  const defaultZone = zones[0] || 'tower';
+  const systems = Array.from(document.querySelectorAll('#modal-sys-tags .tag.sel')).map(t=>({ system:t.dataset.v, zone:defaultZone, system_label:SYSTEM_INFO[t.dataset.v]?.label||t.dataset.v }));
   const lessons = document.getElementById('f-lessons').value.split('\n').map(s=>s.trim()).filter(Boolean);
   const subName = document.getElementById('f-sub').value.trim();
 
@@ -1930,8 +2080,8 @@ function saveProject() {
         floors:parseInt(document.getElementById('f-floors').value)||null,
         facade_area_m2:parseInt(document.getElementById('f-area').value)||null,
         cost_per_m2_aed:parseInt(document.getElementById('f-cost').value)||null,
-        type:document.getElementById('f-type').value,
-        budget_tier:document.getElementById('f-budget').value,
+        type:normalizeTypeValue(document.getElementById('f-type').value),
+        budget_tier:normalizeBudgetValue(document.getElementById('f-budget').value),
         systems, zones, lessons_learned:lessons,
         subcontractors:subName?[{package:'Facade',name:subName,rating:4,notes:''}]:DB.projects[idx].subcontractors
       };
@@ -1946,8 +2096,8 @@ function saveProject() {
       floors:parseInt(document.getElementById('f-floors').value)||null,
       facade_area_m2:parseInt(document.getElementById('f-area').value)||null,
       cost_per_m2_aed:parseInt(document.getElementById('f-cost').value)||null,
-      type:document.getElementById('f-type').value,
-      budget_tier:document.getElementById('f-budget').value,
+      type:normalizeTypeValue(document.getElementById('f-type').value),
+      budget_tier:normalizeBudgetValue(document.getElementById('f-budget').value),
       systems, zones, lessons_learned:lessons,
       subcontractors:subName?[{package:'Facade',name:subName,rating:4,notes:''}]:[],
       tags:[]
