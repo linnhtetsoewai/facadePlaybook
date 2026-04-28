@@ -943,6 +943,7 @@ body {
 
 <div class="notif" id="notif"></div>
 
+<script src="projectsData.js"></script>
 <script>
 // ── DATA ──
 let DB = { meta:{}, projects:[], subcontractor_register:[], facade_systems:[] };
@@ -959,13 +960,26 @@ const TYPE_LABELS = { residential:'Residential', commercial:'Commercial', mixed:
 
 // ── INIT ──
 async function init() {
+  if(window.FACADE_DB) {
+    DB = window.FACADE_DB;
+    syncSystemData();
+    document.getElementById('db-status-text').textContent = `${DB.projects.length} projects loaded`;
+    document.getElementById('nc-projects').textContent = DB.projects.length;
+    document.getElementById('nc-subs').textContent = DB.subcontractor_register.length;
+    renderSystemTagInputs();
+    bindSystemModalEvents();
+    renderProjectsTable();
+    renderCrumbs();
+    notify(`Database loaded — ${DB.projects.length} projects`);
+    return;
+  }
   try {
     const resp = await fetch('projects.json');
     DB = await resp.json();
     syncSystemData();
-    notify(`Database loaded â€” ${DB.projects.length} projects`);
+    notify(`Database loaded — ${DB.projects.length} projects`);
   } catch(e) {
-    notify('Could not load projects.json â€” using empty database');
+    notify('Could not load local database — using empty database');
     DB = { meta:{organisation:'Company'}, projects:[], subcontractor_register:[], facade_systems:[] };
     syncSystemData();
   }
