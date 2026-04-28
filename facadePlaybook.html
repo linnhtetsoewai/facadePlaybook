@@ -16,10 +16,10 @@
   --text: #1A1814;
   --text-2: #6B6560;
   --text-3: #A09890;
-  --accent: #1C3A5E;
-  --accent-2: #2D5F96;
-  --accent-light: #E8EFF7;
-  --accent-mid: #B5CAE4;
+  --accent: #1A1A1A;
+  --accent-2: #3A3A3A;
+  --accent-light: #ECECEC;
+  --accent-mid: #B9B9B9;
   --green: #2A5C3F;
   --green-light: #E6F0EA;
   --green-mid: #A8C9B4;
@@ -241,7 +241,7 @@ body {
 }
 .form-group input:focus,
 .form-group select:focus,
-.form-group textarea:focus { border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(45,95,150,0.08); }
+.form-group textarea:focus { border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(26,26,26,0.08); }
 .form-group textarea { resize: vertical; min-height: 72px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
@@ -1512,7 +1512,7 @@ function matchCard(p,isBest) {
   const lessons = (p.lessons_learned||[]).slice(0,3);
   const circumference = 2*Math.PI*22;
   const offset = circumference*(1-p.score/100);
-  const scoreColor = p.score>=75?'#2D5F96':p.score>=50?'#BA7517':'#C94A4A';
+  const scoreColor = p.score>=75?'#111111':p.score>=50?'#3F3F3F':'#777777';
 
   return `<div class="match-card${isBest?' best':''}">
     ${isBest?`<div style="margin-bottom:6px"><span class="badge badge-blue">Best match</span></div>`:''}
