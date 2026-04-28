@@ -273,6 +273,26 @@ body {
 .badge-amber { background: var(--amber-light); color: var(--amber); border: 1px solid var(--amber-mid); }
 .badge-red { background: var(--red-light); color: var(--red); border: 1px solid #E0B0B0; }
 .badge-gray { background: var(--surface2); color: var(--text-2); border: 1px solid var(--border); }
+.badge-gold { background: #F7E7BF; color: #8A6500; border: 1px solid #D9B65C; }
+.badge-silver { background: #EEF0F3; color: #6A7280; border: 1px solid #C5CBD4; }
+.badge-bronze { background: #F4E0C9; color: #8A5A24; border: 1px solid #D0A06C; }
+
+.section-heading-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-heading-tier::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.9;
+}
+.section-heading-tier.gold { color: #8A6500; }
+.section-heading-tier.silver { color: #6A7280; }
+.section-heading-tier.bronze { color: #8A5A24; }
 
 /* ── TAGS (multi-select chips) ── */
 .tag-group { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -305,6 +325,7 @@ body {
 
 /* ── TABLES ── */
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table.fixed-layout { table-layout: fixed; }
 .data-table th {
   text-align: left;
   padding: 8px 12px;
@@ -322,6 +343,14 @@ body {
   color: var(--text);
   vertical-align: middle;
 }
+.data-table.fixed-layout th,
+.data-table.fixed-layout td {
+  overflow-wrap: anywhere;
+}
+.data-table.fixed-layout .col-name { width: 24%; }
+.data-table.fixed-layout .col-specialities { width: 36%; }
+.data-table.fixed-layout .col-tier { width: 12%; }
+.data-table.fixed-layout .col-contact { width: 28%; }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: var(--surface2); cursor: pointer; }
 
@@ -1251,8 +1280,9 @@ function getBudgetLabel(value) {
 function getBudgetBadgeClass(value) {
   switch(normalizeBudgetValue(value)) {
     case 'platinum': return 'badge-green';
-    case 'gold': return 'badge-blue';
-    case 'silver': return 'badge-amber';
+    case 'gold': return 'badge-gold';
+    case 'silver': return 'badge-silver';
+    case 'bronze': return 'badge-bronze';
     default: return 'badge-gray';
   }
 }
@@ -2005,13 +2035,19 @@ function showProjectDetail(id) {
 function renderSubcontractors() {
   const tiers = ['gold','silver','bronze'];
   const tierLabel = {gold:'Gold',silver:'Silver',bronze:'Bronze'};
-  const tierBadge = {gold:'badge-blue',silver:'badge-amber',bronze:'badge-gray'};
+  const tierBadge = {gold:'badge-gold',silver:'badge-silver',bronze:'badge-bronze'};
   document.getElementById('subs-content').innerHTML = tiers.map(tier=>{
     const subs = (DB.subcontractor_register||[]).filter(s=>s.tier===tier);
     if(!subs.length) return '';
-    return `<div class="section-heading">${tierLabel[tier]} tier</div>
+    return `<div class="section-heading section-heading-tier ${tier}">${tierLabel[tier]} tier</div>
     <div class="card mb-16" style="padding:0;overflow:hidden">
-      <table class="data-table">
+      <table class="data-table fixed-layout subcontractor-table">
+        <colgroup>
+          <col class="col-name">
+          <col class="col-specialities">
+          <col class="col-tier">
+          <col class="col-contact">
+        </colgroup>
         <thead><tr><th>Name</th><th>Specialities</th><th>Tier</th><th>Contact</th></tr></thead>
         <tbody>${subs.map(s=>`
           <tr>
