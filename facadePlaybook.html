@@ -1080,26 +1080,60 @@ function scoreOptionAgainstAnswers(option, answers, ignoreKey = null) {
   return { score, matched };
 }
 
+function narrowScoredOptions(scored, maxItems = 4, minItems = 2) {
+  const sorted = [...scored].sort((a,b)=> b.score - a.score || a.label.localeCompare(b.label));
+  if(!sorted.length) return [];
+
+  const topScore = sorted[0].score;
+  let narrowed = sorted.filter(o => o.score === topScore);
+
+  if(topScore > 0 && narrowed.length < minItems) {
+    const scoreLevels = [...new Set(sorted.map(o => o.score).filter(s => s < topScore).sort((a,b)=> b - a))];
+    for(const level of scoreLevels) {
+      narrowed = narrowed.concat(sorted.filter(o => o.score === level));
+      if(narrowed.length >= minItems) break;
+    }
+  }
+
+  return narrowed.slice(0, maxItems);
+}
+
 function getQuestionOptions(systemId, questionId, answers) {
   const pool = (SYSTEM_OPTIONS[systemId] || []).filter(o => o.question_id === questionId);
   const scored = pool.map(opt => {
     const match = scoreOptionAgainstAnswers(opt, answers, questionId);
     return { ...opt, score: match.score, matched: match.matched };
   });
-  const anyMatch = scored.some(o => o.score > 0);
-  const filtered = anyMatch ? scored.filter(o => o.score > 0) : scored;
-  return filtered.sort((a,b)=> b.score - a.score || a.label.localeCompare(b.label));
+  return narrowScoredOptions(scored, 4, 2);
 }
 
 function getSuggestedOptions(systemId, answers) {
+  if(!answers || !Object.keys(answers).length) return [];
   const pool = SYSTEM_SUGGESTIONS[systemId] || [];
   const scored = pool.map(opt => {
     const match = scoreOptionAgainstAnswers(opt, answers);
     return { ...opt, score: match.score, matched: match.matched };
   });
-  const anyMatch = scored.some(o => o.score > 0);
-  const filtered = anyMatch ? scored.filter(o => o.score > 0) : scored;
-  return filtered.sort((a,b)=> b.score - a.score || a.label.localeCompare(b.label));
+  const matched = scored.filter(opt => opt.score > 0);
+  return matched.length ? narrowScoredOptions(matched, 4, 2) : [];
+}
+
+function getRecommendationSummary(systemId, answers) {
+  const availableCount = (SYSTEM_SUGGESTIONS[systemId] || []).length;
+  const answeredCount = answers ? Object.keys(answers).length : 0;
+  const recommendedCount = answeredCount ? getSuggestedOptions(systemId, answers).length : 0;
+  return { availableCount, answeredCount, recommendedCount };
+}
+
+function refreshSystemState(activeSystemId = CFG.activeSystem) {
+  if(CFG.step === 3) buildSystemCards();
+  if(CFG.step === 4) buildConfigQuestions();
+  if(CFG.step === 5) buildMatches();
+  if(CFG.step === 6) buildSummary();
+  const modal = document.getElementById('modal-system');
+  if(modal && modal.classList.contains('open') && activeSystemId) {
+    renderSystemQuestions(activeSystemId);
+  }
 }
 
 // ── NAVIGATION ──
@@ -1186,12 +1220,14 @@ function buildSystemCards() {
     const isSel = CFG.systems.includes(id);
     const answered = Object.keys(CFG.configs[id]||{}).length;
     const totalQs = (FOLLOW_UPS[id]||[]).length;
+    const { availableCount, answeredCount, recommendedCount } = getRecommendationSummary(id, CFG.configs[id]||{});
     const isDim = hasFitMeta && score===0 && !isSel;
     const tags = [
       hasFitMeta && score>=2 ? `<span class="stag fit">Type match</span>` : '',
       hasFitMeta && score>=4 ? `<span class="stag fit">Budget fit</span>` : '',
       hasFitMeta && score>=6 ? `<span class="stag fit">Zone fit</span>` : '',
-      totalQs ? `<span class="stag">${answered}/${totalQs} answered</span>` : `<span class="stag">Options available</span>`
+      totalQs ? `<span class="stag">${answered}/${totalQs} answered</span>` : `<span class="stag">Options available</span>`,
+      answeredCount && recommendedCount && availableCount ? `<span class="stag">${recommendedCount} options recommended / ${availableCount} options available</span>` : ''
     ].filter(Boolean).join('') || '<span class="stag">Override</span>';
     return `<div class="sys-card${isSel?' sel':''}${isDim?' dimmed':''}" id="sc-${id}" onclick="toggleSystem('${id}')">
       <div class="sys-name">${s.label}</div>
@@ -1232,6 +1268,7 @@ function renderSystemQuestions(id) {
   if(!questions.length) {
     title.textContent = SYSTEM_INFO[id]?.label || id;
     const suggestions = getSuggestedOptions(id, answers);
+    const { availableCount, answeredCount, recommendedCount } = getRecommendationSummary(id, answers);
     body.innerHTML = `
       <div class="card">
         <div class="empty">
@@ -1239,10 +1276,10 @@ function renderSystemQuestions(id) {
           <div class="empty-sub">You can close this panel or open it again to revise answers.</div>
         </div>
         <div class="sys-question" style="margin-top:16px">
-          <div class="sys-question-title">Suggested facade options</div>
+          <div class="sys-question-title">${answeredCount ? (recommendedCount ? `${recommendedCount} options recommended${availableCount ? ` / ${availableCount} options available` : ''}` : 'No recommendations yet') : 'Answer questions to see recommendations'}</div>
           ${suggestions.length ? `
             <div class="sys-suggest-grid">
-              ${suggestions.slice(0, 8).map(opt => {
+              ${suggestions.slice(0, 4).map(opt => {
                 const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
                 return `<div class="sys-suggest-card">
                   <div class="sys-suggest-name">${opt.label}</div>
@@ -1251,8 +1288,8 @@ function renderSystemQuestions(id) {
                 </div>`;
               }).join('')}
             </div>
-            ${suggestions.length > 8 ? `<div class="sys-question-note">Showing 8 of ${suggestions.length} matched options.</div>` : ''}
-          ` : `<div class="sys-question-note">Answer more questions to narrow the facade options.</div>`}
+            ${suggestions.length > 4 ? `<div class="sys-question-note">Showing 4 of ${suggestions.length} matched options.</div>` : ''}
+          ` : `<div class="sys-question-note">${answeredCount ? 'Answer more questions to narrow the facade options.' : 'No recommendations yet. Answer at least one question to begin narrowing options.'}</div>`}
         </div>
       </div>`;
     return;
@@ -1261,6 +1298,7 @@ function renderSystemQuestions(id) {
   if(idx < 0) {
     title.textContent = SYSTEM_INFO[id]?.label || id;
     const suggestions = getSuggestedOptions(id, answers);
+    const { availableCount, answeredCount, recommendedCount } = getRecommendationSummary(id, answers);
     body.innerHTML = `
       <div class="sys-q-head">
         <div class="sys-q-kicker">Complete</div>
@@ -1274,10 +1312,10 @@ function renderSystemQuestions(id) {
         </div>
       </div>
       <div class="sys-question">
-        <div class="sys-question-title">Suggested facade options</div>
+        <div class="sys-question-title">${answeredCount ? (recommendedCount ? `${recommendedCount} options recommended${availableCount ? ` / ${availableCount} options available` : ''}` : 'No recommendations yet') : 'Answer questions to see recommendations'}</div>
         ${suggestions.length ? `
           <div class="sys-suggest-grid">
-            ${suggestions.slice(0, 8).map(opt => {
+            ${suggestions.slice(0, 4).map(opt => {
               const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
               return `<div class="sys-suggest-card">
                 <div class="sys-suggest-name">${opt.label}</div>
@@ -1286,8 +1324,8 @@ function renderSystemQuestions(id) {
               </div>`;
             }).join('')}
           </div>
-          ${suggestions.length > 8 ? `<div class="sys-question-note">Showing 8 of ${suggestions.length} matched options.</div>` : ''}
-        ` : `<div class="sys-question-note">Answer more questions to narrow the facade options.</div>`}
+          ${suggestions.length > 4 ? `<div class="sys-question-note">Showing 4 of ${suggestions.length} matched options.</div>` : ''}
+        ` : `<div class="sys-question-note">${answeredCount ? 'Answer more questions to narrow the facade options.' : 'No recommendations yet. Answer at least one question to begin narrowing options.'}</div>`}
       </div>
     `;
     return;
@@ -1295,6 +1333,7 @@ function renderSystemQuestions(id) {
 
   const q = questions[idx];
   const suggestions = getSuggestedOptions(id, answers);
+  const { availableCount, answeredCount, recommendedCount } = getRecommendationSummary(id, answers);
 
   title.textContent = SYSTEM_INFO[id]?.label || id;
   const total = questions.length;
@@ -1323,10 +1362,10 @@ function renderSystemQuestions(id) {
       ${q.note ? `<div class="sys-question-note">${q.note}</div>` : ''}
     </div>
     <div class="sys-question">
-      <div class="sys-question-title">Suggested facade options</div>
+      <div class="sys-question-title">${answeredCount ? (recommendedCount ? `${recommendedCount} options recommended${availableCount ? ` / ${availableCount} options available` : ''}` : 'No recommendations yet') : 'Answer questions to see recommendations'}</div>
       ${suggestions.length ? `
         <div class="sys-suggest-grid">
-          ${suggestions.slice(0, 8).map(opt => {
+          ${suggestions.slice(0, 4).map(opt => {
             const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
             return `<div class="sys-suggest-card">
               <div class="sys-suggest-name">${opt.label}</div>
@@ -1335,8 +1374,8 @@ function renderSystemQuestions(id) {
             </div>`;
           }).join('')}
         </div>
-        ${suggestions.length > 8 ? `<div class="sys-question-note">Showing 8 of ${suggestions.length} matched options.</div>` : ''}
-      ` : `<div class="sys-question-note">Answer more questions to narrow the facade options.</div>`}
+        ${suggestions.length > 4 ? `<div class="sys-question-note">Showing 4 of ${suggestions.length} matched options.</div>` : ''}
+      ` : `<div class="sys-question-note">${answeredCount ? 'Answer more questions to narrow the facade options.' : 'No recommendations yet. Answer at least one question to begin narrowing options.'}</div>`}
     </div>
     <div class="sys-answer-list">
       ${(questions.slice(0, idx).map(prev => `<div class="sys-answer-row"><div class="sys-answer-k">${prev.q}</div><div class="sys-answer-v">${answers[prev.id] || '—'}</div></div>`).join(''))}
@@ -1347,7 +1386,7 @@ function renderSystemQuestions(id) {
 function setSystemAnswer(sid, qid, val) {
   if(!CFG.configs[sid]) CFG.configs[sid] = {};
   CFG.configs[sid][qid] = val;
-  renderSystemQuestions(sid);
+  refreshSystemState(sid);
   checkConfigComplete();
 }
 
@@ -1369,22 +1408,24 @@ function buildConfigQuestions() {
   container.innerHTML = CFG.systems.map(sid=>{
     const qs = FOLLOW_UPS[sid]||[];
     const suggestions = getSuggestedOptions(sid, CFG.configs[sid]||{});
+    const { availableCount, answeredCount, recommendedCount } = getRecommendationSummary(sid, CFG.configs[sid]||{});
     if(!CFG.configs[sid]) CFG.configs[sid]={};
     return `<div class="config-sys-group">
       <div class="config-sys-label"><span class="sys-dot"></span>${SYSTEM_INFO[sid]?.label||sid}</div>
       ${qs.map(q=>{
         const cur = CFG.configs[sid][q.id]||'';
         const opts = getQuestionOptions(sid, q.id, CFG.configs[sid]);
+        const warn = WARNINGS[sid]?.[q.id]?.[cur];
         return `<div class="config-q-block">
           <h4>${q.q}${cur?`<span class="sel-val">— ${cur}</span>`:''}</h4>
           <div class="tag-group">${opts.map(o=>`<span class="tag${cur===(o.label||o.name||o)?' sel':''}" onclick="setConfig('${sid}','${q.id}','${(o.label||o.name||o).replace(/'/g,'\\\'')}',this,event)">${o.label||o.name||o}</span>`).join('')}</div>
-        </div>`;
+        </div>${warn ? `<div class="warn-note">${warn}</div>` : ''}`;
       }).join('')}
       <div class="config-suggestions">
-        <div class="config-suggestions-head">Suggested options</div>
+        <div class="config-suggestions-head">${answeredCount ? (recommendedCount ? `${recommendedCount} options recommended${availableCount ? ` / ${availableCount} options available` : ''}` : 'No recommendations yet') : 'Answer the system questions to see ranked suggestions'}</div>
         ${suggestions.length ? `
           <div class="config-suggestions-grid">
-            ${suggestions.slice(0, 6).map(opt => {
+            ${suggestions.slice(0, 4).map(opt => {
               const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
               return `<div class="config-suggestion-card">
                 <div class="config-suggestion-name">${opt.label}</div>
@@ -1393,8 +1434,8 @@ function buildConfigQuestions() {
               </div>`;
             }).join('')}
           </div>
-          ${suggestions.length > 6 ? `<div class="sys-question-note">Showing 6 of ${suggestions.length} matched options.</div>` : ''}
-        ` : `<div class="sys-question-note">Answer the system questions to see ranked suggestions.</div>`}
+          ${suggestions.length > 4 ? `<div class="sys-question-note">Showing 4 of ${suggestions.length} matched options.</div>` : ''}
+        ` : `<div class="sys-question-note">${answeredCount ? 'Answer the system questions to see ranked suggestions.' : 'No recommendations yet. Answer at least one question to begin narrowing options.'}</div>`}
       </div>
     </div>`;
   }).join('');
@@ -1404,22 +1445,9 @@ function buildConfigQuestions() {
 function setConfig(sid,qid,val,el,evt) {
   if(!CFG.configs[sid]) CFG.configs[sid]={};
   CFG.configs[sid][qid] = val;
-  el.closest('.tag-group').querySelectorAll('.tag').forEach(t=>t.classList.remove('sel'));
-  el.classList.add('sel');
-  el.closest('.config-q-block').querySelector('h4').innerHTML =
-    `${FOLLOW_UPS[sid].find(q=>q.id===qid).q}<span class="sel-val">— ${val}</span>`;
+  refreshSystemState(sid);
 
   // check warnings
-  const warn = WARNINGS[sid]?.[qid]?.[val];
-  const block = el.closest('.config-q-block');
-  let note = block.nextElementSibling;
-  if(note && note.classList.contains('warn-note')) note.remove();
-  if(warn) {
-    const n = document.createElement('div');
-    n.className='warn-note';
-    n.textContent=warn;
-    block.after(n);
-  }
   checkConfigComplete();
 }
 

@@ -855,9 +855,6 @@
         {
           "label": "Floor-Mounted Metal Balustrade System",
           "tags": {
-            "typology": [
-              "BAL-01 Floor-mounted"
-            ],
             "interface": [
               "Balcony edge",
               "Terrace edge",
@@ -890,9 +887,6 @@
         {
           "label": "Cable Railing Balustrade System",
           "tags": {
-            "typology": [
-              "BAL-04 Cable / vertical"
-            ],
             "interface": [
               "Balcony edge",
               "Terrace edge"
@@ -922,9 +916,6 @@
         {
           "label": "Stainless Steel Vertical Balustrade System",
           "tags": {
-            "typology": [
-              "BAL-04 Cable / vertical"
-            ],
             "interface": [
               "Balcony edge",
               "Terrace edge",
@@ -957,9 +948,6 @@
         {
           "label": "Floor-Mounted Glazed Balustrade System",
           "tags": {
-            "typology": [
-              "BAL-03 Glazed"
-            ],
             "interface": [
               "Balcony edge",
               "Terrace edge"
@@ -988,10 +976,6 @@
         {
           "label": "Face-Mounted Glazed Balustrade System",
           "tags": {
-            "typology": [
-              "BAL-02 Face-mounted",
-              "BAL-03 Glazed"
-            ],
             "interface": [
               "Balcony edge",
               "Terrace edge"
@@ -1020,9 +1004,6 @@
         {
           "label": "Face-Mounted Metal Balustrade System",
           "tags": {
-            "typology": [
-              "BAL-02 Face-mounted"
-            ],
             "interface": [
               "Balcony edge",
               "Terrace edge"
@@ -1057,11 +1038,6 @@
           "note": ""
         },
         {
-          "id": "typology",
-          "q": "Typology codes",
-          "note": ""
-        },
-        {
           "id": "interface",
           "q": "Interface rules",
           "note": ""
@@ -1079,16 +1055,6 @@
         {
           "id": "fire",
           "q": "Fire and authority details",
-          "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
           "note": ""
         }
       ],
@@ -1155,62 +1121,6 @@
             "performance": [
               "High-performance",
               "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "BAL-01 Floor-mounted",
-          "tags": {
-            "typology": [
-              "BAL-01 Floor-mounted"
-            ],
-            "panel_family": [
-              "Floor-Mounted Metal Balustrade System",
-              "Floor-Mounted Glazed Balustrade System",
-              "Cable Railing Balustrade System"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "BAL-02 Face-mounted",
-          "tags": {
-            "typology": [
-              "BAL-02 Face-mounted"
-            ],
-            "panel_family": [
-              "Floor-Mounted Metal Balustrade System",
-              "Floor-Mounted Glazed Balustrade System",
-              "Cable Railing Balustrade System"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "BAL-03 Glazed",
-          "tags": {
-            "typology": [
-              "BAL-03 Glazed"
-            ],
-            "panel_family": [
-              "Floor-Mounted Metal Balustrade System",
-              "Floor-Mounted Glazed Balustrade System",
-              "Cable Railing Balustrade System"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "BAL-04 Cable / vertical",
-          "tags": {
-            "typology": [
-              "BAL-04 Cable / vertical"
-            ],
-            "panel_family": [
-              "Floor-Mounted Metal Balustrade System",
-              "Floor-Mounted Glazed Balustrade System",
-              "Cable Railing Balustrade System"
             ]
           }
         },
@@ -1411,122 +1321,6 @@
               "BMU",
               "Rope access",
               "Internal access"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
             ]
           }
         }
@@ -1763,16 +1557,6 @@
         {
           "id": "fire",
           "q": "Fire and authority details",
-          "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
           "note": ""
         }
       ],
@@ -2302,122 +2086,6 @@
               "Internal access"
             ]
           }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
         }
       ]
     },
@@ -2431,10 +2099,6 @@
               "Flat / planar",
               "Faceted / stepped",
               "Curved / radiused"
-            ],
-            "typology": [
-              "CL1 Standard column",
-              "CL2 Feature column"
             ],
             "primary_structure": [
               "Reinforced concrete frame",
@@ -2471,10 +2135,6 @@
               "Faceted / stepped",
               "Curved / radiused"
             ],
-            "typology": [
-              "CL2 Feature column",
-              "CL3 Tapered / angled column"
-            ],
             "primary_structure": [
               "Reinforced concrete frame",
               "Steel frame",
@@ -2508,10 +2168,6 @@
               "Faceted / stepped",
               "Curved / radiused"
             ],
-            "typology": [
-              "CL2 Feature column",
-              "CL3 Tapered / angled column"
-            ],
             "primary_structure": [
               "Reinforced concrete frame",
               "Steel frame",
@@ -2544,10 +2200,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "CL1 Standard column",
-              "CL2 Feature column"
             ],
             "primary_structure": [
               "Reinforced concrete frame",
@@ -2583,11 +2235,6 @@
           "note": ""
         },
         {
-          "id": "typology",
-          "q": "Typology codes",
-          "note": ""
-        },
-        {
           "id": "primary_structure",
           "q": "Primary structure type",
           "note": ""
@@ -2605,16 +2252,6 @@
         {
           "id": "performance",
           "q": "Performance bands",
-          "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
           "note": ""
         }
       ],
@@ -2681,33 +2318,6 @@
             "performance": [
               "High-performance",
               "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "CL1 Standard column",
-          "tags": {
-            "typology": [
-              "CL1 Standard column"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "CL2 Feature column",
-          "tags": {
-            "typology": [
-              "CL2 Feature column"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "CL3 Tapered / angled column",
-          "tags": {
-            "typology": [
-              "CL3 Tapered / angled column"
             ]
           }
         },
@@ -3007,122 +2617,6 @@
               "Rope access"
             ]
           }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
         }
       ]
     },
@@ -3287,16 +2781,6 @@
         {
           "id": "fire",
           "q": "Fire and authority details",
-          "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
           "note": ""
         }
       ],
@@ -3697,122 +3181,6 @@
               "Internal access"
             ]
           }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
         }
       ]
     },
@@ -3825,10 +3193,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "SOF-01 Standard soffit",
-              "SOF-02 Deep soffit"
             ],
             "interface": [
               "Slab underside",
@@ -3862,10 +3226,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "SOF-02 Deep soffit",
-              "SOF-03 Feature soffit"
             ],
             "interface": [
               "Slab underside",
@@ -3901,11 +3261,6 @@
           "note": ""
         },
         {
-          "id": "typology",
-          "q": "Typology codes",
-          "note": ""
-        },
-        {
           "id": "interface",
           "q": "Interface rules",
           "note": ""
@@ -3923,16 +3278,6 @@
         {
           "id": "performance",
           "q": "Performance bands",
-          "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
           "note": ""
         }
       ],
@@ -3999,33 +3344,6 @@
             "performance": [
               "High-performance",
               "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "SOF-01 Standard soffit",
-          "tags": {
-            "typology": [
-              "SOF-01 Standard soffit"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "SOF-02 Deep soffit",
-          "tags": {
-            "typology": [
-              "SOF-02 Deep soffit"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "SOF-03 Feature soffit",
-          "tags": {
-            "typology": [
-              "SOF-03 Feature soffit"
             ]
           }
         },
@@ -4261,122 +3579,6 @@
               "Rope access"
             ]
           }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
         }
       ]
     },
@@ -4389,10 +3591,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "CW1 Stick",
-              "CW2 Unitised"
             ],
             "module_matrix": [
               "1200 - 1500 mm module",
@@ -4433,10 +3631,6 @@
               "Flat / planar",
               "Faceted / stepped"
             ],
-            "typology": [
-              "CW1 Stick",
-              "CW2 Unitised"
-            ],
             "module_matrix": [
               "1200 - 1500 mm module",
               "1500 - 1800 mm module"
@@ -4475,10 +3669,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "CW1 Stick",
-              "CW2 Unitised"
             ],
             "module_matrix": [
               "1200 - 1500 mm module",
@@ -4519,10 +3709,6 @@
               "Faceted / stepped",
               "Curved / radiused"
             ],
-            "typology": [
-              "CW4 Spider / routel",
-              "CW3 SSG"
-            ],
             "module_matrix": [
               "Custom / curved module"
             ],
@@ -4556,9 +3742,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "CW3 SSG"
             ],
             "module_matrix": [
               "1200 - 1500 mm module",
@@ -4595,10 +3778,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "CW2 Unitised",
-              "CW1 Stick"
             ],
             "module_matrix": [
               "1200 - 1500 mm module",
@@ -4637,10 +3816,6 @@
               "Flat / planar",
               "Faceted / stepped"
             ],
-            "typology": [
-              "CW2 Unitised",
-              "CW1 Stick"
-            ],
             "module_matrix": [
               "1200 - 1500 mm module",
               "1500 - 1800 mm module"
@@ -4678,9 +3853,6 @@
               "Curved / radiused",
               "Faceted / stepped"
             ],
-            "typology": [
-              "CW4 Spider / routel"
-            ],
             "module_matrix": [
               "Custom / curved module"
             ],
@@ -4714,9 +3886,6 @@
             "geometry": [
               "Curved / radiused",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "CW4 Spider / routel"
             ],
             "module_matrix": [
               "Custom / curved module"
@@ -4752,9 +3921,6 @@
               "Curved / radiused",
               "Faceted / stepped"
             ],
-            "typology": [
-              "CW4 Spider / routel"
-            ],
             "module_matrix": [
               "Custom / curved module"
             ],
@@ -4788,10 +3954,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "CW1 Stick",
-              "CW2 Unitised"
             ],
             "module_matrix": [
               "1200 - 1500 mm module",
@@ -4832,9 +3994,6 @@
               "Flat / planar",
               "Faceted / stepped"
             ],
-            "typology": [
-              "CW5 Double-skin"
-            ],
             "module_matrix": [
               "Custom / curved module",
               "1500 - 1800 mm module"
@@ -4872,9 +4031,6 @@
               "Flat / planar",
               "Faceted / stepped"
             ],
-            "typology": [
-              "CW5 Double-skin"
-            ],
             "module_matrix": [
               "Custom / curved module",
               "1500 - 1800 mm module"
@@ -4911,9 +4067,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "CW6 Blast / fire rated"
             ],
             "module_matrix": [
               "1200 - 1500 mm module",
@@ -4954,9 +4107,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "CW6 Blast / fire rated"
             ],
             "module_matrix": [
               "1200 - 1500 mm module",
@@ -4999,11 +4149,6 @@
           "note": ""
         },
         {
-          "id": "typology",
-          "q": "Typology codes",
-          "note": ""
-        },
-        {
           "id": "module_matrix",
           "q": "Module matrix",
           "note": ""
@@ -5031,16 +4176,6 @@
         {
           "id": "fire",
           "q": "Fire and authority details",
-          "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
           "note": ""
         }
       ],
@@ -5107,96 +4242,6 @@
             "performance": [
               "High-performance",
               "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "CW1 Stick",
-          "tags": {
-            "typology": [
-              "CW1 Stick"
-            ],
-            "panel_family": [
-              "Stick curtain wall",
-              "Unitised curtain wall",
-              "SSG / spider glass",
-              "Hybrid facade"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "CW2 Unitised",
-          "tags": {
-            "typology": [
-              "CW2 Unitised"
-            ],
-            "panel_family": [
-              "Stick curtain wall",
-              "Unitised curtain wall",
-              "SSG / spider glass",
-              "Hybrid facade"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "CW3 SSG",
-          "tags": {
-            "typology": [
-              "CW3 SSG"
-            ],
-            "panel_family": [
-              "Stick curtain wall",
-              "Unitised curtain wall",
-              "SSG / spider glass",
-              "Hybrid facade"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "CW4 Spider / routel",
-          "tags": {
-            "typology": [
-              "CW4 Spider / routel"
-            ],
-            "panel_family": [
-              "Stick curtain wall",
-              "Unitised curtain wall",
-              "SSG / spider glass",
-              "Hybrid facade"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "CW5 Double-skin",
-          "tags": {
-            "typology": [
-              "CW5 Double-skin"
-            ],
-            "panel_family": [
-              "Stick curtain wall",
-              "Unitised curtain wall",
-              "SSG / spider glass",
-              "Hybrid facade"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "CW6 Blast / fire rated",
-          "tags": {
-            "typology": [
-              "CW6 Blast / fire rated"
-            ],
-            "panel_family": [
-              "Stick curtain wall",
-              "Unitised curtain wall",
-              "SSG / spider glass",
-              "Hybrid facade"
             ]
           }
         },
@@ -5499,122 +4544,6 @@
               "Internal access"
             ]
           }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
         }
       ]
     },
@@ -5624,9 +4553,6 @@
         {
           "label": "Pivot Door System",
           "tags": {
-            "typology": [
-              "DR1 Pivot"
-            ],
             "module_matrix": [
               "Single leaf",
               "Double leaf"
@@ -5656,9 +4582,6 @@
         {
           "label": "Automatic Sliding Door System",
           "tags": {
-            "typology": [
-              "DR2 Automatic sliding"
-            ],
             "module_matrix": [
               "Double leaf",
               "Wide opening"
@@ -5688,9 +4611,6 @@
         {
           "label": "Revolving Door System",
           "tags": {
-            "typology": [
-              "DR3 Revolving"
-            ],
             "module_matrix": [
               "Wide opening"
             ],
@@ -5717,11 +4637,6 @@
       ],
       "questions": [
         {
-          "id": "typology",
-          "q": "Typology codes",
-          "note": ""
-        },
-        {
           "id": "module_matrix",
           "q": "Module matrix",
           "note": ""
@@ -5745,71 +4660,9 @@
           "id": "fire",
           "q": "Fire and authority details",
           "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
-          "note": ""
         }
       ],
       "question_options": [
-        {
-          "question_id": "typology",
-          "label": "DR1 Pivot",
-          "tags": {
-            "typology": [
-              "DR1 Pivot"
-            ],
-            "panel_family": [
-              "Pivot Door System",
-              "Automatic Sliding Door System",
-              "Revolving Door System",
-              "Aluminium Swing Door System",
-              "Lift and Slide Door System"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "DR2 Automatic sliding",
-          "tags": {
-            "typology": [
-              "DR2 Automatic sliding"
-            ],
-            "panel_family": [
-              "Pivot Door System",
-              "Automatic Sliding Door System",
-              "Revolving Door System",
-              "Aluminium Swing Door System",
-              "Lift and Slide Door System"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "DR3 Revolving",
-          "tags": {
-            "typology": [
-              "DR3 Revolving"
-            ],
-            "panel_family": [
-              "Pivot Door System",
-              "Automatic Sliding Door System",
-              "Revolving Door System",
-              "Aluminium Swing Door System",
-              "Lift and Slide Door System",
-              "Vertical MEP Louver",
-              "Horizontal MEP Louver",
-              "Extruded Aluminium Louver",
-              "Cladded Metal Louver"
-            ]
-          }
-        },
         {
           "question_id": "module_matrix",
           "label": "Single leaf",
@@ -6030,122 +4883,6 @@
               "Internal access"
             ]
           }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
         }
       ]
     },
@@ -6155,9 +4892,6 @@
         {
           "label": "Aluminium Swing Door System",
           "tags": {
-            "typology": [
-              "BD1 Swing"
-            ],
             "interface": [
               "Balcony threshold",
               "Tight sill",
@@ -6184,9 +4918,6 @@
         {
           "label": "Lift and Slide Door System",
           "tags": {
-            "typology": [
-              "BD2 Lift-and-slide"
-            ],
             "interface": [
               "Balcony threshold",
               "Flush sill",
@@ -6213,11 +4944,6 @@
       ],
       "questions": [
         {
-          "id": "typology",
-          "q": "Typology codes",
-          "note": ""
-        },
-        {
           "id": "interface",
           "q": "Interface rules",
           "note": ""
@@ -6231,37 +4957,9 @@
           "id": "performance",
           "q": "Performance bands",
           "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
-          "note": ""
         }
       ],
       "question_options": [
-        {
-          "question_id": "typology",
-          "label": "BD1 Swing",
-          "tags": {
-            "typology": [
-              "BD1 Swing"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "BD2 Lift-and-slide",
-          "tags": {
-            "typology": [
-              "BD2 Lift-and-slide"
-            ]
-          }
-        },
         {
           "question_id": "interface",
           "label": "Balcony threshold",
@@ -6421,122 +5119,6 @@
               "Rope access"
             ]
           }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
         }
       ]
     },
@@ -6549,9 +5131,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "SCR-01 Mesh screen"
             ],
             "module_matrix": [
               "Regular grid",
@@ -6584,9 +5163,6 @@
               "Flat / planar",
               "Faceted / stepped"
             ],
-            "typology": [
-              "SCR-02 Frosted glass screen"
-            ],
             "module_matrix": [
               "Feature / patterned grid"
             ],
@@ -6616,11 +5192,6 @@
           "note": ""
         },
         {
-          "id": "typology",
-          "q": "Typology codes",
-          "note": ""
-        },
-        {
           "id": "module_matrix",
           "q": "Module matrix",
           "note": ""
@@ -6638,16 +5209,6 @@
         {
           "id": "fire",
           "q": "Fire and authority details",
-          "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
           "note": ""
         }
       ],
@@ -6714,32 +5275,6 @@
             "performance": [
               "High-performance",
               "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "SCR-01 Mesh screen",
-          "tags": {
-            "typology": [
-              "SCR-01 Mesh screen"
-            ],
-            "panel_family": [
-              "Mesh Screen",
-              "Frosted Glass"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "SCR-02 Frosted glass screen",
-          "tags": {
-            "typology": [
-              "SCR-02 Frosted glass screen"
-            ],
-            "panel_family": [
-              "Mesh Screen",
-              "Frosted Glass"
             ]
           }
         },
@@ -6949,122 +5484,6 @@
               "Internal access"
             ]
           }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
         }
       ]
     },
@@ -7077,9 +5496,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "LV1 Vertical MEP"
             ],
             "module_matrix": [
               "Narrow blade set",
@@ -7116,9 +5532,6 @@
               "Flat / planar",
               "Faceted / stepped"
             ],
-            "typology": [
-              "LV2 Horizontal MEP"
-            ],
             "module_matrix": [
               "Wide blade set",
               "Mixed blade set"
@@ -7154,11 +5567,6 @@
           "note": ""
         },
         {
-          "id": "typology",
-          "q": "Typology codes",
-          "note": ""
-        },
-        {
           "id": "module_matrix",
           "q": "Module matrix",
           "note": ""
@@ -7176,16 +5584,6 @@
         {
           "id": "performance",
           "q": "Performance bands",
-          "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
           "note": ""
         }
       ],
@@ -7252,36 +5650,6 @@
             "performance": [
               "High-performance",
               "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "LV1 Vertical MEP",
-          "tags": {
-            "typology": [
-              "LV1 Vertical MEP"
-            ],
-            "panel_family": [
-              "Vertical MEP Louver",
-              "Horizontal MEP Louver",
-              "Extruded Aluminium Louver",
-              "Cladded Metal Louver"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "LV2 Horizontal MEP",
-          "tags": {
-            "typology": [
-              "LV2 Horizontal MEP"
-            ],
-            "panel_family": [
-              "Vertical MEP Louver",
-              "Horizontal MEP Louver",
-              "Extruded Aluminium Louver",
-              "Cladded Metal Louver"
             ]
           }
         },
@@ -7475,122 +5843,6 @@
               "Rope access"
             ]
           }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
         }
       ]
     },
@@ -7603,9 +5855,6 @@
             "geometry": [
               "Flat / planar",
               "Faceted / stepped"
-            ],
-            "typology": [
-              "LF1 Extruded fin"
             ],
             "module_matrix": [
               "Slim fins",
@@ -7637,9 +5886,6 @@
               "Flat / planar",
               "Faceted / stepped"
             ],
-            "typology": [
-              "LF2 Cladded metal fin"
-            ],
             "module_matrix": [
               "Deep fins",
               "Feature fins"
@@ -7670,11 +5916,6 @@
           "note": ""
         },
         {
-          "id": "typology",
-          "q": "Typology codes",
-          "note": ""
-        },
-        {
           "id": "module_matrix",
           "q": "Module matrix",
           "note": ""
@@ -7687,16 +5928,6 @@
         {
           "id": "performance",
           "q": "Performance bands",
-          "note": ""
-        },
-        {
-          "id": "access",
-          "q": "Maintenance and access",
-          "note": ""
-        },
-        {
-          "id": "replacement",
-          "q": "Replacement strategy",
           "note": ""
         }
       ],
@@ -7763,24 +5994,6 @@
             "performance": [
               "High-performance",
               "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "LF1 Extruded fin",
-          "tags": {
-            "typology": [
-              "LF1 Extruded fin"
-            ]
-          }
-        },
-        {
-          "question_id": "typology",
-          "label": "LF2 Cladded metal fin",
-          "tags": {
-            "typology": [
-              "LF2 Cladded metal fin"
             ]
           }
         },
@@ -7916,122 +6129,6 @@
           "tags": {
             "performance": [
               "High solar control"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "MEWP",
-          "tags": {
-            "access": [
-              "MEWP"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Rope access",
-          "tags": {
-            "access": [
-              "Rope access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Scaffold",
-          "tags": {
-            "access": [
-              "Scaffold"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "BMU",
-          "tags": {
-            "access": [
-              "BMU"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "access",
-          "label": "Internal access",
-          "tags": {
-            "access": [
-              "Internal access"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Unit-by-unit replacement",
-          "tags": {
-            "replacement": [
-              "Unit-by-unit replacement"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Panel swap-out",
-          "tags": {
-            "replacement": [
-              "Panel swap-out"
-            ],
-            "performance": [
-              "Standard",
-              "Enhanced"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Local repair / patching",
-          "tags": {
-            "replacement": [
-              "Local repair / patching"
-            ],
-            "performance": [
-              "Standard"
-            ]
-          }
-        },
-        {
-          "question_id": "replacement",
-          "label": "Full system replacement",
-          "tags": {
-            "replacement": [
-              "Full system replacement"
-            ],
-            "performance": [
-              "High-performance",
-              "Landmark"
             ]
           }
         }
