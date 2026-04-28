@@ -2,7 +2,7 @@ window.FACADE_DB = {
   "meta": {
     "organisation": "Design Studio",
     "version": "1.0",
-    "last_updated": "2026-04-27",
+    "last_updated": "2026-04-28",
     "description": "Facade Playbook - past project database with embedded facade system catalogue"
   },
   "projects": [
@@ -881,6 +881,20 @@ window.FACADE_DB = {
               "Unit-by-unit replacement",
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -910,6 +924,20 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -942,6 +970,20 @@ window.FACADE_DB = {
               "Unit-by-unit replacement",
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -970,6 +1012,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Full system replacement"
+            ],
+            "budget": [
+              "high"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "mixed"
             ]
           }
         },
@@ -998,6 +1054,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Full system replacement"
+            ],
+            "budget": [
+              "high"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "mixed"
             ]
           }
         },
@@ -1027,6 +1097,20 @@ window.FACADE_DB = {
               "Unit-by-unit replacement",
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         }
@@ -1324,6 +1408,23 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard",
+        "medium",
+        "high"
+      ],
+      "zones": [
+        "tower",
+        "podium",
+        "amenity",
+        "roof",
+        "crown"
+      ],
+      "types": [
+        "residential",
+        "commercial",
+        "mixed"
       ]
     },
     {
@@ -1372,6 +1473,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "podium",
+              "retail",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -1420,6 +1534,21 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -1468,6 +1597,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -1514,6 +1657,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "podium",
+              "retail",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         }
@@ -2087,6 +2244,23 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard",
+        "medium"
+      ],
+      "zones": [
+        "podium",
+        "retail",
+        "amenity",
+        "roof",
+        "tower",
+        "crown"
+      ],
+      "types": [
+        "commercial",
+        "mixed",
+        "residential"
       ]
     },
     {
@@ -2125,6 +2299,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "podium",
+              "carpark",
+              "amenity",
+              "roof",
+              "crown"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -2158,6 +2346,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -2191,6 +2393,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -2224,6 +2440,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "podium",
+              "carpark",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "mixed"
             ]
           }
         }
@@ -2618,6 +2847,23 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard",
+        "medium"
+      ],
+      "zones": [
+        "podium",
+        "carpark",
+        "amenity",
+        "roof",
+        "crown",
+        "tower"
+      ],
+      "types": [
+        "commercial",
+        "mixed",
+        "residential"
       ]
     },
     {
@@ -2661,6 +2907,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "retail",
+              "amenity"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -2702,6 +2962,21 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "retail",
+              "amenity"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -2743,6 +3018,21 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "retail",
+              "amenity"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         }
@@ -3182,6 +3472,22 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard",
+        "medium"
+      ],
+      "zones": [
+        "tower",
+        "podium",
+        "retail",
+        "amenity",
+        "crown"
+      ],
+      "types": [
+        "residential",
+        "commercial",
+        "mixed"
       ]
     },
     {
@@ -3217,6 +3523,21 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "podium",
+              "carpark",
+              "amenity",
+              "roof",
+              "retail"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3250,6 +3571,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Local repair / patching"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "podium",
+              "carpark",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "mixed"
             ]
           }
         }
@@ -3580,6 +3914,21 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard"
+      ],
+      "zones": [
+        "podium",
+        "carpark",
+        "amenity",
+        "roof",
+        "retail"
+      ],
+      "types": [
+        "residential",
+        "commercial",
+        "mixed"
       ]
     },
     {
@@ -3621,6 +3970,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "retail"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3660,6 +4022,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "retail"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3699,6 +4074,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "retail"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3733,6 +4121,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "high"
+            ],
+            "zones": [
+              "tower",
+              "crown",
+              "retail",
+              "amenity"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3769,6 +4170,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "retail"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3806,6 +4220,19 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "retail"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3843,6 +4270,19 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "retail"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3877,6 +4317,20 @@ window.FACADE_DB = {
               "Panel swap-out",
               "Unit-by-unit replacement",
               "Local repair / patching"
+            ],
+            "budget": [
+              "high"
+            ],
+            "zones": [
+              "tower",
+              "crown",
+              "retail",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3911,6 +4365,20 @@ window.FACADE_DB = {
               "Panel swap-out",
               "Unit-by-unit replacement",
               "Local repair / patching"
+            ],
+            "budget": [
+              "high"
+            ],
+            "zones": [
+              "tower",
+              "crown",
+              "retail",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3945,6 +4413,20 @@ window.FACADE_DB = {
               "Panel swap-out",
               "Unit-by-unit replacement",
               "Local repair / patching"
+            ],
+            "budget": [
+              "high"
+            ],
+            "zones": [
+              "tower",
+              "crown",
+              "retail",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -3984,6 +4466,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "retail"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -4021,6 +4516,19 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "retail"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -4058,6 +4566,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "high"
+            ],
+            "zones": [
+              "tower",
+              "crown",
+              "retail",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -4098,6 +4620,19 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "carpark",
+              "retail"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -4138,6 +4673,19 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "carpark",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         }
@@ -4545,6 +5093,25 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard",
+        "medium",
+        "high"
+      ],
+      "zones": [
+        "tower",
+        "podium",
+        "retail",
+        "crown",
+        "amenity",
+        "roof",
+        "carpark"
+      ],
+      "types": [
+        "residential",
+        "commercial",
+        "mixed"
       ]
     },
     {
@@ -4576,6 +5143,19 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "retail",
+              "amenity"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -4605,6 +5185,21 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "retail",
+              "amenity",
+              "carpark"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -4631,6 +5226,18 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "high"
+            ],
+            "zones": [
+              "tower",
+              "retail",
+              "podium"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         }
@@ -4884,6 +5491,23 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "medium",
+        "standard",
+        "high"
+      ],
+      "zones": [
+        "tower",
+        "podium",
+        "retail",
+        "amenity",
+        "carpark"
+      ],
+      "types": [
+        "commercial",
+        "mixed",
+        "residential"
       ]
     },
     {
@@ -4912,6 +5536,19 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "mixed"
             ]
           }
         },
@@ -4938,6 +5575,19 @@ window.FACADE_DB = {
             "replacement": [
               "Unit-by-unit replacement",
               "Panel swap-out"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "mixed"
             ]
           }
         }
@@ -5120,6 +5770,20 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard",
+        "medium"
+      ],
+      "zones": [
+        "tower",
+        "podium",
+        "amenity",
+        "roof"
+      ],
+      "types": [
+        "residential",
+        "mixed"
       ]
     },
     {
@@ -5153,6 +5817,21 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "podium",
+              "carpark",
+              "roof",
+              "amenity",
+              "tower"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -5181,6 +5860,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "amenity",
+              "retail"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         }
@@ -5485,6 +6178,23 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard",
+        "medium"
+      ],
+      "zones": [
+        "podium",
+        "carpark",
+        "roof",
+        "amenity",
+        "tower",
+        "retail"
+      ],
+      "types": [
+        "residential",
+        "commercial",
+        "mixed"
       ]
     },
     {
@@ -5522,6 +6232,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "carpark",
+              "roof",
+              "podium",
+              "amenity",
+              "tower"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -5556,6 +6280,20 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "carpark",
+              "roof",
+              "podium",
+              "amenity",
+              "tower"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         }
@@ -5844,6 +6582,20 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard"
+      ],
+      "zones": [
+        "carpark",
+        "roof",
+        "podium",
+        "amenity",
+        "tower"
+      ],
+      "types": [
+        "commercial",
+        "mixed"
       ]
     },
     {
@@ -5876,6 +6628,22 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "standard"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "retail",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "residential",
+              "commercial",
+              "mixed"
             ]
           }
         },
@@ -5905,6 +6673,21 @@ window.FACADE_DB = {
             "replacement": [
               "Panel swap-out",
               "Unit-by-unit replacement"
+            ],
+            "budget": [
+              "medium"
+            ],
+            "zones": [
+              "tower",
+              "podium",
+              "crown",
+              "retail",
+              "amenity",
+              "roof"
+            ],
+            "type": [
+              "commercial",
+              "mixed"
             ]
           }
         }
@@ -6132,6 +6915,23 @@ window.FACADE_DB = {
             ]
           }
         }
+      ],
+      "budgets": [
+        "standard",
+        "medium"
+      ],
+      "zones": [
+        "tower",
+        "podium",
+        "crown",
+        "retail",
+        "amenity",
+        "roof"
+      ],
+      "types": [
+        "residential",
+        "commercial",
+        "mixed"
       ]
     }
   ]

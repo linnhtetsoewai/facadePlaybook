@@ -669,7 +669,7 @@ body {
       <!-- Step 0: Project type -->
       <div class="config-step active" id="cstep-0">
         <div class="step-header">
-          <div class="step-num">Step 1 of 7</div>
+          <div class="step-num">Step 1 of 8</div>
           <div class="step-q">What is the project type?</div>
         </div>
         <div class="choice-grid">
@@ -692,7 +692,7 @@ body {
       <!-- Step 1: Budget -->
       <div class="config-step" id="cstep-1">
         <div class="step-header">
-          <div class="step-num">Step 2 of 7</div>
+          <div class="step-num">Step 2 of 8</div>
           <div class="step-q">What is the facade budget tier?</div>
         </div>
         <div class="choice-grid">
@@ -721,7 +721,7 @@ body {
       <!-- Step 2: Zones -->
       <div class="config-step" id="cstep-2">
         <div class="step-header">
-          <div class="step-num">Step 3 of 7</div>
+          <div class="step-num">Step 3 of 8</div>
           <div class="step-q">Which facade zones are in scope?</div>
           <div class="step-sub">Select all that apply</div>
         </div>
@@ -743,49 +743,63 @@ body {
       <!-- Step 3: Systems -->
       <div class="config-step" id="cstep-3">
         <div class="step-header">
-          <div class="step-num">Step 4 of 7</div>
+          <div class="step-num">Step 4 of 8</div>
           <div class="step-q">Select facade systems</div>
           <div class="step-sub">Ranked by fit to your type, budget and zones. Select all systems you intend to use.</div>
         </div>
         <div class="sys-grid" id="sys-grid"></div>
         <div class="config-nav">
           <button class="btn" onclick="prevStep()">← Back</button>
-          <button class="btn btn-primary" onclick="nextStep()" id="s3-next" disabled>Configure →</button>
+          <button class="btn btn-primary" onclick="nextStep()" id="s3-next" disabled>Access & maintenance →</button>
         </div>
       </div>
 
-      <!-- Step 4: Configure -->
+      <!-- Step 4: Access & Maintenance -->
       <div class="config-step" id="cstep-4">
         <div class="step-header">
-          <div class="step-num">Step 5 of 7</div>
+          <div class="step-num">Step 5 of 8</div>
+          <div class="step-q">Access & maintenance</div>
+          <div class="step-sub">Choose the access systems needed for the selected facade systems</div>
+        </div>
+        <div id="access-questions"></div>
+        <div class="config-nav">
+          <button class="btn" onclick="prevStep()">← Back</button>
+          <button class="btn btn-primary" onclick="nextStep()" id="s4-next" disabled>Configure →</button>
+        </div>
+      </div>
+
+      <!-- Step 5: Configure -->
+      <div class="config-step" id="cstep-5">
+        <div class="step-header">
+          <div class="step-num">Step 6 of 8</div>
           <div class="step-q">Configure each system</div>
           <div class="step-sub">Answer a few questions to narrow options</div>
         </div>
         <div id="config-questions"></div>
         <div class="config-nav">
           <button class="btn" onclick="prevStep()">← Back</button>
-          <button class="btn btn-primary" onclick="nextStep()" id="s4-next" disabled>Find matches →</button>
+          <button class="btn btn-primary" onclick="nextStep()" id="s5-next" disabled>Find matches →</button>
         </div>
       </div>
 
-      <!-- Step 5: Matches -->
-      <div class="config-step" id="cstep-5">
+      <!-- Step 6: Matches -->
+      <div class="config-step" id="cstep-6">
         <div class="step-header">
-          <div class="step-num">Step 6 of 7</div>
+          <div class="step-num">Step 7 of 8</div>
           <div class="step-q">Comparable past projects</div>
           <div class="step-sub">From the project database — ranked by similarity</div>
         </div>
         <div id="matches-output"></div>
-        <div class="config-nav">
+        <div class="config-nav mt-16">
           <button class="btn" onclick="prevStep()">← Back</button>
           <button class="btn btn-primary" onclick="nextStep()">Review summary →</button>
         </div>
       </div>
 
-      <!-- Step 6: Summary -->
-      <div class="config-step" id="cstep-6">
+      <!-- Step 7: Summary -->
+      <div class="config-step" id="cstep-7">
         <div class="step-header">
-          <div class="step-num">Step 7 of 7</div>
+          <div class="step-num">Step 8 of 8</div>
           <div class="step-q">Project configuration summary</div>
         </div>
         <div id="summary-output"></div>
@@ -947,13 +961,20 @@ body {
 <script>
 // ── DATA ──
 let DB = { meta:{}, projects:[], subcontractor_register:[], facade_systems:[] };
-let CFG = { step:0, type:null, budget:null, zones:[], systems:[], configs:{}, activeSystem:null };
+let CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null };
 
 let SYSTEM_INFO = {};
 let FOLLOW_UPS = {};
 let SYSTEM_OPTIONS = {};
 let SYSTEM_SUGGESTIONS = {};
 let WARNINGS = {};
+const ACCESS_LABELS = {
+  bmu: 'BMU',
+  mewp: 'MEWP',
+  'rope access': 'Rope access',
+  scaffold: 'Scaffold',
+  'internal access': 'Internal access'
+};
 
 const BUDGET_LABELS = { standard:'Standard', medium:'Premium', high:'Landmark' };
 const TYPE_LABELS = { residential:'Residential', commercial:'Commercial', mixed:'Mixed-use' };
@@ -1012,11 +1033,16 @@ function syncSystemData() {
     const options = Array.isArray(sys.options) ? sys.options : [];
     const questionOptions = Array.isArray(sys.question_options) ? sys.question_options : [];
     const facadeOptions = Array.isArray(sys.options) ? sys.options : [];
+    const explicitTypes = Array.isArray(sys.types) ? sys.types : (Array.isArray(sys.suitable_types) ? sys.suitable_types : []);
+    const derivedTypes = [...new Set([...explicitTypes, ...facadeOptions.flatMap(opt => getOptionTypes(opt))].map(normalizeTypeValue).filter(Boolean))];
+    const derivedZones = [...new Set(facadeOptions.flatMap(opt => getOptionZones(opt)))];
+    const derivedAccess = [...new Set(facadeOptions.flatMap(opt => getOptionAccess(opt)))];
     SYSTEM_INFO[id] = {
       label,
       desc: sys.desc || sys.description || (options.length ? `${options.length} options available` : ''),
-      zones: sys.zones || sys.suitable_zones || [],
-      types: sys.types || sys.suitable_types || [],
+      zones: sys.zones || sys.suitable_zones || derivedZones,
+      types: derivedTypes,
+      access: derivedAccess,
       budgets: sys.budgets || (sys.min_budget ? [sys.min_budget] : [])
     };
     FOLLOW_UPS[id] = (sys.questions || sys.follow_ups || []).map(q => ({
@@ -1076,6 +1102,82 @@ function slugify(value) {
     .replace(/^_+|_+$/g, '');
 }
 
+function budgetRank(tier) {
+  const order = { standard: 0, medium: 1, high: 2 };
+  return Object.prototype.hasOwnProperty.call(order, tier) ? order[tier] : -1;
+}
+
+function normalizeTypeValue(value) {
+  const text = String(value || '').trim().toLowerCase();
+  if(!text) return '';
+  if(text === 'mixed-use' || text === 'mixed use' || text === 'mixed') return 'mixed';
+  return text;
+}
+
+function normalizeAccessValue(value) {
+  const text = String(value || '').trim().toLowerCase();
+  const aliases = {
+    rope_access: 'rope access',
+    internal_access: 'internal access',
+    davit_arms: 'bmu'
+  };
+  return aliases[text] || text;
+}
+
+function optionFitsBudget(option, selectedBudget) {
+  if(!selectedBudget) return true;
+  const selectedRank = budgetRank(selectedBudget);
+  if(selectedRank < 0) return true;
+  const optionBudgets = Array.isArray(option?.tags?.budget) ? option.tags.budget : [];
+  if(!optionBudgets.length) return true;
+  return optionBudgets.some(tier => budgetRank(tier) >= 0 && budgetRank(tier) <= selectedRank);
+}
+
+function getOptionAccess(option) {
+  const tags = option?.tags || {};
+  const access = tags.access || tags.access_method || [];
+  const list = Array.isArray(access) ? access : (access ? [access] : []);
+  return [...new Set(list.map(normalizeAccessValue).filter(Boolean))];
+}
+
+function getOptionTypes(option) {
+  const tags = option?.tags || {};
+  const types = tags.type || tags.types || [];
+  const list = Array.isArray(types) ? types : (types ? [types] : []);
+  return [...new Set(list.map(normalizeTypeValue).filter(Boolean))];
+}
+
+function optionFitsType(option, selectedType) {
+  const wanted = normalizeTypeValue(selectedType);
+  if(!wanted) return true;
+  const optionTypes = getOptionTypes(option);
+  if(!optionTypes.length) return true;
+  return optionTypes.includes(wanted);
+}
+
+function getOptionZones(option) {
+  const tags = option?.tags || {};
+  const zones = tags.zones || tags.zone || [];
+  if(Array.isArray(zones)) return zones;
+  return zones ? [zones] : [];
+}
+
+function optionFitsZone(option, selectedZones) {
+  const zones = Array.isArray(selectedZones) ? selectedZones : [];
+  if(!zones.length) return true;
+  const optionZones = getOptionZones(option);
+  if(!optionZones.length) return true;
+  return optionZones.some(zone => zones.includes(zone));
+}
+
+function optionFitsContext(option, selectedBudget = CFG.budget, selectedZones = CFG.zones, selectedType = CFG.type) {
+  return optionFitsType(option, selectedType) && optionFitsBudget(option, selectedBudget) && optionFitsZone(option, selectedZones);
+}
+
+function getAvailableOptions(systemId, selectedBudget = CFG.budget, selectedZones = CFG.zones, selectedType = CFG.type) {
+  return (SYSTEM_SUGGESTIONS[systemId] || []).filter(opt => optionFitsContext(opt, selectedBudget, selectedZones, selectedType));
+}
+
 function scoreOptionAgainstAnswers(option, answers, ignoreKey = null) {
   const tags = option.tags || {};
   const entries = Object.entries(tags).filter(([k]) => k !== ignoreKey);
@@ -1123,8 +1225,9 @@ function getQuestionOptions(systemId, questionId, answers) {
 
 function getSuggestedOptions(systemId, answers) {
   if(!answers || !Object.keys(answers).length) return [];
-  const pool = SYSTEM_SUGGESTIONS[systemId] || [];
-  const scored = pool.map(opt => {
+  const pool = getAvailableOptions(systemId);
+  const filtered = pool.filter(opt => optionFitsContext(opt));
+  const scored = filtered.map(opt => {
     const match = scoreOptionAgainstAnswers(opt, answers);
     return { ...opt, score: match.score, matched: match.matched };
   });
@@ -1133,7 +1236,7 @@ function getSuggestedOptions(systemId, answers) {
 }
 
 function getRecommendationSummary(systemId, answers) {
-  const availableCount = (SYSTEM_SUGGESTIONS[systemId] || []).length;
+  const availableCount = getAvailableOptions(systemId).length;
   const answeredCount = answers ? Object.keys(answers).length : 0;
   const recommendedCount = answeredCount ? getSuggestedOptions(systemId, answers).length : 0;
   return { availableCount, answeredCount, recommendedCount };
@@ -1141,9 +1244,10 @@ function getRecommendationSummary(systemId, answers) {
 
 function refreshSystemState(activeSystemId = CFG.activeSystem) {
   if(CFG.step === 3) buildSystemCards();
-  if(CFG.step === 4) buildConfigQuestions();
-  if(CFG.step === 5) buildMatches();
-  if(CFG.step === 6) buildSummary();
+  if(CFG.step === 4) buildAccessQuestions();
+  if(CFG.step === 5) buildConfigQuestions();
+  if(CFG.step === 6) buildMatches();
+  if(CFG.step === 7) buildSummary();
   const modal = document.getElementById('modal-system');
   if(modal && modal.classList.contains('open') && activeSystemId) {
     renderSystemQuestions(activeSystemId);
@@ -1167,12 +1271,12 @@ function showPage(id, btn) {
 
 // ── CONFIGURATOR ──
 function renderCrumbs() {
-  const steps = ['Type','Budget','Zones','Systems','Configure','Matches','Summary'];
+  const steps = ['Type','Budget','Zones','Systems','Access','Configure','Matches','Summary'];
   document.getElementById('cfg-crumbs').innerHTML = steps.map((s,i)=>
     `${i>0?'<span class="crumb-sep">›</span>':''}
      <span class="crumb ${i<CFG.step?'done':i===CFG.step?'active':''}">${s}</span>`
   ).join('');
-  document.getElementById('cfg-progress').style.width = ((CFG.step+1)/7*100)+'%';
+  document.getElementById('cfg-progress').style.width = ((CFG.step+1)/8*100)+'%';
 }
 
 function pick(key, val, el) {
@@ -1191,13 +1295,18 @@ function toggleZone(el) {
 }
 
 function nextStep() {
-  if(CFG.step === 3) buildConfigQuestions();
-  if(CFG.step === 4) buildMatches();
-  if(CFG.step === 5) buildSummary();
+  if(CFG.step === 3) buildAccessQuestions();
+  if(CFG.step === 4) buildConfigQuestions();
+  if(CFG.step === 5) buildMatches();
+  if(CFG.step === 6) buildSummary();
   document.getElementById('cstep-'+CFG.step).classList.remove('active');
   CFG.step++;
   document.getElementById('cstep-'+CFG.step).classList.add('active');
   if(CFG.step === 3) buildSystemCards();
+  if(CFG.step === 4) buildAccessQuestions();
+  if(CFG.step === 5) buildConfigQuestions();
+  if(CFG.step === 6) buildMatches();
+  if(CFG.step === 7) buildSummary();
   renderCrumbs();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1211,7 +1320,7 @@ function prevStep() {
 }
 
 function resetConfig() {
-  CFG = { step:0, type:null, budget:null, zones:[], systems:[], configs:{}, activeSystem:null };
+  CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null };
   document.querySelectorAll('.config-step').forEach((s,i)=>{ s.classList.toggle('active', i===0); });
   document.querySelectorAll('.choice-card').forEach(c=>c.classList.remove('sel'));
   document.querySelectorAll('#zone-tags .tag').forEach(t=>t.classList.remove('sel'));
@@ -1219,33 +1328,83 @@ function resetConfig() {
   renderCrumbs();
 }
 
+function getAvailableAccessMethods() {
+  const methods = CFG.systems.flatMap(sid => getAvailableOptions(sid).flatMap(opt => getOptionAccess(opt)));
+  const ordered = ['bmu', 'mewp', 'rope access', 'scaffold', 'internal access'];
+  return [...new Set(methods)].sort((a,b)=> ordered.indexOf(a) - ordered.indexOf(b));
+}
+
+function getAccessLabel(value) {
+  const key = normalizeAccessValue(value);
+  return ACCESS_LABELS[key] || value;
+}
+
+function buildAccessQuestions() {
+  const container = document.getElementById('access-questions');
+  if(!container) return;
+  const available = getAvailableAccessMethods();
+  const sanitized = (CFG.access || []).filter(a => available.includes(a));
+  if(sanitized.length !== (CFG.access || []).length) CFG.access = sanitized;
+  const selected = new Set(CFG.access || []);
+
+  const cards = available.length ? available.map(access => {
+    const systems = CFG.systems.filter(sid => (SYSTEM_INFO[sid]?.access || []).includes(access));
+    const label = getAccessLabel(access);
+    const chosen = selected.has(access);
+    return `<button type="button" class="sys-option-card${chosen ? ' sel' : ''}" data-access="${access}" onclick="toggleAccess('${access}')">
+      <div style="font-weight:500">${label}</div>
+      <div style="margin-top:6px;font-size:12px;color:var(--text-2)">${systems.length ? `Supported by ${systems.map(sid => SYSTEM_INFO[sid]?.label || sid).join(', ')}` : 'Available from selected systems'}</div>
+    </button>`;
+  }) : [`<div class="empty"><div class="empty-title">No access methods available</div><div class="empty-sub">Select facade systems with access tags to continue.</div></div>`];
+
+  container.innerHTML = `
+    <div class="sys-question">
+      <div class="sys-question-title">Choose access systems</div>
+      <div class="sys-option-grid">${cards.join('')}</div>
+      <div class="sys-question-note">Select one or more access methods used to inspect, maintain, or replace the selected facade systems.</div>
+    </div>
+  `;
+  document.getElementById('s4-next').disabled = (CFG.access || []).length === 0;
+}
+
+function toggleAccess(access) {
+  const value = normalizeAccessValue(access);
+  if(!CFG.access) CFG.access = [];
+  const idx = CFG.access.indexOf(value);
+  if(idx >= 0) CFG.access.splice(idx, 1);
+  else CFG.access.push(value);
+  buildAccessQuestions();
+}
+
 function buildSystemCards() {
   const grid = document.getElementById('sys-grid');
   const ranked = Object.entries(SYSTEM_INFO).map(([id,s])=>{
+    const availableCount = getAvailableOptions(id).length;
     const hasFitMeta = (s.types||[]).length || (s.budgets||[]).length || (s.zones||[]).length;
     let score = hasFitMeta ? 0 : 1;
     if((s.types||[]).includes(CFG.type)) score+=2;
     if((s.budgets||[]).includes(CFG.budget)) score+=2;
     if(CFG.zones.some(z=>(s.zones||[]).includes(z))) score+=2;
-    return {id,s,score,hasFitMeta};
+    return {id,s,score,hasFitMeta,availableCount};
   }).sort((a,b)=>b.score-a.score);
 
-  grid.innerHTML = ranked.map(({id,s,score,hasFitMeta})=>{
+  grid.innerHTML = ranked.map(({id,s,score,hasFitMeta,availableCount})=>{
+    if(!availableCount) return '';
     const isSel = CFG.systems.includes(id);
     const answered = Object.keys(CFG.configs[id]||{}).length;
     const totalQs = (FOLLOW_UPS[id]||[]).length;
-    const { availableCount, answeredCount, recommendedCount } = getRecommendationSummary(id, CFG.configs[id]||{});
+    const { answeredCount, recommendedCount } = getRecommendationSummary(id, CFG.configs[id]||{});
     const isDim = hasFitMeta && score===0 && !isSel;
     const tags = [
       hasFitMeta && score>=2 ? `<span class="stag fit">Type match</span>` : '',
       hasFitMeta && score>=4 ? `<span class="stag fit">Budget fit</span>` : '',
       hasFitMeta && score>=6 ? `<span class="stag fit">Zone fit</span>` : '',
-      totalQs ? `<span class="stag">${answered}/${totalQs} answered</span>` : `<span class="stag">Options available</span>`,
+      totalQs ? `<span class="stag">${answered}/${totalQs} answered</span>` : `<span class="stag">${availableCount} options available</span>`,
       answeredCount && recommendedCount && availableCount ? `<span class="stag">${recommendedCount} options recommended / ${availableCount} options available</span>` : ''
     ].filter(Boolean).join('') || '<span class="stag">Override</span>';
     return `<div class="sys-card${isSel?' sel':''}${isDim?' dimmed':''}" id="sc-${id}" onclick="toggleSystem('${id}')">
       <div class="sys-name">${s.label}</div>
-      <div class="sys-desc">${s.desc}</div>
+      <div class="sys-desc">${availableCount ? `${availableCount} options available` : 'No options available for this budget'}</div>
       <div class="sys-tags">${tags}</div>
     </div>`;
   }).join('');
@@ -1470,7 +1629,7 @@ function checkConfigComplete() {
     const qs = FOLLOW_UPS[sid]||[];
     return qs.every(q=>CFG.configs[sid]&&CFG.configs[sid][q.id]);
   });
-  document.getElementById('s4-next').disabled = !done;
+  document.getElementById('s5-next').disabled = !done;
 }
 
 // ── MATCHING ──
@@ -1488,6 +1647,12 @@ function scoreMatch(proj) {
     max+=3;
     if(projSystems.includes(sid)) score+=3;
   });
+  // access
+  const projAccess = (proj.access_method||[]).map(normalizeAccessValue);
+  if((CFG.access||[]).length) {
+    max+=2;
+    if(CFG.access.some(a => projAccess.includes(a))) score+=2;
+  }
   // zones
   const projZones = proj.zones||[];
   CFG.zones.forEach(z=>{ max+=1; if(projZones.includes(z)) score+=1; });
@@ -1549,6 +1714,7 @@ function matchCard(p,isBest) {
       ${sysLabels.map(l=>`<span class="badge ${projSystems.some(s=>CFG.systems.includes(s))?'badge-green':'badge-gray'}">${l}</span>`).join('')}
       <span class="badge ${p.type===CFG.type?'badge-green':'badge-gray'}">${TYPE_LABELS[p.type]||p.type}</span>
       <span class="badge ${p.budget_tier===CFG.budget?'badge-green':'badge-amber'}">${BUDGET_LABELS[p.budget_tier]||p.budget_tier}</span>
+      ${(p.access_method||[]).length?`<span class="badge ${CFG.access.some(a=>(p.access_method||[]).map(normalizeAccessValue).includes(a))?'badge-green':'badge-gray'}">${(p.access_method||[]).join(' / ')}</span>`:''}
     </div>
     ${specs.length?`<div class="spec-grid">${specs.map(([k,v])=>`<div class="spec-item"><div class="spec-key">${k}</div><div class="spec-val">${v}</div></div>`).join('')}</div>`:''}
     ${lessons.length?`<div class="section-heading">Lessons learned</div>
@@ -1576,6 +1742,7 @@ function buildSummary() {
         <tr><td class="sk">Project type</td><td class="sv">${TYPE_LABELS[CFG.type]||CFG.type}</td></tr>
         <tr><td class="sk">Budget tier</td><td class="sv">${BUDGET_LABELS[CFG.budget]||CFG.budget}</td></tr>
         <tr><td class="sk">Zones</td><td class="sv">${CFG.zones.join(', ')}</td></tr>
+        <tr><td class="sk">Access & maintenance</td><td class="sv">${(CFG.access||[]).map(getAccessLabel).join(', ') || '—'}</td></tr>
         ${sysRows}
       </table>
     </div>
@@ -1819,7 +1986,7 @@ function saveConfigAsProject() {
     location:document.getElementById('save-location').value||'',
     floors:parseInt(document.getElementById('save-floors').value)||null,
     type:CFG.type, budget_tier:CFG.budget,
-    zones:CFG.zones, systems, lessons_learned:[], subcontractors:[], tags:[],
+    zones:CFG.zones, access_method:CFG.access||[], systems, lessons_learned:[], subcontractors:[], tags:[],
     year_completed:new Date().getFullYear()
   });
   document.getElementById('nc-projects').textContent = DB.projects.length;
