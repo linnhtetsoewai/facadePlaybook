@@ -488,6 +488,606 @@ body {
 .progress-track { height: 2px; background: var(--border); border-radius: 2px; margin-bottom: 28px; }
 .progress-fill { height: 100%; background: var(--accent-2); border-radius: 2px; transition: width 0.3s; }
 
+/* ── ZONE MASSING / MESH ── */
+.zone-modeling {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #fff, #fbfaf7);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.zone-modeling-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.zone-modeling-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.zone-modeling-sub {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-top: 4px;
+  max-width: 780px;
+}
+.zone-modeling-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.zone-modeling-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 14px;
+}
+.zone-modeling-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.zone-modeling-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+.zone-modeling-panel-sub {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 3px;
+}
+.zone-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.zone-kpi {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.zone-kpi .v {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.zone-kpi .l {
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 3px;
+}
+.zone-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.zone-profile {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  background: var(--surface);
+}
+.zone-profile.active {
+  border-color: var(--accent-mid);
+  background: var(--accent-light);
+}
+.zone-profile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.zone-profile-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.zone-profile-fields {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 8px;
+  align-items: end;
+}
+.zone-profile-fields label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.zone-profile-fields input,
+.zone-profile-fields select,
+.zone-mesh-controls input,
+.zone-mesh-controls select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: var(--sans);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+.zone-mesh-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.zone-mesh-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.zone-system-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.zone-system-chip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.zone-system-chip.active {
+  border-color: var(--accent-mid);
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 500;
+}
+.zone-system-chip:hover {
+  border-color: var(--accent-mid);
+}
+.zone-net-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+.zone-face {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  background: linear-gradient(180deg, #fff, #fcfbf8);
+}
+.zone-face-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.zone-face-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+.zone-face-sub {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+.zone-mesh {
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.zone-cell {
+  aspect-ratio: 1 / 1;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  outline: none;
+}
+.zone-cell:hover {
+  filter: brightness(0.95);
+}
+.zone-cell.empty {
+  background: #F0EDE6;
+}
+.zone-cell::after {
+  content: attr(data-zone-short);
+  position: absolute;
+  left: 3px;
+  top: 2px;
+  font-size: 8px;
+  line-height: 1;
+  color: rgba(255,255,255,0.82);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.25);
+}
+.zone-cell[data-system=""]::after {
+  color: rgba(26,24,20,0.35);
+  text-shadow: none;
+}
+.zone-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.zone-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  background: var(--surface);
+}
+.zone-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.zone-breakdown {
+  display: grid;
+  gap: 8px;
+}
+.zone-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.zone-breakdown-row:last-child { border-bottom: none; }
+.zone-breakdown-row .k {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.zone-breakdown-row .v {
+  font-size: 13px;
+  font-weight: 600;
+}
+.zone-note {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* ── PLAN MASSING ── */
+.plan-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+  gap: 12px;
+  align-items: start;
+}
+.plan-stage {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #fff, #fbf8f2);
+  overflow: hidden;
+}
+.plan-toolbar {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.plan-toolbar .plan-hint {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+.plan-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.draw-tool-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.draw-tool-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.draw-tool-options .btn.sel {
+  background: var(--accent-light);
+  border-color: var(--accent-mid);
+  color: var(--accent);
+}
+.plan-canvas-wrap {
+  padding: 12px;
+}
+.plan-canvas {
+  width: 100%;
+  height: 460px;
+  display: block;
+  border-radius: var(--radius);
+  background: #f8f4ed;
+  cursor: crosshair;
+  touch-action: none;
+}
+.three-shell {
+  position: relative;
+  height: 460px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #f8f4ed;
+}
+.three-shell.is-draw .three-viewport {
+  cursor: crosshair;
+}
+.three-shell.is-navigate .three-viewport {
+  cursor: grab;
+}
+.three-viewport {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.three-hit-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: transparent;
+  touch-action: none;
+  user-select: none;
+  pointer-events: none;
+}
+.three-toolbar {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.three-toolbar .mode-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-2);
+  backdrop-filter: blur(6px);
+}
+.three-toolbar .mode-chip.sel {
+  background: var(--accent-light);
+  border-color: var(--accent-mid);
+  color: var(--accent);
+  font-weight: 500;
+}
+.viewcube {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 3;
+  width: 128px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+.viewcube button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 8px 4px;
+  font-size: 11px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.viewcube button:hover {
+  border-color: var(--accent-mid);
+  color: var(--accent);
+}
+.three-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 3;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-2);
+  backdrop-filter: blur(6px);
+}
+.three-loading {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  font-size: 13px;
+}
+.plan-sidebar {
+  display: grid;
+  gap: 12px;
+}
+.plan-list {
+  display: grid;
+  gap: 8px;
+}
+.plan-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 12px;
+}
+.plan-item.active {
+  border-color: var(--accent-mid);
+  background: var(--accent-light);
+}
+.plan-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.plan-item-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+.plan-item-sub {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 3px;
+  line-height: 1.45;
+}
+/* ── 3-line mode toolbar ── */
+.mode-toolbar { border-bottom: 1px solid var(--border); }
+.mode-line-1 {
+  display: flex;
+  background: #faf7f2;
+  border-bottom: 1px solid var(--border);
+}
+.mode-tab {
+  padding: 9px 22px;
+  font-size: 13px;
+  font-family: var(--sans);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  color: var(--text-2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.mode-tab:hover { color: #1a1814; }
+.mode-tab.active {
+  background: var(--surface);
+  border-bottom-color: #1a1814;
+  color: #1a1814;
+  font-weight: 700;
+}
+.mode-line-2 {
+  display: flex;
+  gap: 5px;
+  padding: 7px 12px;
+  background: #fefcf8;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  min-height: 38px;
+  flex-wrap: wrap;
+}
+.mode-line-3 {
+  display: flex;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #fff;
+  border-bottom: 1px solid #f0ebe2;
+  align-items: center;
+  min-height: 34px;
+  flex-wrap: wrap;
+}
+.mode-line-3:empty { display: none; }
+.fn-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: var(--sans);
+  background: #f0ebe2;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #555;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.fn-btn:hover:not(:disabled) { background: #e8e2d8; color: #333; }
+.fn-btn.active { background: #1a1814; color: #fff; font-weight: 600; }
+.fn-btn.fn-primary { background: #1a1814; color: #fff; font-weight: 600; }
+.fn-btn.fn-primary:hover:not(:disabled) { background: #333; }
+.fn-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.ln3-label { font-size: 11px; font-weight: 600; color: #555; margin-right: 4px; white-space: nowrap; }
+.ln3-lbl   { font-size: 11px; color: #666; white-space: nowrap; }
+.ln3-input {
+  width: 60px; padding: 3px 7px;
+  border: 1px solid #ddd; border-radius: 4px;
+  font-size: 12px; font-family: var(--sans); background: #fafafa;
+}
+.ln3-sep     { width: 1px; height: 16px; background: #e0d9ce; margin: 0 2px; flex-shrink: 0; }
+.ln3-readout { font-size: 11px; color: #aaa; white-space: nowrap; }
+.ln3-hint    { font-size: 11px; color: #aaa; }
+.plan-mini {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.plan-mini .badge { padding: 2px 7px; }
+.plan-note {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.plan-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,24,20,0.5);
+  z-index: 260;
+  align-items: center;
+  justify-content: center;
+}
+.plan-modal-backdrop.open { display: flex; }
+.plan-modal {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  width: min(92vw, 420px);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+}
+.plan-modal-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 10px;
+}
+.plan-modal-sub {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.plan-modal .form-group {
+  margin-bottom: 14px;
+}
+.plan-modal .modal-footer {
+  margin-top: 18px;
+  padding-top: 14px;
+}
+@media (max-width: 1100px) {
+  .plan-layout { grid-template-columns: 1fr; }
+}
+
 /* ── SUMMARY PAGE ── */
 .summary-table { width: 100%; font-size: 13px; border-collapse: collapse; }
 .summary-table td { padding: 9px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -776,9 +1376,11 @@ body {
       <div class="config-step" id="cstep-2">
         <div class="step-header">
           <div class="step-num">Step 3 of 8</div>
-          <div class="step-q">Which facade zones are in scope?</div>
-          <div class="step-sub">Select all that apply</div>
+          <div class="step-q">Model the building mass first</div>
+          <div class="step-sub">Set up the overall building form before assigning facade zones.</div>
         </div>
+        <div id="zone-modeling-root"></div>
+        <div class="section-heading" style="margin-top:18px">Optional zones later</div>
         <div class="tag-group mb-24" id="zone-tags">
           <span class="tag" data-v="tower" onclick="toggleZone(this)">Tower</span>
           <span class="tag" data-v="podium" onclick="toggleZone(this)">Podium</span>
@@ -799,7 +1401,7 @@ body {
         </div>
         <div class="config-nav">
           <button class="btn" onclick="prevStep()">← Back</button>
-          <button class="btn btn-primary" onclick="nextStep()" id="s2-next" disabled>See systems →</button>
+          <button class="btn btn-primary" onclick="nextStep()" id="s2-next">See systems →</button>
         </div>
       </div>
 
@@ -1031,10 +1633,13 @@ body {
 <div class="notif" id="notif"></div>
 
 <script src="projectsData.js"></script>
+<script src="src/vendor/three.min.js"></script>
+<script src="src/vendor/OrbitControls.legacy.js"></script>
+<script src="src/zoneMassing.js"></script>
 <script>
 // ── DATA ──
 let DB = { meta:{}, projects:[], subcontractor_register:[], facade_systems:[] };
-let CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null };
+let CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null, massing:null };
 
 let SYSTEM_INFO = {};
 let FOLLOW_UPS = {};
@@ -1072,6 +1677,7 @@ const ZONE_LABELS = {
 
 // ── INIT ──
 async function init() {
+  if(window.ZoneMassing && typeof window.ZoneMassing.init === 'function') window.ZoneMassing.init();
   if(window.FACADE_DB) {
     DB = window.FACADE_DB;
     syncSystemData();
@@ -1145,6 +1751,12 @@ function syncSystemData() {
     SYSTEM_SUGGESTIONS[id] = facadeOptions.map(opt => normalizeFacadeOption(opt, id));
     WARNINGS[id] = sys.warnings || {};
   });
+}
+
+function refreshZoneMassing() {
+  if(window.ZoneMassing && typeof window.ZoneMassing.render === 'function') {
+    window.ZoneMassing.render();
+  }
 }
 
 function normalizeSystemOption(opt, systemId) {
@@ -1441,6 +2053,7 @@ function showPage(id, btn) {
   document.getElementById('tb-actions').innerHTML = '';
   if(id==='projects') renderProjectsTable();
   if(id==='subcontractors') renderSubcontractors();
+  if(id==='configurator') refreshZoneMassing();
 }
 
 // ── CONFIGURATOR ──
@@ -1465,7 +2078,7 @@ function pick(key, val, el) {
 function toggleZone(el) {
   el.classList.toggle('sel');
   CFG.zones = Array.from(document.querySelectorAll('#zone-tags .tag.sel')).map(t=>t.dataset.v);
-  document.getElementById('s2-next').disabled = CFG.zones.length === 0;
+  refreshZoneMassing();
 }
 
 function nextStep() {
@@ -1481,6 +2094,7 @@ function nextStep() {
   if(CFG.step === 5) buildConfigQuestions();
   if(CFG.step === 6) buildMatches();
   if(CFG.step === 7) buildSummary();
+  if(CFG.step === 2) refreshZoneMassing();
   renderCrumbs();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1489,17 +2103,21 @@ function prevStep() {
   document.getElementById('cstep-'+CFG.step).classList.remove('active');
   CFG.step--;
   document.getElementById('cstep-'+CFG.step).classList.add('active');
+  refreshZoneMassing();
   renderCrumbs();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function resetConfig() {
-  CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null };
+  CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null, massing:null };
   document.querySelectorAll('.config-step').forEach((s,i)=>{ s.classList.toggle('active', i===0); });
   document.querySelectorAll('.choice-card').forEach(c=>c.classList.remove('sel'));
   document.querySelectorAll('#zone-tags .tag').forEach(t=>t.classList.remove('sel'));
   document.querySelectorAll('[id^="s"][id$="-next"]').forEach(b=>b.disabled=true);
+  const nextZoneBtn = document.getElementById('s2-next');
+  if(nextZoneBtn) nextZoneBtn.disabled = false;
   renderCrumbs();
+  refreshZoneMassing();
 }
 
 function getAvailableAccessMethods() {
@@ -1600,6 +2218,7 @@ function toggleSystem(id) {
   const card = document.getElementById('sc-'+id);
   if(card) card.classList.toggle('sel', CFG.systems.includes(id));
   document.getElementById('s3-next').disabled = CFG.systems.length===0;
+  refreshZoneMassing();
 }
 
 function openSystemQuestions(id) {
@@ -1914,6 +2533,9 @@ function buildSummary() {
       <td class="sv" style="font-size:12px;font-weight:400">${qs.map(q=>`${q.q}: <strong>${cfg[q.id]||'—'}</strong>`).join(' &nbsp;·&nbsp; ')}</td>
     </tr>`;
   }).join('');
+  const massingHtml = window.ZoneMassing && typeof window.ZoneMassing.getSummaryHtml === 'function'
+    ? window.ZoneMassing.getSummaryHtml()
+    : '';
 
   document.getElementById('summary-output').innerHTML = `
     <div class="card mb-16">
@@ -1925,6 +2547,7 @@ function buildSummary() {
         ${sysRows}
       </table>
     </div>
+    ${massingHtml}
     <div class="card" style="background:var(--accent-light);border-color:var(--accent-mid)">
       <div style="font-size:13px;color:var(--accent);font-weight:500;margin-bottom:6px">Ready to save</div>
       <div style="font-size:12px;color:var(--text-2);line-height:1.6">
@@ -2167,6 +2790,9 @@ function saveConfigAsProject() {
   const name = document.getElementById('save-name').value.trim();
   if(!name) { notify('Project name required'); return; }
   const systems = CFG.systems.map(sid=>({ system:sid, zone:'tower', system_label:SYSTEM_INFO[sid]?.label||sid }));
+  const massingSummary = window.ZoneMassing && typeof window.ZoneMassing.getSummaryData === 'function'
+    ? window.ZoneMassing.getSummaryData()
+    : null;
   const newId = 'ABC-'+String(DB.projects.length+1).padStart(3,'0');
   DB.projects.push({
     id:newId, name,
@@ -2174,7 +2800,28 @@ function saveConfigAsProject() {
     floors:parseInt(document.getElementById('save-floors').value)||null,
     type:CFG.type, budget_tier:CFG.budget,
     zones:CFG.zones, access_method:CFG.access||[], systems, lessons_learned:[], subcontractors:[], tags:[],
-    year_completed:new Date().getFullYear()
+    year_completed:new Date().getFullYear(),
+    massing: window.ZoneMassing && typeof window.ZoneMassing.getState === 'function' ? window.ZoneMassing.getState() : null,
+    massing_summary: massingSummary ? {
+      total_area_m2: Math.round(massingSummary.totalArea || 0),
+      painted_area_m2: Math.round(massingSummary.paintedArea || 0),
+      total_cost_aed: Math.round(massingSummary.totalCost || 0),
+      selected_zones: massingSummary.selectedZones || [],
+      selected_systems: massingSummary.selectedSystems || [],
+      system_rows: (massingSummary.systemRows || []).map(row => ({
+        system: row.systemId,
+        label: row.label,
+        area_m2: Math.round(row.area || 0),
+        cost_aed: Math.round(row.cost || 0)
+      })),
+      zone_rows: (massingSummary.zoneRows || []).map(row => ({
+        zone: row.zone,
+        label: row.label,
+        share: row.share,
+        area_m2: Math.round(row.area || 0),
+        system: row.system || ''
+      }))
+    } : null
   });
   document.getElementById('nc-projects').textContent = DB.projects.length;
   document.getElementById('db-status-text').textContent = `${DB.projects.length} projects loaded`;
