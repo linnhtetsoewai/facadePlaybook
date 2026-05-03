@@ -1,16 +1,24 @@
-﻿(function () {
+(function () {
   const DEFAULTS = {
     loops: [],
     points: [],
     closed: false,
     selected: true,
-    mode: 'navigate',
+    mode: '2d',
     drawTool: 'polyline',
     rectStart: null,
     extrusion: null,
     activeFunction: null,
     paintZone: null,
     loopPaints: {},
+    facePaints: {},
+    loopOffsets: {},
+    loopExtrusions: {},
+    meshifyPending: null,
+    faceGrids: {},
+    selectedPaintFace: null,
+    selectedLoopIndices: [],
+    selectedLoopIdx: null,
     extrudeInput: {
       floors: 40,
       typicalFloorHeight: 3.3
@@ -53,7 +61,9 @@
   let OrbitControls = null;
   let initialized = false;
   let bootstrapStarted = false;
-  let mouseDown = { x: 0, y: 0, button: 0 };
+  let mouseDown = null;
+  let gizmoDrag = null; // { axis, loopIdx, prevMouse, origin }
+  let paintHoverFace = null;
 
   const app = {
     renderer: null,
@@ -69,6 +79,9 @@
     loopGroup: null,
     line: null,
     extrudedGroup: null,
+    footprintMeshGroup: null,
+    paintFaceGroup: null,
+    gizmoGroup: null,
     axes: null,
     grid: null
   };
@@ -89,22 +102,43 @@
     if (!['navigate', '2d', '3d', 'paint'].includes(s.mode)) s.mode = 'navigate';
     if (typeof s.drawTool !== 'string') s.drawTool = 'polyline';
     if (!['polyline', 'rectangle'].includes(s.drawTool)) s.drawTool = 'polyline';
-    if (s.rectStart && (typeof s.rectStart.x !== 'number' || typeof s.rectStart.z !== 'number')) s.rectStart = null;
+    if (s.rectStart && (typeof s.rectStart.x !== 'number' || typeof s.rectStart.y !== 'number')) s.rectStart = null;
     if (typeof s.activeFunction !== 'string' && s.activeFunction !== null) s.activeFunction = null;
     if (typeof s.paintZone !== 'string' && s.paintZone !== null) s.paintZone = null;
     if (!s.loopPaints || typeof s.loopPaints !== 'object' || Array.isArray(s.loopPaints)) s.loopPaints = {};
+    if (!s.facePaints || typeof s.facePaints !== 'object' || Array.isArray(s.facePaints)) s.facePaints = {};
+    if (!s.loopOffsets || typeof s.loopOffsets !== 'object' || Array.isArray(s.loopOffsets)) s.loopOffsets = {};
+    if (!s.loopExtrusions || typeof s.loopExtrusions !== 'object' || Array.isArray(s.loopExtrusions)) s.loopExtrusions = {};
+    if (!s.meshifyPending || typeof s.meshifyPending !== 'object' || Array.isArray(s.meshifyPending)) s.meshifyPending = null;
+    if (s.meshifyPending) {
+      s.meshifyPending.rows = clamp(round(num(s.meshifyPending.rows, 3)), 1, 40);
+      s.meshifyPending.cols = clamp(round(num(s.meshifyPending.cols, 4)), 1, 40);
+    }
+    if (!s.faceGrids || typeof s.faceGrids !== 'object' || Array.isArray(s.faceGrids)) s.faceGrids = {};
+    if (s.selectedPaintFace && typeof s.selectedPaintFace !== 'object') s.selectedPaintFace = null;
+    if (s.selectedPaintFace && (!Number.isInteger(s.selectedPaintFace.loopIdx) || typeof s.selectedPaintFace.faceKey !== 'string')) s.selectedPaintFace = null;
+    if (!Array.isArray(s.selectedLoopIndices)) {
+      if (typeof s.selectedLoopIdx === 'number') s.selectedLoopIndices = [s.selectedLoopIdx];
+      else s.selectedLoopIndices = [];
+    }
     if (!s.extrudeInput || typeof s.extrudeInput !== 'object') s.extrudeInput = { ...DEFAULTS.extrudeInput };
     s.extrudeInput.floors = clamp(round(num(s.extrudeInput.floors, DEFAULTS.extrudeInput.floors)), 1, 120);
     s.extrudeInput.typicalFloorHeight = clamp(num(s.extrudeInput.typicalFloorHeight, DEFAULTS.extrudeInput.typicalFloorHeight), 2.4, 6.0);
     s.loops = s.loops
       .map(loop => Array.isArray(loop) ? loop : [])
       .map(loop => loop
-        .map(p => ({ x: clamp(num(p.x, 0), -WORLD_HALF, WORLD_HALF), z: clamp(num(p.z, 0), -WORLD_HALF, WORLD_HALF) }))
-        .filter(p => Number.isFinite(p.x) && Number.isFinite(p.z)))
+        .map(p => ({
+          x: clamp(num(p.x, 0), -WORLD_HALF, WORLD_HALF),
+          y: clamp(num(Number.isFinite(p.y) ? p.y : p.z, 0), -WORLD_HALF, WORLD_HALF)
+        }))
+        .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y)))
       .filter(loop => loop.length >= 3);
     s.points = s.points
-      .map(p => ({ x: clamp(num(p.x, 0), -WORLD_HALF, WORLD_HALF), z: clamp(num(p.z, 0), -WORLD_HALF, WORLD_HALF) }))
-      .filter(p => Number.isFinite(p.x) && Number.isFinite(p.z));
+      .map(p => ({
+        x: clamp(num(p.x, 0), -WORLD_HALF, WORLD_HALF),
+        y: clamp(num(Number.isFinite(p.y) ? p.y : p.z, 0), -WORLD_HALF, WORLD_HALF)
+      }))
+      .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
     if (s.closed && s.points.length >= 3) {
       s.loops.push(s.points.map(p => ({ ...p })));
       s.points = [];
@@ -115,6 +149,11 @@
       s.selected = true;
       s.rectStart = null;
     }
+    s.selectedLoopIndices = s.selectedLoopIndices
+      .map(v => Number(v))
+      .filter(v => Number.isInteger(v) && v >= 0 && v < s.loops.length);
+    s.selectedLoopIndices = Array.from(new Set(s.selectedLoopIndices)).sort((a, b) => a - b);
+    s.selectedLoopIdx = s.selectedLoopIndices.length ? s.selectedLoopIndices[0] : null;
     return s;
   }
 
@@ -169,7 +208,7 @@
     for (let i = 0; i < points.length; i++) {
       const a = points[i];
       const b = points[(i + 1) % points.length];
-      sum += a.x * b.z - b.x * a.z;
+      sum += a.x * b.y - b.x * a.y;
     }
     return Math.abs(sum) / 2;
   }
@@ -180,27 +219,31 @@
     for (let i = 0; i < points.length; i++) {
       const a = points[i];
       const b = points[(i + 1) % points.length];
-      total += Math.hypot(b.x - a.x, b.z - a.z);
+      total += Math.hypot(b.x - a.x, b.y - a.y);
     }
     return total;
   }
 
   function centroid(points) {
-    if (!points || !points.length) return { x: 0, z: 0 };
+    if (!points || !points.length) return { x: 0, y: 0 };
     let x = 0;
-    let z = 0;
-    points.forEach(p => { x += p.x; z += p.z; });
-    return { x: x / points.length, z: z / points.length };
+    let y = 0;
+    points.forEach(p => { x += p.x; y += p.y; });
+    return { x: x / points.length, y: y / points.length };
   }
 
+  // Z is negated so that after ExtrudeGeometry + rotateX(-PI/2), world Z matches the footprint outline.
+  // ExtrudeGeometry places shape in local XY, extrudes along +Z; rotateX(-PI/2) maps local Y → -worldZ,
+  // so negating Z here gives the correct world position: (px, 0, pz).
   function getFootprintShape(points) {
     const shape = new THREE.Shape();
     if (!points || points.length < 3) return shape;
-    shape.moveTo(points[0].x, points[0].z);
+    // Negate Z so the rotated extrude lands in the same world X/Z positions as the footprint outline.
+    shape.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) {
-      shape.lineTo(points[i].x, points[i].z);
+      shape.lineTo(points[i].x, points[i].y);
     }
-    shape.lineTo(points[0].x, points[0].z);
+    shape.lineTo(points[0].x, points[0].y);
     return shape;
   }
 
@@ -229,14 +272,19 @@
     const points = s.points;
     const footprintArea = loops.reduce((sum, loop) => sum + polygonArea(loop), 0);
     const perimeter = loops.reduce((sum, loop) => sum + polygonPerimeter(loop), 0);
-    const floors = s.extrusion?.floors || 0;
-    const typicalFloorHeight = s.extrusion?.typicalFloorHeight || 0;
-    const height = s.extrusion?.height || (floors * typicalFloorHeight);
+    const extrData = (s.selectedLoopIdx !== null && s.loopExtrusions?.[s.selectedLoopIdx])
+      || s.extrusion
+      || (s.loopExtrusions && Object.values(s.loopExtrusions)[0])
+      || null;
+    const floors = extrData?.floors || 0;
+    const typicalFloorHeight = extrData?.typicalFloorHeight || 0;
+    const height = extrData?.height || (floors * typicalFloorHeight);
     const facadeArea = perimeter && height ? perimeter * height : 0;
     const volume = footprintArea && height ? footprintArea * height : 0;
     const totalCost = facadeArea * getBudgetRate();
     const formFactor = volume ? facadeArea / volume : 0;
     const slenderness = footprintArea ? height / Math.sqrt(footprintArea) : 0;
+    const hasExtrusion = !!s.extrusion || (s.loopExtrusions && Object.keys(s.loopExtrusions).length > 0);
     return {
       ...s,
       footprintArea,
@@ -252,7 +300,8 @@
       center: centroid(loops.flat().concat(points)),
       loopCount: loops.length,
       draftPoints: points.length,
-      selectedZones: getZoneLabels()
+      selectedZones: getZoneLabels(),
+      extrusion: hasExtrusion ? (s.extrusion || true) : null
     };
   }
 
@@ -266,6 +315,7 @@
     const s = state();
     s.mode = mode;
     s.rectStart = null;
+    if (mode !== 'paint') setPaintHoverFace(null);
     if (mode === '2d') {
       s.activeFunction = 'draw';
       render();
@@ -274,7 +324,7 @@
       s.activeFunction = 'extrude';
       render();
     } else if (mode === 'paint') {
-      s.activeFunction = 'paint';
+      s.activeFunction = 'paint-select';
       render();
     } else {
       s.activeFunction = null;
@@ -305,7 +355,7 @@
 
   function setRectangleStart(point) {
     const s = state();
-    s.rectStart = { x: point.x, z: point.z };
+    s.rectStart = { x: point.x, y: point.y };
     s.points = [point];
     s.selected = true;
     s.extrusion = null;
@@ -319,14 +369,14 @@
     if (!start) return;
     const minX = Math.min(start.x, point.x);
     const maxX = Math.max(start.x, point.x);
-    const minZ = Math.min(start.z, point.z);
-    const maxZ = Math.max(start.z, point.z);
-    if (Math.abs(maxX - minX) < 0.5 || Math.abs(maxZ - minZ) < 0.5) return;
+    const minY = Math.min(start.y, point.y);
+    const maxY = Math.max(start.y, point.y);
+    if (Math.abs(maxX - minX) < 0.5 || Math.abs(maxY - minY) < 0.5) return;
     s.loops.push([
-      { x: minX, z: minZ },
-      { x: maxX, z: minZ },
-      { x: maxX, z: maxZ },
-      { x: minX, z: maxZ }
+      { x: minX, y: minY },
+      { x: maxX, y: minY },
+      { x: maxX, y: maxY },
+      { x: minX, y: maxY }
     ]);
     s.points = [];
     s.selected = true;
@@ -362,11 +412,15 @@
     if (!s.loops.length) return;
     const floors = clamp(round(num(s.extrudeInput.floors, DEFAULTS.extrudeInput.floors)), 1, 120);
     const typicalFloorHeight = clamp(num(s.extrudeInput.typicalFloorHeight, DEFAULTS.extrudeInput.typicalFloorHeight), 2.4, 6.0);
-    s.extrusion = {
-      floors,
-      typicalFloorHeight,
-      height: floors * typicalFloorHeight
-    };
+    const extrData = { floors, typicalFloorHeight, height: floors * typicalFloorHeight };
+    if (!s.loopExtrusions) s.loopExtrusions = {};
+    const selected = getSelectedLoopIndices(s);
+    if (selected.length) {
+      selected.forEach(idx => { if (s.loops[idx]) s.loopExtrusions[idx] = extrData; });
+    } else {
+      s.loops.forEach((_, i) => { s.loopExtrusions[i] = extrData; });
+    }
+    s.extrusion = extrData;
     s.selected = true;
     render();
     updateScene();
@@ -382,7 +436,11 @@
 
   function setFunction(fn) {
     state().activeFunction = fn;
+    if (!String(fn || '').startsWith('paint')) setPaintHoverFace(null);
+    if (!String(fn || '').startsWith('paint')) state().meshifyPending = null;
     render();
+    updateScene();
+    updateMode();
   }
 
   function setPaintZone(zone) {
@@ -390,8 +448,52 @@
     render();
   }
 
+  function samePaintFace(a, b) {
+    return !!a && !!b &&
+      a.loopIdx === b.loopIdx &&
+      a.faceKey === b.faceKey &&
+      (a.row ?? null) === (b.row ?? null) &&
+      (a.col ?? null) === (b.col ?? null);
+  }
+
+  function setPaintHoverFace(face) {
+    if (face && paintHoverFace && samePaintFace(face, paintHoverFace)) return;
+    if (!face && !paintHoverFace) return;
+    paintHoverFace = face ? { ...face } : null;
+    updateScene();
+  }
+
+  function meshifyFace() {
+    const rowsRaw = window.prompt('Rows', '3');
+    if (rowsRaw === null) return;
+    const colsRaw = window.prompt('Columns', '4');
+    if (colsRaw === null) return;
+    const rows = clamp(round(num(rowsRaw, 3)), 1, 40);
+    const cols = clamp(round(num(colsRaw, 4)), 1, 40);
+    const s = state();
+    s.meshifyPending = { rows, cols };
+    s.activeFunction = 'meshify';
+    s.selectedPaintFace = null;
+    render();
+    updateScene();
+    updateMode();
+  }
+
+  function cancelMeshify() {
+    const s = state();
+    s.meshifyPending = null;
+    s.activeFunction = 'paint-select';
+    render();
+    updateScene();
+    updateMode();
+  }
+
   function clearPaints() {
     state().loopPaints = {};
+    state().facePaints = {};
+    state().faceGrids = {};
+    state().selectedPaintFace = null;
+    state().meshifyPending = null;
     render();
     updateScene();
   }
@@ -399,6 +501,567 @@
   function cancelExtrude() {
     state().activeFunction = null;
     render();
+  }
+
+  function getSelectedLoopIndices(s = state()) {
+    return Array.isArray(s.selectedLoopIndices) ? s.selectedLoopIndices.slice() : [];
+  }
+
+  function setSelectedLoopIndices(indices) {
+    const s = state();
+    s.selectedLoopIndices = Array.from(new Set((indices || [])
+      .map(v => Number(v))
+      .filter(v => Number.isInteger(v) && v >= 0 && v < s.loops.length))).sort((a, b) => a - b);
+    s.selectedLoopIdx = s.selectedLoopIndices.length ? s.selectedLoopIndices[0] : null;
+  }
+
+  function clearSelection() {
+    setSelectedLoopIndices([]);
+  }
+
+  function toggleLoopSelection(idx, additive = false) {
+    const s = state();
+    const current = getSelectedLoopIndices(s);
+    if (!additive) {
+      const next = (current.length === 1 && current[0] === idx) ? [] : [idx];
+      setSelectedLoopIndices(next);
+    } else {
+      const set = new Set(current);
+      if (set.has(idx)) set.delete(idx);
+      else set.add(idx);
+      setSelectedLoopIndices(Array.from(set));
+    }
+    render();
+    updateScene();
+  }
+
+  function selectLoop(idx, additive = false) {
+    toggleLoopSelection(idx, additive);
+  }
+
+  function deleteSelectedLoops() {
+    const s = state();
+    const selected = getSelectedLoopIndices(s).sort((a, b) => b - a);
+    if (!selected.length) return;
+    selected.forEach(idx => s.loops.splice(idx, 1));
+    // Remap per-loop dictionaries
+    const remap = (src) => {
+      const out = {};
+      const deleted = new Set(selected);
+      Object.keys(src || {}).forEach(k => {
+        const ki = parseInt(k, 10);
+        if (deleted.has(ki)) return;
+        const shift = selected.filter(d => d < ki).length;
+        out[ki - shift] = src[k];
+      });
+      return out;
+    };
+    s.loopOffsets = remap(s.loopOffsets);
+    s.loopExtrusions = remap(s.loopExtrusions);
+    s.loopPaints = remap(s.loopPaints);
+    s.facePaints = remapFacePaintState(s.facePaints, selected);
+    s.faceGrids = remapFaceGridState(s.faceGrids, selected);
+    if (s.selectedPaintFace && selected.includes(s.selectedPaintFace.loopIdx)) s.selectedPaintFace = null;
+    setSelectedLoopIndices([]);
+    s.extrusion = Object.values(s.loopExtrusions)[0] || null;
+    render();
+    updateScene();
+  }
+
+  function remapFacePaintState(src, deletedIndices) {
+    const out = {};
+    const deleted = new Set(deletedIndices || []);
+    Object.entries(src || {}).forEach(([key, value]) => {
+      const match = key.match(/^(\d+):(.+)$/);
+      if (!match) return;
+      const oldIdx = parseInt(match[1], 10);
+      if (deleted.has(oldIdx)) return;
+      const shift = deletedIndices.filter(d => d < oldIdx).length;
+      out[`${oldIdx - shift}:${match[2]}`] = value;
+    });
+    return out;
+  }
+
+  function remapFaceGridState(src, deletedIndices) {
+    const out = {};
+    const deleted = new Set(deletedIndices || []);
+    Object.entries(src || {}).forEach(([loopIdxStr, faces]) => {
+      const oldIdx = parseInt(loopIdxStr, 10);
+      if (!Number.isInteger(oldIdx) || deleted.has(oldIdx)) return;
+      const shift = deletedIndices.filter(d => d < oldIdx).length;
+      const newIdx = oldIdx - shift;
+      out[newIdx] = { ...(faces || {}) };
+    });
+    return out;
+  }
+
+  function faceStateKey(loopIdx, faceKey) {
+    return `${loopIdx}:${faceKey}`;
+  }
+
+  function faceGridKey(loopIdx, faceKey) {
+    return `${loopIdx}:${faceKey}`;
+  }
+
+  function setSelectedPaintFace(faceInfo) {
+    const s = state();
+    if (!faceInfo) {
+      s.selectedPaintFace = null;
+      return;
+    }
+    s.selectedPaintFace = {
+      loopIdx: faceInfo.loopIdx,
+      faceKey: faceInfo.faceKey,
+      faceType: faceInfo.faceType || 'side',
+      edgeIdx: Number.isInteger(faceInfo.edgeIdx) ? faceInfo.edgeIdx : null,
+      faceLabel: faceInfo.faceLabel || ''
+    };
+  }
+
+  function clearSelectedPaintFace() {
+    state().selectedPaintFace = null;
+  }
+
+  function deleteSelectedLoop() {
+    deleteSelectedLoops();
+  }
+
+  function updateGizmo() {
+    if (!app.gizmoGroup || !THREE) return;
+    clearThreeObject(app.gizmoGroup);
+    const s = state();
+    const selected = getSelectedLoopIndices(s);
+    if (!selected.length) {
+      app.gizmoGroup.visible = false;
+      return;
+    }
+    const centers = selected.map(idx => {
+      const loop = s.loops[idx];
+      if (!loop || loop.length < 3) return null;
+      const c = centroid(loop);
+      const offset = s.loopOffsets?.[idx] || { x: 0, y: 0, z: 0 };
+      return new THREE.Vector3(c.x + offset.x, c.y + offset.y, offset.z);
+    }).filter(Boolean);
+    if (!centers.length) { app.gizmoGroup.visible = false; return; }
+    const origin = centers.reduce((acc, v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1 / centers.length);
+    const len = 28, headLen = 7, headWidth = 4;
+    const hitRadius = 1.6;
+    const hitMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.001, depthWrite: false });
+    const makeHit = (axis, orient) => {
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(hitRadius, hitRadius, len, 10, 1, true), hitMat.clone());
+      mesh.position.copy(origin);
+      if (orient === 'x') mesh.rotation.z = Math.PI / 2;
+      if (orient === 'z') mesh.rotation.x = Math.PI / 2;
+      mesh.userData.isGizmo = true;
+      mesh.userData.gizmoAxis = axis;
+      return mesh;
+    };
+
+    const xArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), origin, len, 0xff3333, headLen, headWidth);
+    const yArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), origin, len, 0x22cc44, headLen, headWidth);
+    const zArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), origin, len, 0x3366ff, headLen, headWidth);
+
+    const tag = (helper, axis) => helper.traverse(child => {
+      if (child.isMesh) {
+        child.userData.isGizmo = true;
+        child.userData.gizmoAxis = axis;
+      }
+    });
+    tag(xArrow, 'x'); tag(yArrow, 'y'); tag(zArrow, 'z');
+
+    app.gizmoGroup.add(xArrow, yArrow, zArrow, makeHit('x', 'x'), makeHit('y', 'y'), makeHit('z', 'z'));
+    app.gizmoGroup.visible = true;
+  }
+
+  function pickGizmoAxis(event, canvas) {
+    if (!app.raycaster || !app.camera || !app.gizmoGroup || !app.gizmoGroup.visible) return null;
+    const rect = canvas.getBoundingClientRect();
+    const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+    app.raycaster.setFromCamera({ x: nx, y: ny }, app.camera);
+    const meshes = [];
+    app.gizmoGroup.traverse(c => { if (c.isMesh && c.userData.isGizmo) meshes.push(c); });
+    const hits = app.raycaster.intersectObjects(meshes, false);
+    return hits.length ? (hits[0].object.userData.gizmoAxis || null) : null;
+  }
+
+  function pickFootprint(event, canvas) {
+    if (!app.raycaster || !app.camera || !app.footprintMeshGroup) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+    app.raycaster.setFromCamera({ x: nx, y: ny }, app.camera);
+    const hits = app.raycaster.intersectObjects(app.footprintMeshGroup.children, false);
+    if (!hits.length) return null;
+    const loopIdx = hits[0].object.userData.loopIdx;
+    return typeof loopIdx === 'number' ? loopIdx : null;
+  }
+
+  function pickSelectableLoop(event, canvas, s) {
+    if (!app.raycaster || !app.camera) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+    app.raycaster.setFromCamera({ x: nx, y: ny }, app.camera);
+
+    const candidates = [];
+    if (s.mode === '2d') {
+      if (app.footprintMeshGroup) candidates.push(...app.footprintMeshGroup.children);
+    } else if (s.mode === '3d') {
+      if (app.extrudedGroup) candidates.push(...app.extrudedGroup.children);
+      if (app.footprintMeshGroup) candidates.push(...app.footprintMeshGroup.children);
+    }
+
+    if (!candidates.length) return null;
+    const hits = app.raycaster.intersectObjects(candidates, false);
+    if (!hits.length) return null;
+    const loopIdx = hits[0].object.userData.loopIdx;
+    return typeof loopIdx === 'number' ? loopIdx : null;
+  }
+
+  function pointInPolygon(point, polygon) {
+    if (!polygon || polygon.length < 3) return false;
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].x, yi = polygon[i].y;
+      const xj = polygon[j].x, yj = polygon[j].y;
+      const intersect = ((yi > point.y) !== (yj > point.y)) &&
+        (point.x < (xj - xi) * (point.y - yi) / ((yj - yi) || 1e-9) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  function nearestLoopEdgeIndex(loop, point) {
+    if (!Array.isArray(loop) || loop.length < 2) return 0;
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    loop.forEach((a, i) => {
+      const b = loop[(i + 1) % loop.length];
+      const abx = b.x - a.x;
+      const aby = b.y - a.y;
+      const apx = point.x - a.x;
+      const apy = point.y - a.y;
+      const denom = abx * abx + aby * aby || 1e-9;
+      const t = clamp((apx * abx + apy * aby) / denom, 0, 1);
+      const cx = a.x + abx * t;
+      const cy = a.y + aby * t;
+      const dist = Math.hypot(point.x - cx, point.y - cy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
+      }
+    });
+    return bestIdx;
+  }
+
+  function faceKeyToLabel(faceKey) {
+    if (faceKey === 'top') return 'Top';
+    if (faceKey === 'bottom') return 'Bottom';
+    if (faceKey.startsWith('side-')) return `Side ${parseInt(faceKey.split('-')[1], 10) + 1}`;
+    return faceKey;
+  }
+
+  function getFaceInfoFromHit(mesh, hit) {
+    const loopIdx = mesh?.userData?.loopIdx;
+    if (!Number.isInteger(loopIdx)) return null;
+    const s = state();
+    const loop = s.loops[loopIdx];
+    if (!loop || loop.length < 3) return null;
+    const extrData = s.loopExtrusions?.[loopIdx];
+    if (!extrData) return null;
+    const localPoint = mesh.worldToLocal(hit.point.clone());
+    const localNormal = hit.face?.normal ? hit.face.normal.clone() : new THREE.Vector3(0, 0, 1);
+    const faceType = Math.abs(localNormal.z) > 0.75 ? (localNormal.z > 0 ? 'top' : 'bottom') : 'side';
+    if (faceType === 'side') {
+      const edgeIdx = nearestLoopEdgeIndex(loop, { x: localPoint.x, y: localPoint.y });
+      const a = loop[edgeIdx];
+      const b = loop[(edgeIdx + 1) % loop.length];
+      const edgeLen = Math.hypot(b.x - a.x, b.y - a.y);
+      return {
+        loopIdx,
+        faceType,
+        edgeIdx,
+        faceKey: `side-${edgeIdx}`,
+        faceLabel: faceKeyToLabel(`side-${edgeIdx}`),
+        edgeStart: a,
+        edgeEnd: b,
+        height: extrData.height,
+        offset: s.loopOffsets?.[loopIdx] || { x: 0, y: 0, z: 0 },
+        loop,
+        edgeLen
+      };
+    }
+    const faceKey = faceType;
+    return {
+      loopIdx,
+      faceType,
+      edgeIdx: null,
+      faceKey,
+      faceLabel: faceKeyToLabel(faceKey),
+      height: extrData.height,
+      offset: s.loopOffsets?.[loopIdx] || { x: 0, y: 0, z: 0 },
+      loop
+    };
+  }
+
+  function pickPaintFace(event, canvas) {
+    if (!app.raycaster || !app.camera || !app.extrudedGroup) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+    app.raycaster.setFromCamera({ x: nx, y: ny }, app.camera);
+    const overlayHits = app.paintFaceGroup ? app.raycaster.intersectObjects(app.paintFaceGroup.children, true) : [];
+    if (overlayHits.length) {
+      const obj = overlayHits[0].object;
+      if (obj.userData && Number.isInteger(obj.userData.loopIdx) && typeof obj.userData.faceKey === 'string') {
+        return {
+          loopIdx: obj.userData.loopIdx,
+          faceKey: obj.userData.faceKey,
+          faceType: obj.userData.faceType || 'side',
+          faceLabel: obj.userData.faceLabel || faceKeyToLabel(obj.userData.faceKey),
+          edgeIdx: Number.isInteger(obj.userData.edgeIdx) ? obj.userData.edgeIdx : null,
+          row: Number.isInteger(obj.userData.row) ? obj.userData.row : null,
+          col: Number.isInteger(obj.userData.col) ? obj.userData.col : null,
+          rows: Number.isInteger(obj.userData.rows) ? obj.userData.rows : null,
+          cols: Number.isInteger(obj.userData.cols) ? obj.userData.cols : null
+        };
+      }
+    }
+    const hits = app.raycaster.intersectObjects(app.extrudedGroup.children, false);
+    if (!hits.length) return null;
+    const hit = hits[0];
+    return getFaceInfoFromHit(hit.object, hit);
+  }
+
+  function faceGridStateKey(loopIdx, faceKey, row, col) {
+    return `${loopIdx}:${faceKey}:${row}:${col}`;
+  }
+
+  function getLoopBounds(loop) {
+    const xs = loop.map(p => p.x);
+    const ys = loop.map(p => p.y);
+    return {
+      minX: Math.min(...xs),
+      maxX: Math.max(...xs),
+      minY: Math.min(...ys),
+      maxY: Math.max(...ys)
+    };
+  }
+
+  function makeFaceMaterial(zoneKey, alpha = 0.95) {
+    const color = (zoneKey && ZONE_COLORS[zoneKey]) ? ZONE_COLORS[zoneKey] : DEFAULT_MESH_COLOR;
+    return new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.82,
+      metalness: 0.0,
+      transparent: true,
+      opacity: alpha,
+      side: THREE.DoubleSide
+    });
+  }
+
+  function buildFacePatchMesh(face, row, col, rows, cols, zoneKey, options = {}) {
+    const s = state();
+    const loop = s.loops[face.loopIdx];
+    if (!loop || loop.length < 3) return null;
+    const extrData = s.loopExtrusions?.[face.loopIdx];
+    if (!extrData) return null;
+    const offset = s.loopOffsets?.[face.loopIdx] || { x: 0, y: 0, z: 0 };
+    const alpha = options.alpha ?? 0.9;
+    const material = makeFaceMaterial(zoneKey, alpha);
+    let geometry = null;
+    const mesh = new THREE.Mesh();
+    mesh.material = material;
+    mesh.userData = {
+      loopIdx: face.loopIdx,
+      faceKey: face.faceKey,
+      faceType: face.faceType,
+      faceLabel: face.faceLabel,
+      edgeIdx: Number.isInteger(face.edgeIdx) ? face.edgeIdx : null,
+      row,
+      col,
+      rows,
+      cols
+    };
+
+    if (face.faceType === 'side') {
+      const a = loop[face.edgeIdx];
+      const b = loop[(face.edgeIdx + 1) % loop.length];
+      const edgeVec = new THREE.Vector3(b.x - a.x, b.y - a.y, 0);
+      const len = edgeVec.length();
+      if (len < 1e-6) return null;
+      const xAxis = edgeVec.clone().normalize();
+      const yAxis = new THREE.Vector3(0, 0, 1);
+      const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
+      const cellW = len / cols;
+      const cellH = extrData.height / rows;
+      const localX = -len / 2 + (col + 0.5) * cellW;
+      const localY = -extrData.height / 2 + (row + 0.5) * cellH;
+      geometry = new THREE.PlaneGeometry(cellW, cellH, 1, 1);
+      const center = new THREE.Vector3(
+        offset.x + ((a.x + b.x) / 2) + xAxis.x * localX,
+        offset.y + ((a.y + b.y) / 2) + xAxis.y * localX,
+        offset.z + (extrData.height / 2) + localY
+      );
+      const basis = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+      basis.setPosition(center);
+      geometry.applyMatrix4(basis);
+    } else {
+      const bounds = getLoopBounds(loop);
+      const cellW = (bounds.maxX - bounds.minX) / cols;
+      const cellH = (bounds.maxY - bounds.minY) / rows;
+      const localX = bounds.minX + (col + 0.5) * cellW;
+      const localY = bounds.minY + (row + 0.5) * cellH;
+      if (!pointInPolygon({ x: localX, y: localY }, loop)) return null;
+      geometry = new THREE.PlaneGeometry(cellW, cellH, 1, 1);
+      geometry.rotateX(face.faceType === 'bottom' ? Math.PI : 0);
+      geometry.translate(
+        offset.x + localX,
+        offset.y + localY,
+        offset.z + (face.faceType === 'top' ? extrData.height : 0)
+      );
+    }
+
+    mesh.geometry = geometry;
+    return mesh;
+  }
+
+  function buildSelectableFaceMesh(face) {
+    const s = state();
+    const loop = s.loops[face.loopIdx];
+    if (!loop || loop.length < 3) return null;
+    const extrData = s.loopExtrusions?.[face.loopIdx];
+    if (!extrData) return null;
+    const offset = s.loopOffsets?.[face.loopIdx] || { x: 0, y: 0, z: 0 };
+    let geometry = null;
+    const mesh = new THREE.Mesh();
+    mesh.material = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.001,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    mesh.userData = {
+      loopIdx: face.loopIdx,
+      faceKey: face.faceKey,
+      faceType: face.faceType,
+      faceLabel: face.faceLabel,
+      edgeIdx: Number.isInteger(face.edgeIdx) ? face.edgeIdx : null
+    };
+
+    if (face.faceType === 'side') {
+      const a = loop[face.edgeIdx];
+      const b = loop[(face.edgeIdx + 1) % loop.length];
+      const edgeVec = new THREE.Vector3(b.x - a.x, b.y - a.y, 0);
+      const len = edgeVec.length();
+      if (len < 1e-6) return null;
+      const xAxis = edgeVec.clone().normalize();
+      const yAxis = new THREE.Vector3(0, 0, 1);
+      const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
+      geometry = new THREE.PlaneGeometry(len, extrData.height, 1, 1);
+      const center = new THREE.Vector3(
+        offset.x + ((a.x + b.x) / 2),
+        offset.y + ((a.y + b.y) / 2),
+        offset.z + extrData.height / 2
+      );
+      const basis = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+      basis.setPosition(center);
+      geometry.applyMatrix4(basis);
+    } else {
+      geometry = new THREE.ShapeGeometry(getFootprintShape(loop));
+      geometry.translate(offset.x, offset.y, offset.z + (face.faceType === 'top' ? extrData.height : 0));
+    }
+
+    mesh.geometry = geometry;
+    return mesh;
+  }
+
+  function buildFaceHighlightMesh(face, options = {}) {
+    const s = state();
+    const loop = s.loops[face.loopIdx];
+    if (!loop || loop.length < 3) return null;
+    const extrData = s.loopExtrusions?.[face.loopIdx];
+    if (!extrData) return null;
+    const offset = s.loopOffsets?.[face.loopIdx] || { x: 0, y: 0, z: 0 };
+    const color = options.color || 0x4a7cff;
+    const opacity = options.opacity ?? 0.22;
+    const mesh = new THREE.Mesh();
+    mesh.material = new THREE.MeshStandardMaterial({
+      color,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    mesh.raycast = () => {};
+    if (face.faceType === 'side') {
+      const a = loop[face.edgeIdx];
+      const b = loop[(face.edgeIdx + 1) % loop.length];
+      const edgeVec = new THREE.Vector3(b.x - a.x, b.y - a.y, 0);
+      const len = edgeVec.length();
+      if (len < 1e-6) return null;
+      const xAxis = edgeVec.clone().normalize();
+      const yAxis = new THREE.Vector3(0, 0, 1);
+      const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
+      const geometry = new THREE.PlaneGeometry(len, extrData.height, 1, 1);
+      const center = new THREE.Vector3(
+        offset.x + ((a.x + b.x) / 2),
+        offset.y + ((a.y + b.y) / 2),
+        offset.z + extrData.height / 2
+      );
+      const basis = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+      basis.setPosition(center);
+      geometry.applyMatrix4(basis);
+      mesh.geometry = geometry;
+      return mesh;
+    }
+    const geometry = new THREE.ShapeGeometry(getFootprintShape(loop));
+    geometry.translate(offset.x, offset.y, offset.z + (face.faceType === 'top' ? extrData.height : 0));
+    mesh.geometry = geometry;
+    return mesh;
+  }
+
+  function meshifySelectedFace(faceOverride = null, gridOverride = null) {
+    const s = state();
+    const face = faceOverride || s.selectedPaintFace || paintHoverFace;
+    if (!face || !Number.isInteger(face.loopIdx) || !face.faceKey) return false;
+    const rows = gridOverride?.rows ?? s.meshifyPending?.rows;
+    const cols = gridOverride?.cols ?? s.meshifyPending?.cols;
+    if (!Number.isFinite(rows) || !Number.isFinite(cols)) return false;
+    if (!s.faceGrids) s.faceGrids = {};
+    if (!s.faceGrids[face.loopIdx]) s.faceGrids[face.loopIdx] = {};
+    s.faceGrids[face.loopIdx][face.faceKey] = { rows, cols };
+    render();
+    updateScene();
+    return true;
+  }
+
+  function computeGizmoDelta(event, axis, origin, canvas) {
+    if (!app.camera || !app.renderer) return 0;
+    const axisDir = axis === 'x'
+      ? new THREE.Vector3(1, 0, 0)
+      : axis === 'y'
+        ? new THREE.Vector3(0, 1, 0)
+        : new THREE.Vector3(0, 0, 1);
+    const p1 = origin.clone().project(app.camera);
+    const p2 = origin.clone().add(axisDir).project(app.camera);
+    const sax = p2.x - p1.x, say = p2.y - p1.y;
+    const slen = Math.sqrt(sax * sax + say * say);
+    if (slen < 1e-6) return 0;
+    const sdx = sax / slen, sdy = say / slen;
+    const rect = canvas.getBoundingClientRect();
+    const prevNX = (gizmoDrag.prevMouse.x - rect.left) / rect.width * 2 - 1;
+    const prevNY = -((gizmoDrag.prevMouse.y - rect.top) / rect.height * 2 - 1);
+    const currNX = (event.clientX - rect.left) / rect.width * 2 - 1;
+    const currNY = -((event.clientY - rect.top) / rect.height * 2 - 1);
+    const proj = (currNX - prevNX) * sdx + (currNY - prevNY) * sdy;
+    const dist = app.camera.position.distanceTo(origin);
+    const worldPerNDC = dist * Math.tan(THREE.MathUtils.degToRad(app.camera.fov / 2));
+    return proj * worldPerNDC;
   }
 
   function createScene() {
@@ -433,7 +1096,8 @@
     app.controls.enableDamping = true;
     app.controls.dampingFactor = 0.08;
     app.controls.screenSpacePanning = true;
-    app.controls.maxPolarAngle = Math.PI * 0.49;
+    app.controls.minPolarAngle = 0.01;
+    app.controls.maxPolarAngle = Math.PI - 0.01;
     app.controls.minDistance = 20;
     app.controls.maxDistance = 500;
 
@@ -446,25 +1110,17 @@
     app.scene.add(sun);
 
     app.grid = new THREE.GridHelper(GRID_SIZE, 30, 0x9d9588, 0xd9d0cf);
+    app.grid.rotation.x = Math.PI / 2;
     const gridMaterials = Array.isArray(app.grid.material) ? app.grid.material : [app.grid.material];
-    gridMaterials.forEach(mat => {
-      mat.transparent = true;
-      mat.opacity = 0.5;
-    });
+    gridMaterials.forEach(mat => { mat.transparent = true; mat.opacity = 0.5; });
     app.scene.add(app.grid);
 
     app.axes = new THREE.AxesHelper(GRID_SIZE * 0.4);
     app.scene.add(app.axes);
 
     const planeGeo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE);
-    const planeMat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      color: 0xffffff
-    });
+    const planeMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, color: 0xffffff });
     app.ground = new THREE.Mesh(planeGeo, planeMat);
-    app.ground.rotation.x = -Math.PI / 2;
     app.scene.add(app.ground);
 
     app.pointGroup = new THREE.Group();
@@ -473,6 +1129,12 @@
     app.scene.add(app.loopGroup);
     app.extrudedGroup = new THREE.Group();
     app.scene.add(app.extrudedGroup);
+    app.footprintMeshGroup = new THREE.Group();
+    app.scene.add(app.footprintMeshGroup);
+    app.paintFaceGroup = new THREE.Group();
+    app.scene.add(app.paintFaceGroup);
+    app.gizmoGroup = new THREE.Group();
+    app.scene.add(app.gizmoGroup);
 
     app.line = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x1a1814, linewidth: 2 }));
     app.scene.add(app.line);
@@ -489,8 +1151,8 @@
   function buildPointLine(points, closed) {
     if (!points.length) return new THREE.BufferGeometry();
     const positions = [];
-    points.forEach(p => positions.push(p.x, 0.15, p.z));
-    if (closed && points.length >= 3) positions.push(points[0].x, 0.15, points[0].z);
+    points.forEach(p => positions.push(p.x, p.y, 0.15));
+    if (closed && points.length >= 3) positions.push(points[0].x, points[0].y, 0.15);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     return geometry;
@@ -506,41 +1168,65 @@
     clearThreeObject(app.pointGroup);
     clearThreeObject(app.loopGroup);
     clearThreeObject(app.extrudedGroup);
+    if (app.footprintMeshGroup) clearThreeObject(app.footprintMeshGroup);
+    if (app.paintFaceGroup) clearThreeObject(app.paintFaceGroup);
+    const selectedSet = new Set(getSelectedLoopIndices(s));
 
     loops.forEach((loop, loopIdx) => {
-      const loopColor = [0x1a1814, 0x28536b, 0x7a5c2e, 0x4a6f43][loopIdx % 4];
+      const isSelected = selectedSet.has(loopIdx);
+      const offset = s.loopOffsets?.[loopIdx] || { x: 0, y: 0, z: 0 };
+      const loopColor = isSelected ? 0x0055cc : [0x1a1814, 0x28536b, 0x7a5c2e, 0x4a6f43][loopIdx % 4];
+
+      // Group shifted by offset so all children inherit it
+      const loopGroupI = new THREE.Group();
+      loopGroupI.position.set(offset.x, offset.y, offset.z);
+
       const positions = [];
-      loop.forEach(p => positions.push(p.x, 0.15, p.z));
-      if (loop.length >= 3) positions.push(loop[0].x, 0.15, loop[0].z);
+      loop.forEach(p => positions.push(p.x, p.y, 0.15));
+      if (loop.length >= 3) positions.push(loop[0].x, loop[0].y, 0.15);
       const loopGeo = new THREE.BufferGeometry();
       loopGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      const loopLine = new THREE.LineLoop(loopGeo, new THREE.LineBasicMaterial({ color: loopColor, linewidth: 2 }));
-      app.loopGroup.add(loopLine);
+      const loopLine = new THREE.LineLoop(loopGeo, new THREE.LineBasicMaterial({ color: loopColor, linewidth: isSelected ? 3 : 2 }));
+      loopGroupI.add(loopLine);
 
       loop.forEach((p, idx) => {
         const sphere = new THREE.Mesh(
-          new THREE.SphereGeometry(0.9, 16, 16),
+          new THREE.SphereGeometry(isSelected ? 1.1 : 0.9, 16, 16),
           new THREE.MeshStandardMaterial({ color: loopColor, roughness: 0.45, metalness: 0.05 })
         );
-        sphere.position.set(p.x, 0.9, p.z);
-        app.loopGroup.add(sphere);
-
+        sphere.position.set(p.x, p.y, 0.9);
+        loopGroupI.add(sphere);
         const label = createLabel(`${idx + 1}`);
-        label.position.set(p.x + 1.1, 1.55, p.z - 1.1);
-        app.loopGroup.add(label);
+        label.position.set(p.x + 1.1, p.y + 1.1, 1.55);
+        loopGroupI.add(label);
       });
+
+      app.loopGroup.add(loopGroupI);
+
+      // Invisible filled mesh for selection raycasting
+      if (app.footprintMeshGroup) {
+        const fShape = getFootprintShape(loop);
+        const fGeo = new THREE.ShapeGeometry(fShape);
+        const fMesh = new THREE.Mesh(
+          fGeo,
+          new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false })
+        );
+        fMesh.position.set(offset.x, offset.y, offset.z);
+        fMesh.userData.loopIdx = loopIdx;
+        app.footprintMeshGroup.add(fMesh);
+      }
     });
 
+    // Draft points
     points.forEach((p, idx) => {
       const sphere = new THREE.Mesh(
         new THREE.SphereGeometry(0.9, 16, 16),
         new THREE.MeshStandardMaterial({ color: 0x1a1814, roughness: 0.45, metalness: 0.05 })
       );
-      sphere.position.set(p.x, 0.9, p.z);
+      sphere.position.set(p.x, p.y, 0.9);
       app.pointGroup.add(sphere);
-
       const label = createLabel(`${idx + 1}`);
-      label.position.set(p.x + 1.1, 1.55, p.z - 1.1);
+      label.position.set(p.x + 1.1, p.y + 1.1, 1.55);
       app.pointGroup.add(label);
     });
 
@@ -548,38 +1234,124 @@
     app.line.geometry = buildPointLine(points, false);
     app.line.material.color.set(0x7e7362);
 
-    if (s.extrusion && loops.length) {
+    // Per-loop extruded meshes
+    loops.forEach((loop, loopIdx) => {
+      if (loop.length < 3) return;
+      const extrData = s.loopExtrusions?.[loopIdx];
+      if (!extrData) return;
+      const offset = s.loopOffsets?.[loopIdx] || { x: 0, y: 0, z: 0 };
+      const shape = getFootprintShape(loop);
+      const extrudeGeo = new THREE.ExtrudeGeometry(shape, {
+        depth: extrData.height,
+        bevelEnabled: false,
+        steps: 1
+      });
+      const zoneKey = s.loopPaints ? s.loopPaints[loopIdx] : null;
+      const color = (zoneKey && ZONE_COLORS[zoneKey]) ? ZONE_COLORS[zoneKey] : DEFAULT_MESH_COLOR;
+      const material = new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.0, transparent: true, opacity: 0.92 });
+      const mesh = new THREE.Mesh(extrudeGeo, material);
+      mesh.position.set(offset.x, offset.y, offset.z);
+      mesh.userData.loopIdx = loopIdx;
+      app.extrudedGroup.add(mesh);
+    });
+
+    // Selected face highlight and meshified grids
+    const selectedFace = s.selectedPaintFace && Number.isInteger(s.selectedPaintFace.loopIdx) ? s.selectedPaintFace : null;
+    if (app.paintFaceGroup) {
+      // Always add selectable face hit meshes for painted masses.
       loops.forEach((loop, loopIdx) => {
         if (loop.length < 3) return;
-        const shape = getFootprintShape(loop);
-        const extrudeGeo = new THREE.ExtrudeGeometry(shape, {
-          depth: s.extrusion.height,
-          bevelEnabled: false,
-          steps: 1
+        const extrData = s.loopExtrusions?.[loopIdx];
+        if (!extrData) return;
+        const faceDefs = [
+          { faceKey: 'top', faceType: 'top', faceLabel: 'Top', edgeIdx: null },
+          { faceKey: 'bottom', faceType: 'bottom', faceLabel: 'Bottom', edgeIdx: null }
+        ];
+        loop.forEach((_, edgeIdx) => {
+          faceDefs.push({
+            faceKey: `side-${edgeIdx}`,
+            faceType: 'side',
+            faceLabel: faceKeyToLabel(`side-${edgeIdx}`),
+            edgeIdx
+          });
         });
-        extrudeGeo.rotateX(-Math.PI / 2);
-        const zoneKey = s.loopPaints ? s.loopPaints[loopIdx] : null;
-        const color = (zoneKey && ZONE_COLORS[zoneKey]) ? ZONE_COLORS[zoneKey] : DEFAULT_MESH_COLOR;
-        const material = new THREE.MeshStandardMaterial({
-          color,
-          roughness: 0.82,
-          metalness: 0.0,
-          transparent: true,
-          opacity: 0.92
+        faceDefs.forEach(face => {
+          const hit = buildSelectableFaceMesh({ ...face, loopIdx });
+          if (hit) app.paintFaceGroup.add(hit);
         });
-        const mesh = new THREE.Mesh(extrudeGeo, material);
-        mesh.userData.loopIdx = loopIdx;
-        app.extrudedGroup.add(mesh);
+      });
+
+      if (selectedFace) {
+        const highlight = buildFaceHighlightMesh(selectedFace, { color: 0xff2d2d, opacity: 0.28 });
+        if (highlight) {
+          highlight.userData.isSelectionFace = true;
+          app.paintFaceGroup.add(highlight);
+        }
+      }
+      if (paintHoverFace && (!selectedFace || !samePaintFace(paintHoverFace, selectedFace))) {
+        const hover = buildFaceHighlightMesh(paintHoverFace, { color: 0x57b5ff, opacity: 0.16 });
+        if (hover) {
+          hover.userData.isHoverFace = true;
+          app.paintFaceGroup.add(hover);
+        }
+      }
+      Object.entries(s.faceGrids || {}).forEach(([loopIdxStr, faces]) => {
+        const loopIdx = parseInt(loopIdxStr, 10);
+        const loop = loops[loopIdx];
+        const extrData = s.loopExtrusions?.[loopIdx];
+        if (!loop || !extrData) return;
+        Object.entries(faces || {}).forEach(([faceKey, grid]) => {
+          const faceType = faceKey === 'top' || faceKey === 'bottom' ? faceKey : 'side';
+          const face = {
+            loopIdx,
+            faceKey,
+            faceType,
+            faceLabel: faceKeyToLabel(faceKey),
+            edgeIdx: faceType === 'side' ? parseInt(faceKey.split('-')[1], 10) : null
+          };
+          for (let row = 0; row < (grid?.rows || 0); row++) {
+            for (let col = 0; col < (grid?.cols || 0); col++) {
+              const zoneKey = s.facePaints?.[faceGridStateKey(loopIdx, faceKey, row, col)] || null;
+              const piece = buildFacePatchMesh(face, row, col, grid.rows, grid.cols, zoneKey, { alpha: 0.94 });
+              if (!piece) continue;
+              app.paintFaceGroup.add(piece);
+            }
+          }
+        });
+      });
+      Object.entries(s.facePaints || {}).forEach(([key, zoneKey]) => {
+        if (key.match(/:\d+:\d+$/)) return;
+        const match = key.match(/^(\d+):([^:]+)$/);
+        if (!match) return;
+        const loopIdx = parseInt(match[1], 10);
+        const faceKey = match[2];
+        if (s.faceGrids?.[loopIdx]?.[faceKey]) return;
+        const loop = loops[loopIdx];
+        const extrData = s.loopExtrusions?.[loopIdx];
+        if (!loop || !extrData) return;
+        const faceType = faceKey === 'top' || faceKey === 'bottom' ? faceKey : 'side';
+        const face = {
+          loopIdx,
+          faceKey,
+          faceType,
+          faceLabel: faceKeyToLabel(faceKey),
+          edgeIdx: faceType === 'side' ? parseInt(faceKey.split('-')[1], 10) : null
+        };
+        const overlay = buildFacePatchMesh(face, 0, 0, 1, 1, zoneKey, { alpha: 0.72 });
+        if (overlay) app.paintFaceGroup.add(overlay);
       });
     }
 
+    updateGizmo();
     updateContinueButton(metrics);
     syncDom();
   }
 
-  function updateContinueButton(metrics = getMetrics()) {
+  function updateContinueButton() {
+    const s = state();
+    const hasExtrusion = !!s.extrusion || (s.loopExtrusions && Object.keys(s.loopExtrusions).length > 0);
     const btn = document.getElementById('s2-next');
-    if (btn) btn.disabled = !metrics.extrusion;
+    if (btn) btn.disabled = !hasExtrusion;
   }
 
   function resize() {
@@ -631,10 +1403,7 @@
     const sprite = new THREE.Sprite(material);
     sprite.scale.set(6, 3, 1);
     group.add(sprite);
-    group.userData.dispose = () => {
-      texture.dispose();
-      material.dispose();
-    };
+    group.userData.dispose = () => { texture.dispose(); material.dispose(); };
     return group;
   }
 
@@ -654,7 +1423,6 @@
 
   function buildLine1Html(s) {
     const tabs = [
-      { id: 'navigate', label: 'Navigate' },
       { id: '2d',       label: '2D' },
       { id: '3d',       label: '3D' },
       { id: 'paint',    label: 'Paint' }
@@ -664,15 +1432,18 @@
     ).join('');
   }
 
+  function buildViewButtonsHtml() {
+    const currentView = app.currentView || 'top';
+    return ['top','front','iso','left','right','back'].map(v =>
+      `<button class="fn-btn${currentView === v ? ' active' : ''}" data-action="view" data-view="${v}">${v.charAt(0).toUpperCase() + v.slice(1)}</button>`
+    ).join('');
+  }
+
   function buildLine2Html(s) {
-    if (s.mode === 'navigate') {
-      return ['top','front','iso','left','right','back'].map(v =>
-        `<button class="fn-btn" data-action="view" data-view="${v}">${v.charAt(0).toUpperCase() + v.slice(1)}</button>`
-      ).join('');
-    }
     if (s.mode === '2d') {
       return `
         <button class="fn-btn${s.activeFunction === 'draw' ? ' active' : ''}" data-action="set-function" data-fn="draw">Draw</button>
+        <button class="fn-btn${s.activeFunction === 'select' ? ' active' : ''}" data-action="set-function" data-fn="select">Select</button>
         <button class="fn-btn" disabled>Offset</button>
         <button class="fn-btn" disabled>Trim</button>
       `;
@@ -680,6 +1451,7 @@
     if (s.mode === '3d') {
       const noLoops = !s.loops.length;
       return `
+        <button class="fn-btn${s.activeFunction === 'select' ? ' active' : ''}" data-action="set-function" data-fn="select" ${noLoops ? 'disabled title="Draw and close a loop in 2D mode first"' : ''}>Select</button>
         <button class="fn-btn${s.activeFunction === 'extrude' ? ' active' : ''}" data-action="set-function" data-fn="extrude" ${noLoops ? 'disabled title="Draw and close a loop in 2D mode first"' : ''}>Extrude</button>
         <button class="fn-btn" disabled>Sweep</button>
         <button class="fn-btn" disabled>Extract</button>
@@ -687,9 +1459,11 @@
       `;
     }
     if (s.mode === 'paint') {
-      const noExtrusion = !s.extrusion;
+      const noExtrusion = !s.extrusion && !(s.loopExtrusions && Object.keys(s.loopExtrusions).length);
       return `
+        <button class="fn-btn${s.activeFunction === 'paint-select' ? ' active' : ''}" data-action="set-function" data-fn="paint-select" ${noExtrusion ? 'disabled title="Extrude a model in 3D mode first"' : ''}>Select</button>
         <button class="fn-btn${s.activeFunction === 'paint' ? ' active' : ''}" data-action="set-function" data-fn="paint" ${noExtrusion ? 'disabled title="Extrude a model in 3D mode first"' : ''}>Paint</button>
+        <button class="fn-btn${s.activeFunction === 'meshify' ? ' active' : ''}" data-action="meshify-face" ${noExtrusion ? 'disabled title="Extrude a model in 3D mode first"' : ''}>Meshify</button>
         <button class="fn-btn" disabled>Unpaint</button>
         <div style="flex:1"></div>
         <button class="fn-btn" data-action="clear-paints">Clear all</button>
@@ -699,8 +1473,31 @@
   }
 
   function buildLine3Html(s) {
+    const selected = getSelectedLoopIndices(s);
+    const selectedCount = selected.length;
+    const selectedLabel = selectedCount === 1 ? `Loop ${selected[0] + 1}` : selectedCount > 1 ? `${selectedCount} selected` : 'All loops';
     if (s.mode === 'navigate') {
-      return `<span class="ln3-hint">Orbit · Zoom · Pan — no geometry editing in this mode</span>`;
+      return `<span class="ln3-hint">Orbit - Zoom - Pan - no geometry editing in this mode</span>`;
+    }
+    if (s.mode === '2d' && s.activeFunction === 'select') {
+      const hasSelected = selectedCount > 0;
+      return `
+        <span class="ln3-hint">Click a footprint to select - Shift-click adds more - Drag the gizmo to move all selected</span>
+        ${hasSelected ? `
+          <div style="flex:1"></div>
+          <button class="fn-btn fn-danger" data-action="delete-loop">Delete Selected (${selectedCount})</button>
+        ` : ''}
+      `;
+    }
+    if (s.mode === '3d' && s.activeFunction === 'select') {
+      const hasSelected = selectedCount > 0;
+      return `
+        <span class="ln3-hint">Click an object to select - Shift-click adds more - Delete or extrude the selection</span>
+        ${hasSelected ? `
+          <div style="flex:1"></div>
+          <button class="fn-btn fn-danger" data-action="delete-loop">Delete Selected (${selectedCount})</button>
+        ` : ''}
+      `;
     }
     if (s.mode === '2d' && s.activeFunction === 'draw') {
       return `
@@ -718,12 +1515,13 @@
       const floors = s.extrudeInput.floors;
       const floorHt = s.extrudeInput.typicalFloorHeight;
       const total = (floors * floorHt).toFixed(1);
+      const targetLabel = selectedLabel;
       return `
-        <span class="ln3-label">Extrude:</span>
+        <span class="ln3-label">Extrude (${escapeHtml(targetLabel)}):</span>
         <span class="ln3-lbl">Floors</span>
-        <input class="ln3-input" type="number" min="1" max="120" step="1" value="${escapeHtml(String(floors))}" data-field="floors">
+        <input class="ln3-input" type="number" min="1" max="120" step="1" inputmode="numeric" value="${escapeHtml(String(floors))}" data-field="floors">
         <span class="ln3-lbl">Floor height (m)</span>
-        <input class="ln3-input" type="number" min="2.4" max="6" step="0.1" value="${escapeHtml(String(floorHt))}" data-field="typicalFloorHeight">
+        <input class="ln3-input" type="number" min="2.4" max="6" step="0.1" inputmode="decimal" value="${escapeHtml(String(floorHt))}" data-field="typicalFloorHeight">
         <div class="ln3-sep"></div>
         <button class="fn-btn fn-primary" data-action="confirm-extrude">Confirm</button>
         <button class="fn-btn" data-action="cancel-extrude">Cancel</button>
@@ -742,12 +1540,35 @@
         ).join('')}
       `;
     }
+    if (s.mode === 'paint' && s.activeFunction === 'paint-select') {
+      const face = s.selectedPaintFace;
+      const faceText = face ? `Loop ${face.loopIdx + 1} · ${face.faceLabel || face.faceKey}` : 'No face selected';
+      return `
+        <span class="ln3-hint">Click a face to select it · Meshify splits it into grid cells</span>
+        <span class="ln3-readout">${escapeHtml(faceText)}</span>
+      `;
+    }
+    if (s.mode === 'paint' && s.activeFunction === 'meshify') {
+      const pending = s.meshifyPending;
+      const gridText = pending ? `Meshify pending: ${pending.rows} rows × ${pending.cols} cols` : 'Meshify pending';
+      return `
+        <span class="ln3-hint">Click a face to subdivide it with the stored grid size</span>
+        <span class="ln3-readout">${escapeHtml(gridText)}</span>
+        <button class="fn-btn" data-action="cancel-meshify">Cancel</button>
+      `;
+    }
     return '';
   }
 
   function buildHintText(s) {
-    if (s.mode === '2d' && s.activeFunction === 'draw') return 'Click the viewport to place points · Close to finish the loop';
-    if (s.mode === 'paint' && s.activeFunction === 'paint') return 'Click a mesh to assign the selected zone';
+    const selectedCount = getSelectedLoopIndices(s).length;
+    if (s.mode === '2d' && s.activeFunction === 'draw') return 'Click the viewport to place points - Close to finish the loop';
+    if (s.mode === '2d' && s.activeFunction === 'select') return selectedCount ? 'Drag the gizmo to move all selected - Delete removes the selection' : 'Click a footprint to select it - Shift-click adds more';
+    if (s.mode === '3d' && s.activeFunction === 'select') return selectedCount ? 'Delete removes the selection - Shift-click adds more objects' : 'Click an object to select it - Shift-click adds more';
+    if (s.mode === '3d' && s.activeFunction === 'extrude') return selectedCount ? 'Extruding the selected objects - Click Extrude to confirm' : 'Click objects to select them, or extrude all loops';
+    if (s.mode === 'paint' && s.activeFunction === 'paint-select') return 'Click a face to select it · Hover previews the clicked face';
+    if (s.mode === 'paint' && s.activeFunction === 'meshify') return 'Click a face to subdivide it';
+    if (s.mode === 'paint' && s.activeFunction === 'paint') return s.selectedPaintFace ? 'Click a selected face or grid cell to assign the zone' : 'Select a face first, then click Paint to assign a zone';
     return '';
   }
 
@@ -761,7 +1582,7 @@
             <div class="zone-modeling-title">Massing from scratch</div>
             <div class="zone-modeling-sub">Draw footprints in 2D, extrude in 3D, assign facade zones in Paint.</div>
           </div>
-          <span class="badge badge-${s.extrusion ? 'green' : 'blue'}" data-role="status-badge">${s.extrusion ? 'Extruded' : 'Draft'}</span>
+          <span class="badge badge-${metrics.extrusion ? 'green' : 'blue'}" data-role="status-badge">${metrics.extrusion ? 'Extruded' : 'Draft'}</span>
         </div>
 
         <div class="plan-layout">
@@ -772,54 +1593,9 @@
               <div class="mode-line-3" data-role="mode-line-3">${buildLine3Html(s)}</div>
             </div>
             <div class="three-shell">
+              <div class="viewcube">${buildViewButtonsHtml()}</div>
               <div class="three-hint" data-role="three-hint">${buildHintText(s)}</div>
               <div class="three-viewport" id="massing-viewport"></div>
-            </div>
-          </div>
-
-          <div class="plan-sidebar">
-            <div class="card zone-modeling-panel">
-              <div class="zone-modeling-panel-head">
-                <div>
-                  <div class="zone-modeling-panel-title">Massing summary</div>
-                  <div class="zone-modeling-panel-sub">Footprints from one or more loops. Extrusion from floors and typical floor height.</div>
-                </div>
-                <span class="badge badge-${s.extrusion ? 'green' : 'gray'}" data-role="status-badge-sidebar">${s.extrusion ? 'Extruded' : 'Draft'}</span>
-              </div>
-              <div class="zone-kpi-grid mb-16">
-                <div class="zone-kpi"><div class="v" data-role="kpi-footprint">${formatArea(metrics.footprintArea)}</div><div class="l">Footprint area</div></div>
-                <div class="zone-kpi"><div class="v" data-role="kpi-perimeter">${metrics.perimeter.toFixed(1)} m</div><div class="l">Perimeter</div></div>
-                <div class="zone-kpi"><div class="v" data-role="kpi-height">${metrics.height ? `${metrics.height.toFixed(1)} m` : '—'}</div><div class="l">Extruded height</div></div>
-                <div class="zone-kpi"><div class="v" data-role="kpi-cost">${formatCurrency(metrics.totalCost)}</div><div class="l">Facade cost</div></div>
-              </div>
-              <div class="zone-breakdown">
-                <div class="zone-breakdown-row"><div class="k">Loops</div><div class="v" data-role="loop-status">${metrics.loopCount} closed${s.points.length ? ` · drafting ${s.points.length}` : ''}</div></div>
-                <div class="zone-breakdown-row"><div class="k">Mode</div><div class="v" data-role="mode-text">${s.mode}</div></div>
-                <div class="zone-breakdown-row"><div class="k">Floors</div><div class="v" data-role="floors-text">${metrics.floors || '—'}</div></div>
-                <div class="zone-breakdown-row"><div class="k">Typical floor height</div><div class="v" data-role="floor-height-text">${metrics.typicalFloorHeight ? `${metrics.typicalFloorHeight.toFixed(2)} m` : '—'}</div></div>
-              </div>
-            </div>
-
-            <div class="card zone-modeling-panel">
-              <div class="zone-modeling-panel-title">Workflow</div>
-              <div class="plan-list mt-8">
-                <div class="plan-item${s.points.length ? ' active' : ''}">
-                  <div class="plan-item-title">1. Draw the loop (2D mode)</div>
-                  <div class="plan-item-sub">Switch to 2D, select Draw, click the viewport to place points.</div>
-                </div>
-                <div class="plan-item${s.loops.length ? ' active' : ''}">
-                  <div class="plan-item-title">2. Close the loop</div>
-                  <div class="plan-item-sub">Click Close loop to finish each footprint polygon.</div>
-                </div>
-                <div class="plan-item${s.extrusion ? ' active' : ''}">
-                  <div class="plan-item-title">3. Extrude (3D mode)</div>
-                  <div class="plan-item-sub">Switch to 3D, click Extrude, enter floors and floor height.</div>
-                </div>
-                <div class="plan-item${Object.keys(s.loopPaints || {}).length ? ' active' : ''}">
-                  <div class="plan-item-title">4. Paint zones (Paint mode)</div>
-                  <div class="plan-item-sub">Switch to Paint, select a zone, click the mesh to assign it.</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -867,8 +1643,8 @@
 
     [statusBadge, statusBadgeSidebar].forEach(el => {
       if (!el) return;
-      el.textContent = s.extrusion ? 'Extruded' : 'Draft';
-      el.className = `badge badge-${s.extrusion ? 'green' : 'gray'}`;
+      el.textContent = metrics.extrusion ? 'Extruded' : 'Draft';
+      el.className = `badge badge-${metrics.extrusion ? 'green' : 'gray'}`;
     });
     if (footprint)       footprint.textContent = formatArea(metrics.footprintArea);
     if (perimeter)       perimeter.textContent = `${metrics.perimeter.toFixed(1)} m`;
@@ -880,7 +1656,7 @@
     if (floorHeightText) floorHeightText.textContent = metrics.typicalFloorHeight ? `${metrics.typicalFloorHeight.toFixed(2)} m` : '—';
 
     updateMode();
-    updateContinueButton(metrics);
+    updateContinueButton();
   }
 
   function bindUI() {
@@ -905,6 +1681,9 @@
       if (action === 'cancel-extrude') { cancelExtrude(); return; }
       if (action === 'set-paint-zone') { setPaintZone(actionEl.dataset.zone); return; }
       if (action === 'clear-paints')   { clearPaints(); return; }
+      if (action === 'meshify-face')    { meshifyFace(); return; }
+      if (action === 'cancel-meshify')  { cancelMeshify(); return; }
+      if (action === 'delete-loop')    { deleteSelectedLoop(); return; }
     });
 
     root.addEventListener('input', event => {
@@ -918,6 +1697,31 @@
       if (!input) return;
       updateDialogField(input.dataset.field, input.value);
     });
+
+    root.addEventListener('keydown', event => {
+      const input = event.target.closest('input[data-field]');
+      if (!input) return;
+      const allowed = [
+        'Backspace', 'Delete', 'Tab', 'Enter', 'Escape',
+        'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+        'Home', 'End'
+      ];
+      if (event.ctrlKey || event.metaKey || allowed.includes(event.key)) return;
+      if (input.dataset.field === 'floors') {
+        if (/^[0-9]$/.test(event.key)) return;
+      } else if (input.dataset.field === 'typicalFloorHeight') {
+        if (/^[0-9.]$/.test(event.key)) return;
+      }
+      event.preventDefault();
+    });
+
+    // Delete key removes selected loop
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Delete' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+        const s = state();
+        if (getSelectedLoopIndices(s).length) { e.preventDefault(); deleteSelectedLoops(); }
+      }
+    });
   }
 
   function bindViewportEvents() {
@@ -925,15 +1729,141 @@
     const canvas = app.renderer.domElement;
 
     canvas.addEventListener('mousedown', event => {
+      if (event.button !== 0) { mouseDown = null; return; }
+
+      const s = state();
+
+      if (s.mode === 'paint' && s.activeFunction === 'paint-select') {
+        const face = pickPaintFace(event, canvas);
+        if (face) {
+          setSelectedPaintFace(face);
+          render();
+          updateScene();
+          mouseDown = null;
+          return;
+        }
+      }
+
+      // Gizmo drag takes priority
+      const selected = getSelectedLoopIndices(s);
+      if (selected.length && app.gizmoGroup?.visible) {
+        const axis = pickGizmoAxis(event, canvas);
+        if (axis) {
+          const centers = selected.map(idx => {
+            const loop = s.loops[idx];
+            if (!loop || loop.length < 3) return null;
+            const c = centroid(loop);
+            const offset = s.loopOffsets?.[idx] || { x: 0, y: 0, z: 0 };
+            return { idx, origin: new THREE.Vector3(c.x + offset.x, c.y + offset.y, offset.z) };
+          }).filter(Boolean);
+          if (!centers.length) return;
+          gizmoDrag = {
+            axis,
+            loopIdx: selected[0],
+            selectedIndices: selected.slice(),
+            prevMouse: { x: event.clientX, y: event.clientY },
+            origin: centers.reduce((acc, item) => acc.add(item.origin), new THREE.Vector3()).multiplyScalar(1 / centers.length)
+          };
+          if (app.controls) app.controls.enabled = false;
+          mouseDown = null;
+          return;
+        }
+      }
+
       mouseDown = { x: event.clientX, y: event.clientY, button: event.button };
     });
 
-    window.addEventListener('mouseup', event => {
+    window.addEventListener('mousemove', event => {
       const s = state();
-      if (mouseDown.button !== 0) return;
+      if (!gizmoDrag) {
+        if (s.mode === 'paint' && s.activeFunction && s.activeFunction.startsWith('paint')) {
+          const face = pickPaintFace(event, canvas);
+          setPaintHoverFace(face);
+          if (app.renderer) {
+            app.renderer.domElement.style.cursor = face ? 'pointer' : 'crosshair';
+          }
+        } else if (paintHoverFace) {
+          setPaintHoverFace(null);
+        }
+      }
+      if (!gizmoDrag) return;
+      const selectedIndices = Array.isArray(gizmoDrag.selectedIndices) ? gizmoDrag.selectedIndices : [gizmoDrag.loopIdx];
+      const delta = computeGizmoDelta(event, gizmoDrag.axis, gizmoDrag.origin, canvas);
+      if (!s.loopOffsets) s.loopOffsets = {};
+      selectedIndices.forEach(idx => {
+        const curr = s.loopOffsets?.[idx] || { x: 0, y: 0, z: 0 };
+        const newOffset = { ...curr };
+        if (gizmoDrag.axis === 'x') newOffset.x = (curr.x || 0) + delta;
+        if (gizmoDrag.axis === 'y') newOffset.y = (curr.y || 0) + delta;
+        if (gizmoDrag.axis === 'z') newOffset.z = (curr.z || 0) + delta;
+        s.loopOffsets[idx] = newOffset;
+      });
+
+      // Update stored origin so next frame computes delta from the new selection center
+      const centers = selectedIndices.map(idx => {
+        const loop = s.loops[idx];
+        if (!loop || loop.length < 3) return null;
+        const c = centroid(loop);
+        const off = s.loopOffsets?.[idx] || { x: 0, y: 0, z: 0 };
+        return new THREE.Vector3(c.x + off.x, c.y + off.y, off.z);
+      }).filter(Boolean);
+      if (centers.length) gizmoDrag.origin = centers.reduce((acc, item) => acc.add(item), new THREE.Vector3()).multiplyScalar(1 / centers.length);
+      gizmoDrag.prevMouse = { x: event.clientX, y: event.clientY };
+
+      updateScene();
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      if (paintHoverFace) setPaintHoverFace(null);
+    });
+
+    window.addEventListener('mouseup', event => {
+      if (gizmoDrag) {
+        gizmoDrag = null;
+        updateMode(); // re-enable orbit controls per current mode
+        return;
+      }
+
+      if (!mouseDown || mouseDown.button !== 0) return;
       const moved = Math.hypot(event.clientX - mouseDown.x, event.clientY - mouseDown.y);
+      mouseDown = null;
       if (moved > 6) return;
 
+      const s = state();
+
+      if (s.mode === 'paint' && s.activeFunction === 'meshify') {
+        const face = pickPaintFace(event, canvas);
+        if (face) {
+          setSelectedPaintFace(face);
+          const success = meshifySelectedFace(face, s.meshifyPending || null);
+          if (success) {
+            s.meshifyPending = null;
+            s.activeFunction = 'paint-select';
+            render();
+            updateScene();
+            updateMode();
+          }
+        }
+        return;
+      }
+
+      // Select footprints in either 2D select mode or 3D select/extrude mode.
+      const canSelectFootprint =
+        s.mode === 'navigate' ||
+        (s.mode === '2d' && s.activeFunction === 'select') ||
+        (s.mode === '3d' && (s.activeFunction === 'select' || s.activeFunction === 'extrude'));
+      if (canSelectFootprint) {
+        const loopIdx = pickSelectableLoop(event, canvas, s);
+        if (loopIdx !== null) {
+          toggleLoopSelection(loopIdx, event.shiftKey);
+        } else {
+          const st = state();
+          if (!event.shiftKey && getSelectedLoopIndices(st).length) { clearSelection(); }
+        }
+        return;
+      }
+
+      // 2D draw: place points
       if (s.mode === '2d' && s.activeFunction === 'draw') {
         const point = pickPlanPoint(event, canvas);
         if (!point) return;
@@ -944,7 +1874,7 @@
         }
         if (s.points.length >= 3) {
           const first = s.points[0];
-          if (Math.hypot(point.x - first.x, point.z - first.z) <= 2.25) {
+          if (Math.hypot(point.x - first.x, point.y - first.y) <= 2.25) {
             closeLoop();
             return;
           }
@@ -953,21 +1883,26 @@
         return;
       }
 
-      if (s.mode === 'paint' && s.activeFunction === 'paint' && s.paintZone) {
-        if (!app.raycaster || !app.camera || !app.extrudedGroup) return;
-        const rect = canvas.getBoundingClientRect();
-        if (!rect.width || !rect.height) return;
-        if (event.clientX < rect.left || event.clientX > rect.right ||
-            event.clientY < rect.top  || event.clientY > rect.bottom) return;
-        const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        const ny = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-        app.raycaster.setFromCamera({ x: nx, y: ny }, app.camera);
-        const hits = app.raycaster.intersectObjects(app.extrudedGroup.children, false);
-        if (!hits.length) return;
-        const loopIdx = hits[0].object.userData.loopIdx;
-        if (typeof loopIdx !== 'number') return;
-        s.loopPaints[loopIdx] = s.paintZone;
-        updateScene();
+      // Paint: face selection and zone assignment
+      if (s.mode === 'paint' && s.activeFunction && s.activeFunction.startsWith('paint')) {
+        const face = pickPaintFace(event, canvas);
+        if (!face) return;
+        setSelectedPaintFace(face);
+        if (s.activeFunction === 'paint-select') {
+          render();
+          updateScene();
+          return;
+        }
+        if (s.activeFunction === 'paint' && s.paintZone) {
+          if (s.faceGrids?.[face.loopIdx]?.[face.faceKey]) {
+            const row = Number.isInteger(face.row) ? face.row : 0;
+            const col = Number.isInteger(face.col) ? face.col : 0;
+            s.facePaints[faceGridStateKey(face.loopIdx, face.faceKey, row, col)] = s.paintZone;
+          } else {
+            s.facePaints[faceStateKey(face.loopIdx, face.faceKey)] = s.paintZone;
+          }
+          updateScene();
+        }
       }
     });
   }
@@ -976,59 +1911,32 @@
     if (!surface || !app.renderer || !app.camera || !app.raycaster || !app.ground) return null;
     const rect = surface.getBoundingClientRect();
     if (!rect.width || !rect.height) return null;
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) {
-      return null;
-    }
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return null;
     const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     const ny = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
     app.raycaster.setFromCamera({ x: nx, y: ny }, app.camera);
     const hits = app.raycaster.intersectObject(app.ground, false);
     if (!hits.length) return null;
     const p = hits[0].point;
-    return {
-      x: clamp(p.x, -WORLD_HALF, WORLD_HALF),
-      z: clamp(p.z, -WORLD_HALF, WORLD_HALF)
-    };
+    return { x: clamp(p.x, -WORLD_HALF, WORLD_HALF), y: clamp(p.y, -WORLD_HALF, WORLD_HALF) };
   }
 
   function setView(view) {
     if (!app.camera || !app.controls) return;
     const dist = 220;
     const center = new THREE.Vector3(0, 0, 0);
+    app.currentView = view;
     app.controls.target.copy(center);
     switch (view) {
-      case 'top':
-        app.camera.position.set(0, dist, 0.01);
-        app.camera.up.set(0, 0, -1);
-        break;
-      case 'front':
-        app.camera.position.set(0, 70, dist);
-        app.camera.up.set(0, 1, 0);
-        break;
-      case 'back':
-        app.camera.position.set(0, 70, -dist);
-        app.camera.up.set(0, 1, 0);
-        break;
-      case 'left':
-        app.camera.position.set(-dist, 70, 0);
-        app.camera.up.set(0, 1, 0);
-        break;
-      case 'right':
-        app.camera.position.set(dist, 70, 0);
-        app.camera.up.set(0, 1, 0);
-        break;
+      case 'top':   app.camera.position.set(0, 0, dist);   app.camera.up.set(0, 1, 0); break;
+      case 'front': app.camera.position.set(0, dist, 0);   app.camera.up.set(0, 0, 1); break;
+      case 'back':  app.camera.position.set(0, -dist, 0);  app.camera.up.set(0, 0, 1); break;
+      case 'left':  app.camera.position.set(-dist, 0, 0);   app.camera.up.set(0, 0, 1); break;
+      case 'right': app.camera.position.set(dist, 0, 0);    app.camera.up.set(0, 0, 1); break;
       case 'iso':
-      default:
-        app.camera.position.set(dist * 0.9, dist * 0.7, dist * 0.9);
-        app.camera.up.set(0, 1, 0);
-        break;
+      default:      app.camera.position.set(dist * 0.9, dist * 0.7, dist * 0.9); app.camera.up.set(0, 0, 1); break;
     }
     app.controls.update();
-  }
-
-  function updateContinueButton(metrics = getMetrics()) {
-    const btn = document.getElementById('s2-next');
-    if (btn) btn.disabled = !metrics.extrusion;
   }
 
   function initScene() {
@@ -1036,7 +1944,6 @@
     const viewport = document.getElementById('massing-viewport');
     if (!viewport || !THREE) return;
     if (app.animateHandle) cancelAnimationFrame(app.animateHandle);
-
     createScene();
     initialized = true;
     setView('top');
@@ -1056,11 +1963,21 @@
       shell.classList.toggle('is-3d',       s.mode === '3d');
       shell.classList.toggle('is-paint',    s.mode === 'paint');
     }
-    if (app.controls) {
-      app.controls.enabled = s.mode === 'navigate' || s.mode === '3d' || s.mode === 'paint';
+    if (app.controls && !gizmoDrag) {
+      app.controls.enabled =
+        s.mode === 'navigate' ||
+        (s.mode === '3d' && s.activeFunction !== 'select') ||
+        (s.mode === 'paint' && s.activeFunction === 'paint');
     }
     if (app.renderer) {
-      const cursor = (s.mode === '2d' || s.mode === 'paint') ? 'crosshair'
+      const isSelect =
+        (s.mode === '2d' && s.activeFunction === 'select') ||
+        (s.mode === '3d' && s.activeFunction === 'select');
+      const cursor = s.mode === '2d' && s.activeFunction === 'draw' ? 'crosshair'
+                   : isSelect ? 'pointer'
+                   : s.mode === '3d' && s.activeFunction === 'extrude' ? 'pointer'
+                   : s.mode === 'paint' && (s.activeFunction === 'paint-select' || s.activeFunction === 'meshify') ? 'pointer'
+                   : s.mode === 'paint' ? 'crosshair'
                    : s.mode === 'navigate' ? 'grab'
                    : 'default';
       app.renderer.domElement.style.cursor = cursor;

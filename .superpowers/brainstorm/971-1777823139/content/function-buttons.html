@@ -1,0 +1,129 @@
+<h2>Function buttons with expanding sub-toolbar</h2>
+<p class="subtitle">Each mode exposes named function buttons. Clicking one opens its tool panel below the tab bar.</p>
+
+<div style="display:flex;flex-direction:column;gap:28px;max-width:900px;font-family:system-ui,sans-serif;font-size:12px">
+
+  <!-- NAVIGATE: no sub-panel needed, view presets are the functions -->
+  <div>
+    <div class="label" style="margin-bottom:6px">Navigate — view preset functions (no sub-panel needed)</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden">
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2;align-items:stretch">
+        <div style="padding:9px 20px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;color:#1a1814">Navigate</div>
+        <div style="padding:9px 20px;color:#bbb">2D</div>
+        <div style="padding:9px 20px;color:#bbb">3D</div>
+        <div style="padding:9px 20px;color:#bbb">Paint</div>
+        <div style="flex:1"></div>
+        <!-- View preset buttons = the functions for Navigate -->
+        <div style="padding:7px 14px;display:flex;gap:5px;align-items:center">
+          <span style="background:#f0ebe2;border-radius:4px;padding:4px 10px;color:#444;cursor:pointer">Top</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:4px 10px;color:#444;cursor:pointer">Front</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:4px 10px;color:#444;cursor:pointer">Iso</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:4px 10px;color:#444;cursor:pointer">Left</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:4px 10px;color:#444;cursor:pointer">Right</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:4px 10px;color:#444;cursor:pointer">Back</span>
+        </div>
+      </div>
+      <div style="padding:6px 14px;background:#fffdf8;color:#999;font-size:11px">Orbit · Zoom · Pan — no geometry editing in this mode</div>
+      <div style="height:70px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">3D viewport</div>
+    </div>
+  </div>
+
+  <!-- 2D: Draw is the function, click it to expand draw options -->
+  <div>
+    <div class="label" style="margin-bottom:6px">2D — "Draw" function button → expands draw sub-toolbar</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden">
+      <!-- Tab bar with function buttons -->
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2;align-items:stretch">
+        <div style="padding:9px 20px;color:#bbb">Navigate</div>
+        <div style="padding:9px 20px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;color:#1a1814">2D</div>
+        <div style="padding:9px 20px;color:#bbb">3D</div>
+        <div style="padding:9px 20px;color:#bbb">Paint</div>
+        <div style="flex:1"></div>
+        <!-- Function buttons for 2D -->
+        <div style="padding:7px 14px;display:flex;gap:6px;align-items:center">
+          <span style="background:#1a1814;border-radius:4px;padding:4px 14px;color:#fff;font-weight:600;cursor:pointer">Draw ▾</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:4px 14px;color:#444;cursor:pointer">Reset</span>
+        </div>
+      </div>
+      <!-- Expanded sub-toolbar for Draw -->
+      <div style="padding:8px 14px;background:#fff;border-bottom:1px solid #e8e2d8;display:flex;gap:8px;align-items:center">
+        <span style="color:#666;font-size:11px;font-weight:600">Tool:</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#444;cursor:pointer">Polyline</span>
+        <span style="background:#1a1814;border-radius:4px;padding:3px 10px;color:#fff;cursor:pointer">Rectangle</span>
+        <div style="width:1px;height:16px;background:#e0d9ce;margin:0 4px"></div>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#444;cursor:pointer">Undo point</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#444;cursor:pointer">Close loop</span>
+      </div>
+      <div style="padding:5px 14px;background:#fffdf8;color:#999;font-size:11px">Click the viewport to place points · Close loop when done</div>
+      <div style="height:70px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">Top-down plan view</div>
+    </div>
+  </div>
+
+  <!-- 3D: Extrude is the function, click it to expand extrude inputs -->
+  <div>
+    <div class="label" style="margin-bottom:6px">3D — "Extrude" function button → expands extrude sub-toolbar</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden">
+      <!-- Tab bar with function buttons -->
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2;align-items:stretch">
+        <div style="padding:9px 20px;color:#bbb">Navigate</div>
+        <div style="padding:9px 20px;color:#bbb">2D</div>
+        <div style="padding:9px 20px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;color:#1a1814">3D</div>
+        <div style="padding:9px 20px;color:#bbb">Paint</div>
+        <div style="flex:1"></div>
+        <!-- Function buttons for 3D -->
+        <div style="padding:7px 14px;display:flex;gap:6px;align-items:center">
+          <span style="background:#1a1814;border-radius:4px;padding:4px 14px;color:#fff;font-weight:600;cursor:pointer">Extrude ▾</span>
+        </div>
+      </div>
+      <!-- Expanded sub-toolbar for Extrude -->
+      <div style="padding:8px 14px;background:#fff;border-bottom:1px solid #e8e2d8;display:flex;gap:12px;align-items:center">
+        <span style="color:#666;font-size:11px;font-weight:600">Extrude:</span>
+        <label style="color:#666;font-size:11px">Floors</label>
+        <input type="number" value="40" style="width:58px;padding:4px 7px;border:1px solid #ddd;border-radius:4px;font-size:12px">
+        <label style="color:#666;font-size:11px">Floor height (m)</label>
+        <input type="number" value="3.3" style="width:58px;padding:4px 7px;border:1px solid #ddd;border-radius:4px;font-size:12px">
+        <div style="width:1px;height:16px;background:#e0d9ce;margin:0 4px"></div>
+        <span style="background:#1a1814;border-radius:4px;padding:4px 16px;color:#fff;font-weight:600;cursor:pointer">Confirm</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 10px;color:#555;cursor:pointer">Cancel</span>
+        <div style="flex:1"></div>
+        <span style="color:#aaa;font-size:11px">Total height: 132 m</span>
+      </div>
+      <div style="padding:5px 14px;background:#fffdf8;color:#999;font-size:11px">Enter floors and floor height · Needs a closed loop from 2D mode</div>
+      <div style="height:70px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">Isometric / perspective view</div>
+    </div>
+  </div>
+
+  <!-- PAINT: Paint is the function, click it to pick zone then click faces -->
+  <div>
+    <div class="label" style="margin-bottom:6px">Paint — "Paint" function button → expands zone picker sub-toolbar</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden">
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2;align-items:stretch">
+        <div style="padding:9px 20px;color:#bbb">Navigate</div>
+        <div style="padding:9px 20px;color:#bbb">2D</div>
+        <div style="padding:9px 20px;color:#bbb">3D</div>
+        <div style="padding:9px 20px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;color:#1a1814">Paint</div>
+        <div style="flex:1"></div>
+        <!-- Function buttons for Paint -->
+        <div style="padding:7px 14px;display:flex;gap:6px;align-items:center">
+          <span style="background:#1a1814;border-radius:4px;padding:4px 14px;color:#fff;font-weight:600;cursor:pointer">Paint ▾</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:4px 14px;color:#444;cursor:pointer">Clear all</span>
+        </div>
+      </div>
+      <!-- Expanded sub-toolbar for Paint -->
+      <div style="padding:8px 14px;background:#fff;border-bottom:1px solid #e8e2d8;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="color:#666;font-size:11px;font-weight:600">Zone:</span>
+        <span style="background:#28536b;border-radius:4px;padding:3px 10px;color:#fff;font-weight:600;cursor:pointer">Tower</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Podium</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Lobby</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Retail</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Roof Crown</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Penthouse</span>
+      </div>
+      <div style="padding:5px 14px;background:#fffdf8;color:#999;font-size:11px">Select a zone above · Click a face on the model to assign · Needs an extruded model</div>
+      <div style="height:70px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">Extruded model — click faces to assign zones</div>
+    </div>
+  </div>
+
+</div>
+
+<p style="color:#888;font-size:12px;margin-top:16px">The ▾ marks indicate the button is active/expanded. Does this pattern feel right? Any functions missing or named differently?</p>

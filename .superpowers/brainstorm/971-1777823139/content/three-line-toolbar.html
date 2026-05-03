@@ -1,0 +1,136 @@
+<h2>3-line toolbar structure</h2>
+<p class="subtitle">Line 1 = mode tabs · Line 2 = function buttons · Line 3 = active function prompts</p>
+
+<div style="display:flex;flex-direction:column;gap:28px;max-width:920px;font-family:system-ui,sans-serif;font-size:12px">
+
+  <!-- NAVIGATE -->
+  <div>
+    <div class="label" style="margin-bottom:6px">Navigate mode</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden">
+      <!-- Line 1: Mode tabs -->
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2">
+        <div style="padding:9px 22px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;color:#1a1814">Navigate</div>
+        <div style="padding:9px 22px;color:#bbb">2D</div>
+        <div style="padding:9px 22px;color:#bbb">3D</div>
+        <div style="padding:9px 22px;color:#bbb">Paint</div>
+      </div>
+      <!-- Line 2: Function buttons -->
+      <div style="display:flex;gap:6px;padding:7px 12px;border-bottom:1px solid #e8e2d8;background:#fefcf8;align-items:center">
+        <span style="background:#1a1814;border-radius:4px;padding:4px 12px;color:#fff;font-weight:600;cursor:pointer">Top</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#444;cursor:pointer">Front</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#444;cursor:pointer">Iso</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#444;cursor:pointer">Left</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#444;cursor:pointer">Right</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#444;cursor:pointer">Back</span>
+      </div>
+      <!-- Line 3: No prompt for Navigate — just a hint -->
+      <div style="padding:6px 14px;background:#fffdf8;color:#aaa;font-size:11px">Orbit · Zoom · Pan — no geometry editing in this mode</div>
+      <div style="height:80px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">3D viewport</div>
+    </div>
+  </div>
+
+  <!-- 2D -->
+  <div>
+    <div class="label" style="margin-bottom:6px">2D mode — "Draw" selected</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden">
+      <!-- Line 1 -->
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2">
+        <div style="padding:9px 22px;color:#bbb">Navigate</div>
+        <div style="padding:9px 22px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;color:#1a1814">2D</div>
+        <div style="padding:9px 22px;color:#bbb">3D</div>
+        <div style="padding:9px 22px;color:#bbb">Paint</div>
+      </div>
+      <!-- Line 2: Function buttons -->
+      <div style="display:flex;gap:6px;padding:7px 12px;border-bottom:1px solid #e8e2d8;background:#fefcf8;align-items:center">
+        <span style="background:#1a1814;border-radius:4px;padding:4px 12px;color:#fff;font-weight:600;cursor:pointer">Draw</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#aaa;cursor:pointer">Offset</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#aaa;cursor:pointer">Trim</span>
+        <span style="color:#bbb;font-size:10px;margin-left:4px">· · · more later</span>
+      </div>
+      <!-- Line 3: Draw prompts -->
+      <div style="display:flex;gap:8px;padding:6px 12px;background:#fff;border-bottom:1px solid #f0ebe2;align-items:center">
+        <span style="color:#555;font-weight:600;font-size:11px;margin-right:4px">Draw:</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#444;cursor:pointer">Polyline</span>
+        <span style="background:#1a1814;border-radius:4px;padding:3px 10px;color:#fff;cursor:pointer">Rectangle</span>
+        <div style="width:1px;height:16px;background:#e0d9ce;margin:0 4px"></div>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#444;cursor:pointer">Undo point</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#444;cursor:pointer">Close loop</span>
+        <div style="flex:1"></div>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#888;cursor:pointer">Reset</span>
+      </div>
+      <div style="height:80px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">Top-down plan view</div>
+    </div>
+  </div>
+
+  <!-- 3D — Extrude selected -->
+  <div>
+    <div class="label" style="margin-bottom:6px">3D mode — "Extrude" selected</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden">
+      <!-- Line 1 -->
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2">
+        <div style="padding:9px 22px;color:#bbb">Navigate</div>
+        <div style="padding:9px 22px;color:#bbb">2D</div>
+        <div style="padding:9px 22px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;color:#1a1814">3D</div>
+        <div style="padding:9px 22px;color:#bbb">Paint</div>
+      </div>
+      <!-- Line 2: Function buttons -->
+      <div style="display:flex;gap:6px;padding:7px 12px;border-bottom:1px solid #e8e2d8;background:#fefcf8;align-items:center">
+        <span style="background:#1a1814;border-radius:4px;padding:4px 12px;color:#fff;font-weight:600;cursor:pointer">Extrude</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#aaa;cursor:pointer">Sweep</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#aaa;cursor:pointer">Extract</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#aaa;cursor:pointer">Boolean</span>
+        <span style="color:#bbb;font-size:10px;margin-left:4px">· · · more later</span>
+      </div>
+      <!-- Line 3: Extrude prompts -->
+      <div style="display:flex;gap:10px;padding:6px 12px;background:#fff;border-bottom:1px solid #f0ebe2;align-items:center">
+        <span style="color:#555;font-weight:600;font-size:11px;margin-right:4px">Extrude:</span>
+        <label style="color:#666;font-size:11px">Floors</label>
+        <input type="number" value="40" style="width:58px;padding:3px 7px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fafafa">
+        <label style="color:#666;font-size:11px">Floor height (m)</label>
+        <input type="number" value="3.3" style="width:58px;padding:3px 7px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fafafa">
+        <div style="width:1px;height:16px;background:#e0d9ce;margin:0 4px"></div>
+        <span style="background:#1a1814;border-radius:4px;padding:3px 14px;color:#fff;font-weight:600;cursor:pointer">Confirm</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#666;cursor:pointer">Cancel</span>
+        <div style="flex:1"></div>
+        <span style="color:#aaa;font-size:11px">Total: 132 m</span>
+      </div>
+      <div style="height:80px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">Isometric / perspective view</div>
+    </div>
+  </div>
+
+  <!-- PAINT -->
+  <div>
+    <div class="label" style="margin-bottom:6px">Paint mode — "Paint" selected</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden">
+      <!-- Line 1 -->
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2">
+        <div style="padding:9px 22px;color:#bbb">Navigate</div>
+        <div style="padding:9px 22px;color:#bbb">2D</div>
+        <div style="padding:9px 22px;color:#bbb">3D</div>
+        <div style="padding:9px 22px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;color:#1a1814">Paint</div>
+      </div>
+      <!-- Line 2: Function buttons -->
+      <div style="display:flex;gap:6px;padding:7px 12px;border-bottom:1px solid #e8e2d8;background:#fefcf8;align-items:center">
+        <span style="background:#1a1814;border-radius:4px;padding:4px 12px;color:#fff;font-weight:600;cursor:pointer">Paint</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#aaa;cursor:pointer">Unpaint</span>
+        <span style="color:#bbb;font-size:10px;margin-left:4px">· · · more later</span>
+        <div style="flex:1"></div>
+        <span style="background:#f0ebe2;border-radius:4px;padding:4px 12px;color:#888;cursor:pointer">Clear all</span>
+      </div>
+      <!-- Line 3: Paint prompts — zone picker -->
+      <div style="display:flex;gap:8px;padding:6px 12px;background:#fff;border-bottom:1px solid #f0ebe2;align-items:center;flex-wrap:wrap">
+        <span style="color:#555;font-weight:600;font-size:11px;margin-right:4px">Zone:</span>
+        <span style="background:#28536b;border-radius:4px;padding:3px 10px;color:#fff;font-weight:600;cursor:pointer">Tower</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Podium</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Lobby</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Retail</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Roof Crown</span>
+        <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;cursor:pointer">Penthouse</span>
+      </div>
+      <div style="height:80px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">Extruded model — click faces to assign zones</div>
+    </div>
+  </div>
+
+</div>
+
+<p style="color:#888;font-size:12px;margin-top:16px">Does this 3-line structure feel right? Let me know in the terminal — any functions to rename, add, or reorder in line 2?</p>

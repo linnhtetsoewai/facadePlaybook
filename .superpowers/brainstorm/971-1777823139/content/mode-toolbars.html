@@ -1,0 +1,116 @@
+<h2>Per-mode toolbar — what controls appear in each tab?</h2>
+<p class="subtitle">Each tab shows only its own tools. Does this match what you expect?</p>
+
+<div style="display:flex;flex-direction:column;gap:20px;max-width:860px">
+
+  <!-- NAVIGATE MODE -->
+  <div>
+    <div class="label" style="margin-bottom:6px">Navigate mode</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden;font-family:system-ui,sans-serif;font-size:12px">
+      <!-- Tab bar -->
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2">
+        <div style="padding:9px 20px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;font-size:12px;color:#1a1814">Navigate</div>
+        <div style="padding:9px 20px;color:#999;font-size:12px">2D</div>
+        <div style="padding:9px 20px;color:#999;font-size:12px">3D</div>
+        <div style="padding:9px 20px;color:#999;font-size:12px">Paint</div>
+        <div style="flex:1"></div>
+        <div style="padding:9px 14px;display:flex;gap:6px;align-items:center">
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px;cursor:pointer">Top</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px;cursor:pointer">Front</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px;cursor:pointer">Iso</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px;cursor:pointer">Left</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px;cursor:pointer">Right</span>
+        </div>
+      </div>
+      <!-- Hint -->
+      <div style="padding:6px 14px;background:#fffdf8;color:#888;font-size:11px;border-bottom:1px solid #f0ebe2">
+        Orbit: drag · Zoom: scroll · Pan: middle-drag
+      </div>
+      <!-- Viewport stub -->
+      <div style="height:90px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#bbb;font-size:11px">3D viewport (light)</div>
+    </div>
+  </div>
+
+  <!-- 2D MODE -->
+  <div>
+    <div class="label" style="margin-bottom:6px">2D mode</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden;font-family:system-ui,sans-serif;font-size:12px">
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2">
+        <div style="padding:9px 20px;color:#999;font-size:12px">Navigate</div>
+        <div style="padding:9px 20px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;font-size:12px;color:#1a1814">2D</div>
+        <div style="padding:9px 20px;color:#999;font-size:12px">3D</div>
+        <div style="padding:9px 20px;color:#999;font-size:12px">Paint</div>
+        <div style="flex:1"></div>
+        <div style="padding:9px 14px;display:flex;gap:6px;align-items:center">
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px">Polyline</span>
+          <span style="background:#1a1814;border-radius:4px;padding:3px 9px;color:#fff;font-size:11px">Rectangle</span>
+          <div style="width:1px;height:16px;background:#ddd;margin:0 4px"></div>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px">Undo point</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px">Close loop</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px">Reset</span>
+        </div>
+      </div>
+      <div style="padding:6px 14px;background:#fffdf8;color:#888;font-size:11px;border-bottom:1px solid #f0ebe2">
+        Click to place points · Close the loop to finish the footprint
+      </div>
+      <div style="height:90px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#bbb;font-size:11px">Top-down plan view</div>
+    </div>
+  </div>
+
+  <!-- 3D MODE -->
+  <div>
+    <div class="label" style="margin-bottom:6px">3D mode</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden;font-family:system-ui,sans-serif;font-size:12px">
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2;align-items:center">
+        <div style="padding:9px 20px;color:#999;font-size:12px">Navigate</div>
+        <div style="padding:9px 20px;color:#999;font-size:12px">2D</div>
+        <div style="padding:9px 20px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;font-size:12px;color:#1a1814">3D</div>
+        <div style="padding:9px 20px;color:#999;font-size:12px">Paint</div>
+        <div style="flex:1"></div>
+        <div style="padding:7px 14px;display:flex;gap:8px;align-items:center">
+          <label style="color:#666;font-size:11px">Floors</label>
+          <input type="number" value="40" style="width:52px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;background:#fff">
+          <label style="color:#666;font-size:11px">Flr ht (m)</label>
+          <input type="number" value="3.3" style="width:52px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;background:#fff">
+          <div style="width:1px;height:16px;background:#ddd;margin:0 4px"></div>
+          <span style="background:#1a1814;border-radius:4px;padding:4px 14px;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Extrude</span>
+        </div>
+      </div>
+      <div style="padding:6px 14px;background:#fffdf8;color:#888;font-size:11px;border-bottom:1px solid #f0ebe2">
+        Set floors and floor height, then click Extrude · Needs a closed loop from 2D mode
+      </div>
+      <div style="height:90px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#bbb;font-size:11px">Isometric / perspective view</div>
+    </div>
+  </div>
+
+  <!-- PAINT MODE -->
+  <div>
+    <div class="label" style="margin-bottom:6px">Paint mode</div>
+    <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden;font-family:system-ui,sans-serif;font-size:12px">
+      <div style="display:flex;border-bottom:1px solid #e0d9ce;background:#faf7f2;align-items:center">
+        <div style="padding:9px 20px;color:#999;font-size:12px">Navigate</div>
+        <div style="padding:9px 20px;color:#999;font-size:12px">2D</div>
+        <div style="padding:9px 20px;color:#999;font-size:12px">3D</div>
+        <div style="padding:9px 20px;background:#fff;border-bottom:2px solid #1a1814;font-weight:700;font-size:12px;color:#1a1814">Paint</div>
+        <div style="flex:1"></div>
+        <div style="padding:7px 14px;display:flex;gap:6px;align-items:center">
+          <span style="font-size:11px;color:#666;margin-right:4px">Zone:</span>
+          <span style="background:#28536b;border-radius:4px;padding:3px 10px;color:#fff;font-size:11px;font-weight:600">Tower</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;font-size:11px">Podium</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;font-size:11px">Lobby</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;font-size:11px">Retail</span>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 10px;color:#555;font-size:11px">Roof Crown</span>
+          <div style="width:1px;height:16px;background:#ddd;margin:0 4px"></div>
+          <span style="background:#f0ebe2;border-radius:4px;padding:3px 9px;color:#555;font-size:11px">Clear</span>
+        </div>
+      </div>
+      <div style="padding:6px 14px;background:#fffdf8;color:#888;font-size:11px;border-bottom:1px solid #f0ebe2">
+        Select a zone, then click a mesh face to assign it · Needs an extruded model from 3D mode
+      </div>
+      <div style="height:90px;background:linear-gradient(180deg,#f9f6f0,#f0ebe2);display:flex;align-items:center;justify-content:center;color:#bbb;font-size:11px">Extruded model · click faces to paint zones</div>
+    </div>
+  </div>
+
+</div>
+
+<p style="color:#888;font-size:12px;margin-top:16px">Does this match your intent for each mode? Let me know in the terminal — any changes, missing tools, or things that feel off.</p>

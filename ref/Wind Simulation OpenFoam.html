@@ -1,0 +1,4216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WINDFLOW — 3D Wind Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --bg-soft: #fafafa;
+    --panel: rgba(255, 255, 255, 0.92);
+    --panel-strong: #ffffff;
+    --border: #d9dde3;
+    --border-strong: #c5ccd6;
+    --accent: #5f6b7a;
+    --accent2: #8b95a3;
+    --accent3: #6f7c8c;
+    --text: #2f343b;
+    --muted: #848d99;
+    --shadow: 0 12px 30px rgba(31, 41, 55, 0.06);
+    --font-mono: 'Roboto', Arial, sans-serif;
+    --font-display: 'Roboto', Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(255,255,255,0.88), transparent 28%),
+      linear-gradient(135deg, #f7f8fa 0%, #eef1f4 100%);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+    padding: 14px 22px;
+    border-bottom: 1px solid rgba(197, 204, 214, 0.85);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    flex-shrink: 0;
+    z-index: 10;
+    box-shadow: 0 8px 24px rgba(31, 41, 55, 0.04);
+  }
+  header h1 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    color: var(--accent);
+  }
+  header h1 span { color: #7f8a98; }
+
+  .header-status {
+    display: flex; gap: 16px; align-items: center; margin-left: auto;
+  }
+  .status-pill {
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: all 0.3s;
+    background: rgba(255,255,255,0.62);
+  }
+  .status-pill.active { border-color: var(--accent3); color: var(--accent3); }
+  .status-pill.warning { border-color: var(--accent2); color: var(--accent2); }
+  .header-loading-text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #8c775d;
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.6px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
+  }
+  .header-loading-text.show { opacity: 0.9; }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* LEFT SIDEBAR */
+  .sidebar {
+    width: 260px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.98));
+    border-right: 1px solid rgba(197, 204, 214, 0.85);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+    box-shadow: inset -1px 0 0 rgba(255,255,255,0.7);
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .section {
+    border-bottom: 1px solid rgba(217, 221, 227, 0.9);
+    padding: 16px 18px;
+  }
+  .section-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAP */
+  #map-container { position: relative; }
+  #map { height: 200px; }
+  .map-overlay {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid var(--border);
+    padding: 7px 11px;
+    font-size: 10px;
+    color: var(--accent);
+    pointer-events: none;
+    z-index: 1000;
+    border-radius: 999px;
+    box-shadow: var(--shadow);
+  }
+
+  /* WIND DATA DISPLAY */
+  .wind-data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .wind-datum {
+    background: rgba(255,255,255,0.92);
+    border: 1px solid var(--border);
+    padding: 10px 8px;
+    text-align: center;
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(31, 41, 55, 0.04);
+  }
+  .wind-datum .val {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .wind-datum .unit { font-size: 9px; color: var(--muted); margin-top: 2px; }
+  .wind-datum .label { font-size: 9px; color: var(--muted); margin-top: 4px; letter-spacing: 1px; }
+
+  /* COMPASS */
+  .compass-wrap { display: flex; justify-content: center; margin: 10px 0; }
+  #compass-canvas {
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.96);
+    box-shadow: 0 8px 18px rgba(31, 41, 55, 0.04);
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+    transition: all 0.2s ease;
+    text-align: center;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(31, 41, 55, 0.03);
+  }
+  .btn:hover {
+    border-color: var(--border-strong);
+    color: var(--accent);
+    background: #ffffff;
+    transform: translateY(-1px);
+  }
+  .btn.primary {
+    border-color: rgba(95, 107, 122, 0.28);
+    color: var(--accent);
+    background: rgba(95, 107, 122, 0.08);
+  }
+  .btn.primary:hover { background: rgba(95, 107, 122, 0.12); }
+  .btn.run {
+    border-color: rgba(111, 124, 140, 0.28);
+    color: var(--accent3);
+    background: rgba(111, 124, 140, 0.1);
+  }
+  .btn.run:hover { background: rgba(111, 124, 140, 0.14); }
+  .btn + .btn { margin-top: 6px; }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* FILE INPUT */
+  .file-input-wrap {
+    position: relative;
+    overflow: hidden;
+  }
+  .file-input-wrap input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+  }
+
+  /* TOGGLE */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(217, 221, 227, 0.9);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 11px; color: var(--text); }
+  .viz-header {
+    display: grid;
+    grid-template-columns: 1fr 44px 44px;
+    gap: 10px;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(217, 221, 227, 0.9);
+    margin-bottom: 2px;
+  }
+  .source-selector { display: flex; gap: 6px; margin-bottom: 10px; }
+  .source-btn {
+    flex: 1; padding: 5px 0; border: none; border-radius: 4px;
+    font-size: 9px; letter-spacing: 1px; font-weight: 700; text-transform: uppercase;
+    cursor: pointer; background: #cfd5dc; color: #6b7280; transition: background 0.2s, color 0.2s;
+  }
+  .source-btn.local.on  { background: #1d4ed8; color: #fff; }
+  .source-btn.openfoam.on { background: #dc2626; color: #fff; }
+  .viz-col-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    font-weight: 700;
+  }
+  .viz-col-label.local { color: #1d4ed8; }
+  .viz-col-label.openfoam { color: #dc2626; }
+  .toggle-row.dual {
+    display: grid;
+    grid-template-columns: 1fr 44px 44px;
+    gap: 10px;
+    align-items: center;
+  }
+  .toggle-row.single {
+    display: grid;
+    grid-template-columns: 1fr 44px 44px;
+    gap: 10px;
+    align-items: center;
+  }
+  .toggle-row.single .toggle {
+    grid-column: 2 / span 2;
+    justify-self: center;
+  }
+  .toggle {
+    width: 32px; height: 16px;
+    background: #cfd5dc;
+    border-radius: 8px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle.local.on { background: #1d4ed8; }
+  .toggle.openfoam.on { background: #dc2626; }
+  .toggle:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 12px; height: 12px;
+    background: #fffdf9;
+    border-radius: 50%;
+    transition: left 0.2s;
+  }
+  .toggle.on::after { left: 18px; }
+
+  /* SLIDER */
+  .slider-row { margin: 6px 0; }
+  .slider-row label { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .slider-row label span { color: var(--accent); }
+  .slider-row.rotate-slider-row label {
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px;
+  }
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 4px;
+    background: rgba(197, 204, 214, 0.8);
+    outline: none;
+    border-radius: 999px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 4px 10px rgba(31, 41, 55, 0.12);
+  }
+
+  /* POINTS LIST */
+  #points-list {
+    max-height: 140px;
+    overflow-y: auto;
+    margin-top: 8px;
+  }
+  #points-list::-webkit-scrollbar { width: 3px; }
+  #points-list::-webkit-scrollbar-thumb { background: var(--border); }
+  .point-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(217, 221, 227, 0.85);
+    font-size: 10px;
+  }
+  .point-row:hover { background: rgba(95, 107, 122, 0.05); }
+  .point-speed {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  /* CENTER — 3D VIEWPORT */
+  .viewport-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(255,255,255,0.8), transparent 26%),
+      linear-gradient(180deg, #fafbfc 0%, #f1f3f6 100%);
+  }
+  #three-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* HUD overlays on 3D viewport */
+  .hud {
+    position: absolute;
+    pointer-events: none;
+  }
+  .hud-tl {
+    display: none;
+  }
+  .hud-br {
+    bottom: 12px; right: 12px;
+    text-align: right;
+    font-size: 10px;
+    color: var(--muted);
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(217, 221, 227, 0.9);
+    border-radius: 16px;
+    padding: 10px 12px;
+    backdrop-filter: blur(10px);
+  }
+  .hud-legend {
+    bottom: 12px; left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    pointer-events: auto;
+  }
+  .legend-bar {
+    width: 120px; height: 10px;
+    background: linear-gradient(to right, #00008f 0%, #0000ff 16%, #00cfff 34%, #00ff66 54%, #fff200 74%, #ff8a00 88%, #ff1a1a 100%);
+    border: 1px solid var(--border);
+  }
+  .legend-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--muted);
+    width: 120px;
+  }
+  .legend-range {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 120px;
+    margin-top: 3px;
+  }
+  .legend-range .field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .legend-range label {
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.6px;
+  }
+  .legend-range input {
+    width: 100%;
+    height: 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 5px;
+    font-size: 9px;
+    color: var(--text);
+    background: rgba(255,255,255,0.95);
+  }
+  .legend-range input[type=number] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  .legend-range input[type=number]::-webkit-outer-spin-button,
+  .legend-range input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .view-controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 6px;
+    z-index: 20;
+  }
+  .view-btn {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.94);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+  }
+  .view-btn:hover,
+  .view-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(255,255,255,0.96);
+  }
+  .loop-tools {
+    margin-top: 8px;
+    display: grid;
+    gap: 6px;
+  }
+  .loop-row {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .loop-row input[type="number"] {
+    flex: 1 1 92px;
+    min-width: 92px;
+  }
+  .loop-row .btn {
+    flex: 1 1 150px;
+    min-width: 150px;
+  }
+  .loop-divider {
+    height: 1px;
+    width: 100%;
+    background: var(--border);
+    margin: 10px 0;
+  }
+  .loop-field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .field-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .field-label {
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--text);
+    padding-left: 10px;
+  }
+  .field-stack input[type="number"] {
+    width: 100%;
+  }
+  .loop-tools .btn {
+    margin-top: 0;
+  }
+  .loop-status {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* LOADING */
+  .loading-overlay {
+    position: absolute; inset: 0;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    display: none;
+    pointer-events: none;
+  }
+  .loading-overlay.show { display: flex; }
+  .loading-svg-wrap {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+  .loading-svg-wrap svg { width: 100%; height: 100%; }
+  #loading-text-svg { display: none; }
+  .loading-text {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    position: absolute;
+    bottom: 28%;
+  }
+  .loading-steps {
+    width: min(460px, 78%);
+    max-height: 180px;
+    overflow: auto;
+    background: rgba(255,255,255,0.86);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: var(--shadow);
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 101;
+    pointer-events: auto;
+  }
+  .loading-step {
+    font-size: 11px;
+    color: var(--muted);
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(217, 221, 227, 0.75);
+  }
+  .loading-step:last-child { border-bottom: none; }
+  .loading-step strong {
+    color: var(--accent);
+    font-weight: 600;
+    margin-right: 8px;
+  }
+
+  /* TOOLTIP */
+  #tooltip {
+    position: absolute;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid rgba(197, 204, 214, 0.9);
+    padding: 10px 12px;
+    font-size: 10px;
+    pointer-events: none;
+    display: none;
+    z-index: 50;
+    line-height: 1.8;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+  #tooltip strong { color: var(--accent); font-family: var(--font-display); font-size: 18px; font-weight: 500; }
+
+  /* NOTIFICATION */
+  #notif {
+    position: fixed;
+    top: 56px; right: 16px;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 16px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    z-index: 9999;
+    transform: translateX(120%);
+    transition: transform 0.3s;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+  #notif.show { transform: translateX(0); }
+  #notif.err { border-color: var(--accent2); color: var(--accent2); }
+
+  select, input[type=number] {
+    background: rgba(255,255,255,0.98);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 8px 10px;
+    width: 100%;
+    margin-top: 4px;
+    outline: none;
+    border-radius: 12px;
+  }
+  select:focus, input[type=number]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(95, 107, 122, 0.08);
+  }
+
+  .row-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-top: 8px;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>WIND<span>SIM</span></h1>
+  <div id="header-loading-text" class="header-loading-text"></div>
+  <div class="header-status">
+    <div class="status-pill" id="pill-location">NO SITE</div>
+    <div class="status-pill" id="pill-obj">NO OBJ</div>
+    <div class="status-pill" id="pill-pts">NO POINTS</div>
+    <div class="status-pill" id="pill-wind">NO WIND DATA</div>
+  </div>
+</header>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- STEP 1: SITE LOCATION -->
+    <div class="section">
+      <div class="section-title">Site Location</div>
+      <div id="map-container">
+        <div class="map-overlay" id="map-hint">CLICK TO SET SITE</div>
+        <div id="map"></div>
+      </div>
+      <div style="margin-top:8px; font-size:10px; color:var(--muted)" id="coords-display">—</div>
+      <button class="btn primary" id="btn-fetch-wind" style="margin-top:8px" disabled>FETCH WIND DATA</button>
+    </div>
+
+    <!-- WIND DATA -->
+    <div class="section">
+      <div class="section-title">Wind Data</div>
+      <div class="compass-wrap">
+        <canvas id="compass-canvas" width="80" height="80"></canvas>
+      </div>
+      <div class="wind-data-grid">
+        <div class="wind-datum">
+          <div class="val" id="wd-speed">—</div>
+          <div class="unit">m/s</div>
+          <div class="label">MAX SPEED</div>
+        </div>
+        <div class="wind-datum">
+          <div class="val" id="wd-dir">—</div>
+          <div class="unit">°</div>
+          <div class="label">DIRECTION</div>
+        </div>
+        <div class="wind-datum">
+          <div class="val" id="wd-gust">—</div>
+          <div class="unit">m/s</div>
+          <div class="label">GUST</div>
+        </div>
+        <div class="wind-datum">
+          <div class="val" id="wd-cat">—</div>
+          <div class="unit"></div>
+          <div class="label">BEAUFORT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: GEOMETRY -->
+    <div class="section">
+      <div class="section-title">Context Geometry</div>
+      <button class="btn primary" id="btn-example" style="margin-bottom:6px">LOAD EXAMPLE SCENE</button>
+      <div class="file-input-wrap">
+        <button class="btn">LOAD OBJ FILE</button>
+        <input type="file" id="obj-input" accept=".obj">
+      </div>
+      <div style="margin-top:6px; font-size:10px; color:var(--muted)" id="obj-status">No file loaded</div>
+    </div>
+
+    <!-- STEP 4: ANALYSIS POINTS -->
+    <div class="section">
+      <div class="section-title">Analysis Points</div>
+      <div class="file-input-wrap">
+        <button class="btn">LOAD CSV (X,Y,Z)</button>
+        <input type="file" id="csv-input" accept=".csv,.txt">
+      </div>
+      <button class="btn" id="btn-gen-grid" style="margin-top:6px" disabled>GENERATE GRID</button>
+      <div class="loop-divider" style="margin-top:10px; margin-bottom:10px"></div>
+      <div class="loop-field-grid" style="margin-bottom:6px">
+        <div class="field-stack">
+          <div class="field-label">X :</div>
+          <input type="number" id="loop-size-x" value="2.5" min="0.5" step="0.5" placeholder="X size (m)" disabled>
+        </div>
+        <div class="field-stack">
+          <div class="field-label">Y :</div>
+          <input type="number" id="loop-size-y" value="2.5" min="0.5" step="0.5" placeholder="Y size (m)" disabled>
+        </div>
+      </div>
+      <div class="loop-tools">
+        <div class="loop-row">
+          <button class="btn" id="btn-generate-loop">GENERATE LOOP</button>
+        </div>
+        <button class="btn" id="btn-align-loop-wind" disabled>ALIGN LOOP - WIND</button>
+        <div class="slider-row rotate-slider-row" style="margin-top:4px; margin-bottom:2px">
+          <label>ROTATE <span id="loop-rotate-val">0</span>°</label>
+          <input type="range" id="loop-rotate" min="0" max="360" step="1" value="0" oninput="onLoopRotate(this)">
+        </div>
+        <button class="btn" id="btn-draw-loop">DRAW LOOP</button>
+        <button class="btn" id="btn-close-loop">CLOSE LOOP</button>
+        <button class="btn" id="btn-clear-loop">CLEAR LOOP</button>
+        <div class="loop-status" id="loop-status">No loop drawn</div>
+        <div class="loop-divider"></div>
+        <div class="loop-field-grid">
+          <div class="field-stack">
+            <div class="field-label">GRID SIZE :</div>
+            <input type="number" id="loop-grid-size" value="2.5" min="0.5" step="0.5" placeholder="Loop grid size (m)">
+          </div>
+          <div class="field-stack">
+            <div class="field-label">GRID HEIGHT :</div>
+            <input type="number" id="loop-grid-height" value="2.5" min="0" step="0.5" placeholder="Loop grid height (m)">
+          </div>
+        </div>
+        <button class="btn" id="btn-generate-loop-grid">GENERATE GRID</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: SIMULATION -->
+    <div class="section">
+      <div class="section-title">Simulation</div>
+
+      <span class="row-label">TERRAIN ROUGHNESS</span>
+      <select id="terrain">
+        <option value="0.01">Open sea / flat plain</option>
+        <option value="0.05">Open farmland</option>
+        <option value="0.3" selected>Suburban / low buildings</option>
+        <option value="1.0">Dense urban / forests</option>
+      </select>
+
+      <span class="row-label" style="margin-top:10px">OPENFOAM TUNING</span>
+      <div class="loop-field-grid" style="margin-bottom:6px">
+        <div class="field-stack">
+          <div class="field-label">PAD UP ×</div>
+          <input type="number" id="of-pad-up-factor" value="0.4" min="0" step="0.05">
+        </div>
+        <div class="field-stack">
+          <div class="field-label">PAD DOWN ×</div>
+          <input type="number" id="of-pad-down-factor" value="1.2" min="0" step="0.05">
+        </div>
+      </div>
+      <div class="loop-field-grid" style="margin-bottom:6px">
+        <div class="field-stack">
+          <div class="field-label">PAD CROSS ×</div>
+          <input type="number" id="of-pad-cross-factor" value="0.5" min="0" step="0.05">
+        </div>
+        <div class="field-stack">
+          <div class="field-label">ITERATIONS</div>
+          <input type="number" id="of-end-time" value="200" min="20" step="10">
+        </div>
+      </div>
+      <div class="loop-field-grid" style="margin-bottom:6px">
+        <div class="field-stack">
+          <div class="field-label">CAP ALONG MAX</div>
+          <input type="number" id="of-cap-along-max" value="80" min="24" step="4">
+        </div>
+        <div class="field-stack">
+          <div class="field-label">CAP CROSS MAX</div>
+          <input type="number" id="of-cap-cross-max" value="64" min="24" step="4">
+        </div>
+      </div>
+      <div class="loop-field-grid" style="margin-bottom:6px">
+        <div class="field-stack">
+          <div class="field-label">CAP VERT MAX</div>
+          <input type="number" id="of-cap-vert-max" value="48" min="16" step="4">
+        </div>
+        <div class="field-stack"></div>
+      </div>
+
+      <button class="btn run" id="btn-run" style="margin-top:10px" disabled>RUN FAST</button>
+      <button class="btn run" id="btn-run-openfoam" style="margin-top:6px" disabled>RUN OPENFOAM</button>
+      <button class="btn" id="btn-export" style="margin-top:6px" disabled>EXPORT CSV</button>
+      <button class="btn" id="btn-stop-python" style="margin-top:6px">STOP PYTHON SERVER</button>
+    </div>
+
+    <!-- VISUALIZATION TOGGLES -->
+    <div class="section">
+      <div class="section-title">Visualization</div>
+      <div class="toggle-row single">
+        <span class="toggle-label">Ghost Buildings</span>
+        <button class="toggle" id="tog-ghost-buildings" onclick="toggleGhostBuildings(this)"></button>
+      </div>
+      <div class="toggle-row single" style="border-bottom:none">
+        <span class="toggle-label">Loop</span>
+        <button class="toggle on" id="tog-loop" onclick="toggleLoop(this)"></button>
+      </div>
+      <div class="toggle-row single" style="border-bottom:none">
+        <span class="toggle-label">OpenFOAM Domain Grid</span>
+        <button class="toggle on" id="tog-of-domain" onclick="toggleOpenFoamDomainOverlay(this)"></button>
+      </div>
+      <div class="source-selector">
+        <button class="source-btn local on" id="src-local" onclick="setActiveSource('local')">Local</button>
+        <button class="source-btn openfoam" id="src-openfoam" onclick="setActiveSource('openfoam')">OpenFOAM</button>
+      </div>
+      <div class="viz-header">
+        <span></span>
+        <span class="viz-col-label local">Local</span>
+        <span class="viz-col-label openfoam">OpenFOAM</span>
+      </div>
+      <div class="toggle-row dual">
+        <span class="toggle-label">Arrows</span>
+        <button class="toggle local on" id="tog-local-arrows" onclick="toggleViz('local','arrows',this)"></button>
+        <button class="toggle openfoam on" id="tog-openfoam-arrows" onclick="toggleViz('openfoam','arrows',this)"></button>
+      </div>
+      <div class="toggle-row dual">
+        <span class="toggle-label">Streamlines</span>
+        <button class="toggle local" id="tog-local-stream" onclick="toggleViz('local','stream',this)"></button>
+        <button class="toggle openfoam" id="tog-openfoam-stream" onclick="toggleViz('openfoam','stream',this)"></button>
+      </div>
+      <div class="toggle-row dual">
+        <span class="toggle-label">Speed Labels</span>
+        <button class="toggle local" id="tog-local-labels" onclick="toggleViz('local','labels',this)"></button>
+        <button class="toggle openfoam" id="tog-openfoam-labels" onclick="toggleViz('openfoam','labels',this)"></button>
+      </div>
+      <div class="toggle-row dual">
+        <span class="toggle-label">Velocity Heatmap</span>
+        <button class="toggle local" id="tog-local-heatmap" onclick="toggleViz('local','heatmap',this)"></button>
+        <button class="toggle openfoam" id="tog-openfoam-heatmap" onclick="toggleViz('openfoam','heatmap',this)"></button>
+      </div>
+      <div class="toggle-row dual">
+        <span class="toggle-label">Analysis Points</span>
+        <button class="toggle local on" id="tog-local-points" onclick="toggleViz('local','points',this)"></button>
+        <button class="toggle openfoam on" id="tog-openfoam-points" onclick="toggleViz('openfoam','points',this)"></button>
+      </div>
+      <div class="toggle-row dual">
+        <span class="toggle-label">Flow Particles</span>
+        <button class="toggle local" id="tog-local-particles" onclick="toggleViz('local','particles',this)"></button>
+        <button class="toggle openfoam" id="tog-openfoam-particles" onclick="toggleViz('openfoam','particles',this)"></button>
+      </div>
+      <div class="slider-row" style="margin-top:6px">
+        <label>PARTICLE SPEED <span id="particle-speed-val">20</span></label>
+        <input type="range" id="particle-speed" min="5" max="120" step="1" value="20" oninput="onParticleSpeed(this)">
+      </div>
+      <div class="slider-row" style="margin-top:10px">
+        <label>ARROW SCALE <span id="arrow-scale-val">1.0</span></label>
+        <input type="range" id="arrow-scale" min="0.2" max="3" step="0.1" value="1" oninput="onArrowScale(this)">
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Point List</div>
+      <div style="margin-top:6px; font-size:10px; color:var(--muted)" id="pts-status">No points loaded</div>
+      <div id="points-list"></div>
+    </div>
+
+  </div>
+
+  <!-- 3D VIEWPORT -->
+  <div class="viewport-wrap">
+    <canvas id="three-canvas"></canvas>
+
+    <div class="view-controls">
+      <button class="view-btn active" data-view="3d">3D</button>
+      <button class="view-btn" data-view="top">Top</button>
+      <button class="view-btn" data-view="front">Front</button>
+      <button class="view-btn" data-view="left">Left</button>
+    </div>
+
+    <div class="hud hud-tl" id="hud-info">
+      WINDFLOW 3D<br>
+      <span style="color:var(--muted)">Orbit: left-drag &nbsp;|&nbsp; Pan: right-drag &nbsp;|&nbsp; Zoom: scroll</span><br>
+      <span style="color:var(--muted)">Hover point for details</span>
+    </div>
+
+    <div class="hud hud-legend" id="legend" style="display:none">
+      <div style="font-size:9px; color:var(--muted); margin-bottom:3px; letter-spacing:1px;">WIND SPEED</div>
+      <div class="legend-bar"></div>
+      <div class="legend-labels">
+        <span id="leg-min">0.0 m/s</span><span id="leg-max">0.0 m/s</span>
+      </div>
+      <div class="legend-range">
+        <div class="field">
+          <label for="leg-min-input">MIN</label>
+          <input type="number" id="leg-min-input" step="0.1" min="0">
+        </div>
+        <div class="field">
+          <label for="leg-max-input">MAX</label>
+          <input type="number" id="leg-max-input" step="0.1" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="hud hud-br" id="hud-stats" style="display:none">
+      <span id="stat-max" style="color:var(--accent2)"></span><br>
+      <span id="stat-min" style="color:var(--accent3)"></span>
+    </div>
+
+    <div class="loading-overlay" id="loading">
+      <div class="loading-svg-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+          <defs>
+            <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(240,240,240,0.72)"/>
+              <stop offset="100%" stop-color="rgba(236,236,236,0.68)"/>
+            </linearGradient>
+            <filter id="soft"><feGaussianBlur stdDeviation="0.2"/></filter>
+            <g id="leafA"><path d="M0 0 C16 -10, 34 -10, 48 0 C34 10, 16 10, 0 0 Z" fill="#111"/></g>
+            <g id="leafB"><path d="M0 0 C11 -7, 22 -7, 33 0 C22 7, 11 7, 0 0 Z" fill="#343434"/></g>
+            <g id="leafC"><path d="M0 0 C8 -5, 16 -5, 24 0 C16 5, 8 5, 0 0 Z" fill="#666"/></g>
+            <style>
+              .stream-main { fill: none; stroke: #1b1b1b; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+              .stream-light { fill: none; stroke: #5a5a5a; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+              .leafWrap { filter: url(#soft); }
+              .lbl { font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 25px; letter-spacing: 0.6px; fill: #8c775d; }
+            </style>
+          </defs>
+          <rect width="100%" height="100%" fill="none"/>
+          <g>
+            <path class="stream-main" stroke-width="4.2"
+              d="M 70 272 C 118 225, 162 218, 205 245 S 278 313, 335 280 S 432 208, 505 238"
+              pathLength="100" stroke-dasharray="26 74" stroke-dashoffset="100">
+              <animate attributeName="opacity" values="0;0.76;0.76;0" keyTimes="0;0.15;0.78;1" dur="6.2s" repeatCount="indefinite"/>
+              <animate attributeName="stroke-dashoffset" values="100;0" dur="6.2s" repeatCount="indefinite"/>
+            </path>
+            <path class="stream-main" stroke-width="4"
+              d="M 845 520 C 892 565, 948 559, 995 520 S 1065 432, 1108 462 S 1146 548, 1092 575"
+              pathLength="100" stroke-dasharray="26 74" stroke-dashoffset="100">
+              <animate attributeName="opacity" values="0;0.8;0.8;0" keyTimes="0;0.12;0.8;1" dur="6.8s" begin="1.2s" repeatCount="indefinite"/>
+              <animate attributeName="stroke-dashoffset" values="100;0" dur="6.8s" begin="1.2s" repeatCount="indefinite"/>
+            </path>
+            <path class="stream-main" stroke-width="3.8"
+              d="M 270 438 C 350 408, 446 405, 530 430 S 668 470, 758 448"
+              pathLength="100" stroke-dasharray="24 76" stroke-dashoffset="100">
+              <animate attributeName="opacity" values="0;0.55;0.55;0" keyTimes="0;0.16;0.8;1" dur="5.7s" begin="2.4s" repeatCount="indefinite"/>
+              <animate attributeName="stroke-dashoffset" values="100;0" dur="5.7s" begin="2.4s" repeatCount="indefinite"/>
+            </path>
+            <path class="stream-light" stroke-width="2.4"
+              d="M 512 132 C 596 122, 688 124, 772 131 S 905 142, 988 134"
+              pathLength="100" stroke-dasharray="18 82" stroke-dashoffset="100">
+              <animate attributeName="opacity" values="0;0.28;0.28;0" keyTimes="0;0.14;0.82;1" dur="6.6s" begin="0.7s" repeatCount="indefinite"/>
+              <animate attributeName="stroke-dashoffset" values="100;0" dur="6.6s" begin="0.7s" repeatCount="indefinite"/>
+            </path>
+            <path class="stream-light" stroke-width="2.1"
+              d="M 160 170 C 230 132, 310 134, 380 166 S 508 228, 584 212"
+              pathLength="100" stroke-dasharray="16 84" stroke-dashoffset="100">
+              <animate attributeName="opacity" values="0;0.24;0.24;0" keyTimes="0;0.14;0.8;1" dur="6s" begin="3.3s" repeatCount="indefinite"/>
+              <animate attributeName="stroke-dashoffset" values="100;0" dur="6s" begin="3.3s" repeatCount="indefinite"/>
+            </path>
+          </g>
+          <g class="leafWrap">
+            <g transform="translate(-90 225) rotate(-22)">
+              <use href="#leafB">
+                <animateTransform attributeName="transform" type="translate" values="0 0; 300 -30; 640 10; 1010 -18; 1330 -10" dur="13.5s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" additive="sum" type="rotate" values="-4;7;-2;8;-4" dur="5.4s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0;0.82;0.82;0" keyTimes="0;0.08;0.92;1" dur="13.5s" repeatCount="indefinite"/>
+              </use>
+            </g>
+            <g transform="translate(-160 150) rotate(8)">
+              <use href="#leafA">
+                <animateTransform attributeName="transform" type="translate" values="0 0; 360 -18; 720 -2; 1080 -30; 1450 -12" dur="15.4s" begin="-7.1s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" additive="sum" type="rotate" values="2;-7;5;-6;2" dur="5.8s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0;0.95;0.95;0" keyTimes="0;0.06;0.93;1" dur="15.4s" begin="-7.1s" repeatCount="indefinite"/>
+              </use>
+            </g>
+            <g transform="translate(-120 305) rotate(4)">
+              <use href="#leafB" opacity="0.86">
+                <animateTransform attributeName="transform" type="translate" values="0 0; 280 18; 610 -8; 930 8; 1290 -6" dur="12.7s" begin="-3.7s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" additive="sum" type="rotate" values="1;-5;4;-6;1" dur="4.6s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0;0.84;0.84;0" keyTimes="0;0.08;0.92;1" dur="12.7s" begin="-3.7s" repeatCount="indefinite"/>
+              </use>
+            </g>
+            <g transform="translate(-210 390) rotate(-16)">
+              <use href="#leafC">
+                <animateTransform attributeName="transform" type="translate" values="0 0; 330 -6; 700 -20; 1030 -12; 1410 -28" dur="16.2s" begin="-11.2s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" additive="sum" type="rotate" values="1;6;-2;7;1" dur="6.2s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0;0.55;0.55;0" keyTimes="0;0.06;0.94;1" dur="16.2s" begin="-11.2s" repeatCount="indefinite"/>
+              </use>
+            </g>
+            <g transform="translate(-70 520) rotate(26)">
+              <use href="#leafB">
+                <animateTransform attributeName="transform" type="translate" values="0 0; 300 -14; 610 10; 930 -18; 1280 -14" dur="14.1s" begin="-5.5s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" additive="sum" type="rotate" values="-2;8;-3;5;-2" dur="5s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0;0.86;0.86;0" keyTimes="0;0.08;0.92;1" dur="14.1s" begin="-5.5s" repeatCount="indefinite"/>
+              </use>
+            </g>
+            <g transform="translate(-130 105) rotate(-32)">
+              <use href="#leafA" opacity="0.98">
+                <animateTransform attributeName="transform" type="translate" values="0 0; 350 12; 690 -14; 1010 6; 1380 -22" dur="13.2s" begin="-9.4s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" additive="sum" type="rotate" values="-3;5;-6;4;-3" dur="4.9s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0;0.92;0.92;0" keyTimes="0;0.07;0.93;1" dur="13.2s" begin="-9.4s" repeatCount="indefinite"/>
+              </use>
+            </g>
+            <g transform="translate(-250 250) rotate(14)">
+              <use href="#leafC" opacity="0.72">
+                <animateTransform attributeName="transform" type="translate" values="0 0; 320 -26; 670 4; 1000 -14; 1390 -4" dur="15.8s" begin="-2.1s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" additive="sum" type="rotate" values="2;-6;3;-5;2" dur="5.1s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0;0.48;0.48;0" keyTimes="0;0.08;0.92;1" dur="15.8s" begin="-2.1s" repeatCount="indefinite"/>
+              </use>
+            </g>
+            <g transform="translate(-180 340) rotate(10)">
+              <use href="#leafB" opacity="0.8">
+                <animateTransform attributeName="transform" type="translate" values="0 0; 310 10; 650 -8; 980 14; 1340 -6" dur="14.8s" begin="-12.5s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" additive="sum" type="rotate" values="0;-7;3;-5;0" dur="5.7s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0;0.76;0.76;0" keyTimes="0;0.08;0.92;1" dur="14.8s" begin="-12.5s" repeatCount="indefinite"/>
+              </use>
+            </g>
+            <g transform="translate(-95 185) rotate(-12)">
+              <use href="#leafC" opacity="0.6">
+                <animateTransform attributeName="transform" type="translate" values="0 0; 350 -16; 710 -4; 1040 -20; 1390 -10" dur="16.5s" begin="-6.8s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" additive="sum" type="rotate" values="1;5;-2;6;1" dur="6.4s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0;0.4;0.4;0" keyTimes="0;0.08;0.92;1" dur="16.5s" begin="-6.8s" repeatCount="indefinite"/>
+              </use>
+            </g>
+          </g>
+          <text class="lbl" id="loading-text-svg" x="600" y="54" text-anchor="middle">
+            Running wind simulation...
+            <animate attributeName="opacity" values="0.55;0.94;0.55" dur="2.8s" repeatCount="indefinite"/>
+          </text>
+        </svg>
+      </div>
+      <div class="loading-steps" id="loading-steps" style="display:none"></div>
+    </div>
+
+    <div id="tooltip"></div>
+  </div>
+</div>
+
+<div id="notif"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────
+const state = {
+  lat: null, lon: null,
+  windSpeed: null, windDir: null, windGust: null,
+  windFetched: false,
+  objMesh: null,
+  analysisPoints: [],   // [{x,y,z}]
+  localResults: [],     // [{x,y,z, speed, dir, vx,vy,vz, ratio}] from local sim
+  openfoamResults: [],  // [{x,y,z, speed, dir, vx,vy,vz, ratio}] from OpenFOAM
+  localStats: null,     // { avg, max, min } after local run
+  openfoamStats: null,  // { avg, max, min } after openfoam run
+  activeSource: 'local', // 'local' | 'openfoam' | null — which result set is currently visible
+  wakeModel: null,
+  localViz: { arrows: true, stream: false, labels: false, heatmap: false, points: true, particles: false },
+  openfoamViz: { arrows: true, stream: false, labels: false, heatmap: false, points: true, particles: false },
+  arrowScale: 1.0,
+  csvPointsLoaded: false,
+  loopDrawing: false,
+  loopClosed: false,
+  loopPoints: [],
+  loopBasePoints: [],
+  loopRotation: 0,
+  loopSizingReady: false,
+  loopVisible: true,
+  openfoamDomainOverlay: true,
+  openfoamDomainMeta: null,
+  activeView: '3d',
+  openFoamStatusTimer: null,
+  nextPointId: 1,
+  legendRange: {
+    local: { min: null, max: null },
+    openfoam: { min: null, max: null },
+  },
+};
+
+const DEFAULT_REF_HEIGHT = 10;
+const OPENFOAM_DOMAIN = {
+  minX: -80,
+  maxX: 80,
+  minY: 0,
+  maxY: 80,
+  minZ: -80,
+  maxZ: 80,
+};
+
+function ensurePointIds(points) {
+  return points.map(pt => ({
+    ...pt,
+    id: pt.id || `pt_${state.nextPointId++}`
+  }));
+}
+
+// ─────────────────────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────────────────────
+function notify(msg, err=false) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = 'show' + (err ? ' err' : '');
+  setTimeout(() => el.className = '', 3000);
+}
+
+// ─────────────────────────────────────────────────────────
+// MAP SETUP
+// ─────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: false }).setView([51.5, -0.1], 13);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '©OpenStreetMap ©CARTO', maxZoom: 19
+}).addTo(map);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+let siteMarker = null;
+map.on('click', e => {
+  state.lat = e.latlng.lat;
+  state.lon = e.latlng.lng;
+  if (siteMarker) map.removeLayer(siteMarker);
+  siteMarker = L.circleMarker([state.lat, state.lon], {
+    radius: 6, color: '#28536b', fillColor: '#28536b', fillOpacity: 1, weight: 2
+  }).addTo(map);
+  document.getElementById('coords-display').textContent =
+    `LAT ${state.lat.toFixed(5)}  LON ${state.lon.toFixed(5)}`;
+  document.getElementById('btn-fetch-wind').disabled = false;
+  document.getElementById('pill-location').textContent = 'SITE SET';
+  document.getElementById('pill-location').classList.add('active');
+  document.getElementById('map-hint').style.display = 'none';
+});
+
+// ─────────────────────────────────────────────────────────
+// WIND DATA FETCH
+// ─────────────────────────────────────────────────────────
+async function fetchWindData() {
+  showLoading('FETCHING WIND DATA');
+  try {
+    if (state.lat === null || state.lon === null) {
+      notify('Set site location before fetching wind data', true);
+      return;
+    }
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=ms&forecast_days=1`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const speeds = data.hourly.wind_speed_10m;
+    const dirs = data.hourly.wind_direction_10m;
+    const gusts = data.hourly.wind_gusts_10m;
+    let maxIdx = 0;
+    speeds.forEach((s, i) => { if (s > speeds[maxIdx]) maxIdx = i; });
+    state.windSpeed = speeds[maxIdx];
+    state.windDir = dirs[maxIdx];
+    state.windGust = Math.max(...gusts);
+    state.windFetched = true;
+
+    document.getElementById('wd-speed').textContent = state.windSpeed.toFixed(1);
+    document.getElementById('wd-dir').textContent = Math.round(state.windDir);
+    document.getElementById('wd-gust').textContent = state.windGust.toFixed(1);
+    document.getElementById('wd-cat').textContent = beaufort(state.windSpeed);
+    drawCompass(state.windDir);
+    updateSceneWindUI(state.windDir, state.windSpeed);
+    addWindIndicatorArrow(state.windDir, state.windSpeed);
+
+    document.getElementById('pill-wind').textContent = `${state.windSpeed.toFixed(1)} m/s`;
+    document.getElementById('pill-wind').classList.add('active');
+    updateAlignLoopWindButtonState();
+    refreshWakeModelPreview();
+    checkRunReady();
+    updateOpenFoamDomainPreview();
+    notify('Wind data loaded');
+  } catch (e) {
+    notify('Failed to fetch wind data', true);
+  } finally {
+    hideLoading();
+  }
+}
+
+document.getElementById('btn-fetch-wind').addEventListener('click', fetchWindData);
+
+function beaufort(ms) {
+  if (ms < 0.5) return 0;
+  if (ms < 1.6) return 1;
+  if (ms < 3.4) return 2;
+  if (ms < 5.5) return 3;
+  if (ms < 8.0) return 4;
+  if (ms < 10.8) return 5;
+  if (ms < 13.9) return 6;
+  if (ms < 17.2) return 7;
+  if (ms < 20.8) return 8;
+  if (ms < 24.5) return 9;
+  if (ms < 28.5) return 10;
+  if (ms < 32.7) return 11;
+  return 12;
+}
+
+function drawCompass(deg) {
+  const c = document.getElementById('compass-canvas');
+  const ctx = c.getContext('2d');
+  const cx = 40, cy = 40, r = 36;
+  ctx.clearRect(0,0,80,80);
+  ctx.strokeStyle = '#5c4a3b'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+  ['N','E','S','W'].forEach((d,i) => {
+    const a = i * Math.PI/2 - Math.PI/2;
+    ctx.fillStyle = '#806f61'; ctx.font = '500 10px Roboto';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(d, cx + (r-8)*Math.cos(a), cy + (r-8)*Math.sin(a));
+  });
+  // arrow
+  const rad = (deg + 90) * Math.PI / 180;
+  ctx.strokeStyle = '#28536b'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - 16*Math.cos(rad), cy - 16*Math.sin(rad));
+  ctx.lineTo(cx + 22*Math.cos(rad), cy + 22*Math.sin(rad));
+  ctx.stroke();
+  // arrowhead
+  ctx.fillStyle = '#28536b';
+  ctx.beginPath();
+  const hx = cx + 22*Math.cos(rad), hy = cy + 22*Math.sin(rad);
+  ctx.moveTo(hx, hy);
+  ctx.lineTo(hx - 8*Math.cos(rad-0.4), hy - 8*Math.sin(rad-0.4));
+  ctx.lineTo(hx - 8*Math.cos(rad+0.4), hy - 8*Math.sin(rad+0.4));
+  ctx.fill();
+}
+
+// ─────────────────────────────────────────────────────────
+// OBJ LOADER (manual parser — no external loader needed)
+// ─────────────────────────────────────────────────────────
+document.getElementById('obj-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const geo = parseOBJ(ev.target.result);
+      buildSceneMesh(geo);
+      document.getElementById('obj-status').textContent =
+        `${file.name} — ${geo.positions.length/3|0} verts`;
+      document.getElementById('pill-obj').textContent = 'OBJ LOADED';
+      document.getElementById('pill-obj').classList.add('active');
+      checkRunReady();
+      notify('OBJ geometry loaded');
+    } catch(err) {
+      notify('Failed to parse OBJ: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+});
+
+function parseOBJ(text) {
+  const verts = [], indices = [];
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const parts = line.trim().split(/\s+/);
+    if (parts[0] === 'v') {
+      verts.push(parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3]));
+    } else if (parts[0] === 'f') {
+      const fv = parts.slice(1).map(p => parseInt(p.split('/')[0]) - 1);
+      for (let i = 1; i < fv.length - 1; i++) {
+        indices.push(fv[0], fv[i], fv[i+1]);
+      }
+    }
+  }
+  return { positions: new Float32Array(verts), indices: new Uint32Array(indices) };
+}
+
+// btn-export-obj removed
+
+function exportSceneOBJ() {
+  const mesh = getBuildingMesh();
+  if (!mesh) {
+    notify('No geometry to export (load or create scene first)', true);
+    return;
+  }
+  const geometry = mesh.geometry;
+  const pos = geometry.attributes.position.array;
+  const idx = geometry.index ? geometry.index.array : null;
+  let obj = 'o WINDFLOW_buildings\n';
+
+  for (let i = 0; i < pos.length; i += 3) {
+    obj += `v ${pos[i].toFixed(6)} ${pos[i + 1].toFixed(6)} ${pos[i + 2].toFixed(6)}\n`;
+  }
+
+  if (idx) {
+    for (let i = 0; i < idx.length; i += 3) {
+      obj += `f ${idx[i] + 1} ${idx[i + 1] + 1} ${idx[i + 2] + 1}\n`;
+    }
+  } else {
+    const count = pos.length / 3;
+    for (let i = 0; i < count; i += 3) {
+      obj += `f ${i + 1} ${i + 2} ${i + 3}\n`;
+    }
+  }
+
+  const blob = new Blob([obj], { type: 'text/plain' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'windflow_scene.obj';
+  link.click();
+  notify('Scene OBJ exported for OpenFOAM workflow');
+}
+
+// ─────────────────────────────────────────────────────────
+// CSV POINTS LOADER
+// ─────────────────────────────────────────────────────────
+document.getElementById('csv-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const pts = sanitizeAnalysisPoints(parseCSV(ev.target.result));
+    if (pts.length === 0) { notify('No valid points found in CSV', true); return; }
+    state.csvPointsLoaded = true;
+    refreshGridButtonState();
+    state.analysisPoints = pts;
+    updatePointsList([]);
+    spawnPointSpheres();
+    document.getElementById('pts-status').textContent = `${pts.length} points loaded`;
+    refreshWakeModelPreview();
+    document.getElementById('pill-pts').textContent = `${pts.length} PTS`;
+    document.getElementById('pill-pts').classList.add('active');
+    checkRunReady();
+    notify(`${pts.length} analysis points loaded`);
+  };
+  reader.readAsText(file);
+});
+
+function parseCSV(text) {
+  const pts = [];
+  const lines = text.trim().split('\n');
+  for (const line of lines) {
+    if (!line.trim() || line.startsWith('#')) continue;
+    const cols = line.split(/[,;\t]+/);
+    const nums = cols.map(c => parseFloat(c.trim())).filter(n => !isNaN(n));
+    if (nums.length >= 3) pts.push({ x: nums[0], y: nums[1], z: nums[2] });
+  }
+  return ensurePointIds(pts);
+}
+
+function refreshGridButtonState() {
+  document.getElementById('btn-gen-grid').disabled = !state.csvPointsLoaded;
+}
+
+// GRID GENERATOR
+function generateDefaultGridPoints() {
+  const pts = [];
+  const size = 50, step = 5, h = 1.5;
+  for (let x = -size/2; x <= size/2; x += step)
+    for (let z = -size/2; z <= size/2; z += step)
+      pts.push({ x, y: h, z });
+  state.analysisPoints = sanitizeAnalysisPoints(ensurePointIds(pts));
+  updatePointsList([]);
+  spawnPointSpheres();
+  document.getElementById('pts-status').textContent = `${state.analysisPoints.length} grid points`;
+  refreshWakeModelPreview();
+  document.getElementById('pill-pts').textContent = `${state.analysisPoints.length} PTS`;
+  document.getElementById('pill-pts').classList.add('active');
+  checkRunReady();
+  updateOpenFoamDomainPreview();
+  notify(`Generated ${state.analysisPoints.length} grid points`);
+}
+
+document.getElementById('btn-gen-grid').addEventListener('click', generateDefaultGridPoints);
+
+document.getElementById('btn-draw-loop').addEventListener('click', startLoopDrawing);
+document.getElementById('btn-generate-loop').addEventListener('click', generateBoundingLoop);
+document.getElementById('btn-align-loop-wind').addEventListener('click', alignLoopToWindDirection);
+document.getElementById('btn-close-loop').addEventListener('click', closeLoopDrawing);
+document.getElementById('btn-generate-loop-grid').addEventListener('click', generateLoopGrid);
+document.getElementById('btn-clear-loop').addEventListener('click', () => {
+  clearLoopDrawing();
+  notify('Loop cleared');
+});
+
+// ─────────────────────────────────────────────────────────
+// EXAMPLE SCENE GENERATOR
+// ─────────────────────────────────────────────────────────
+document.getElementById('btn-example').addEventListener('click', () => {
+  loadExampleScene();
+});
+
+function makeBoxOBJ(buildings) {
+  // buildings: [{x,z,w,d,h}] — generate OBJ text for axis-aligned boxes
+  const verts = [], faces = [];
+  let vi = 1;
+  for (const b of buildings) {
+    const x0=b.x-b.w/2, x1=b.x+b.w/2;
+    const z0=b.z-b.d/2, z1=b.z+b.d/2;
+    const y0=0, y1=b.h;
+    // 8 vertices
+    const v = [
+      [x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1],
+      [x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1],
+    ];
+    v.forEach(([vx,vy,vz]) => verts.push(`v ${vx} ${vy} ${vz}`));
+    const o = vi;
+    // 6 faces (quads → 2 tris each)
+    const quads = [
+      [1,2,3,4],[5,8,7,6],[1,5,6,2],
+      [2,6,7,3],[3,7,8,4],[4,8,5,1]
+    ];
+    for (const [a,b2,c,d2] of quads) {
+      faces.push(`f ${o+a-1} ${o+b2-1} ${o+c-1}`);
+      faces.push(`f ${o+a-1} ${o+c-1} ${o+d2-1}`);
+    }
+    vi += 8;
+  }
+  return [...verts, ...faces].join('\n');
+}
+
+function loadExampleScene() {
+  // ── SCENE: Sydney CBD-inspired urban block ──
+  // Street canyon running N-S (Z axis)
+  // Wind from West (270°) cuts through the gap
+  const buildings = [
+    // TALL TOWER — dominant feature, west side
+    { x: -18, z: 0,   w: 16, d: 16, h: 60 },
+    // MID TOWER — east side, creates street canyon
+    { x:  18, z: 5,   w: 14, d: 18, h: 42 },
+    // LOW PODIUM — south, wraps base of tall tower
+    { x: -18, z: 18,  w: 30, d: 10, h: 8  },
+    // LOW PODIUM — north
+    { x: -18, z: -20, w: 30, d: 10, h: 6  },
+    // BACKGROUND BLOCK — northeast
+    { x:  22, z: -22, w: 18, d: 12, h: 28 },
+    // BACKGROUND BLOCK — southeast
+    { x:  20, z:  24, w: 14, d: 14, h: 22 },
+    // SMALL VOLUME — courtyard west
+    { x: -32, z: 10,  w: 10, d: 8,  h: 14 },
+    // SMALL VOLUME — south gap
+    { x:   0, z:  30, w: 12, d: 8,  h: 10 },
+  ];
+
+  const objText = makeBoxOBJ(buildings);
+  const geo = parseOBJ(objText);
+  buildSceneMesh(geo);
+
+  document.getElementById('obj-status').textContent =
+    `Example scene — ${buildings.length} buildings`;
+  document.getElementById('pill-obj').textContent = 'OBJ LOADED';
+  document.getElementById('pill-obj').classList.add('active');
+
+  // ── Pre-set wind: W→E at 8.5 m/s ──
+  state.windSpeed = 8.5;
+  state.windDir   = 270;   // From west
+  state.windGust  = 12.2;
+
+  document.getElementById('wd-speed').textContent = '8.5';
+  document.getElementById('wd-dir').textContent   = '270';
+  document.getElementById('wd-gust').textContent  = '12.2';
+  document.getElementById('wd-cat').textContent   = beaufort(8.5);
+  drawCompass(270);
+  updateSceneWindUI(state.windDir, state.windSpeed);
+
+  document.getElementById('pill-wind').textContent = '8.5 m/s';
+  document.getElementById('pill-wind').classList.add('active');
+
+  // Mark site as set (Sydney CBD lat/lon) so fetch button also works
+  state.lat = -33.8688; state.lon = 151.2093;
+  document.getElementById('coords-display').textContent = 'LAT -33.86880  LON 151.20930';
+  document.getElementById('pill-location').textContent = 'SITE SET';
+  document.getElementById('pill-location').classList.add('active');
+  document.getElementById('btn-fetch-wind').disabled = false;
+  document.getElementById('map-hint').style.display = 'none';
+  map.setView([state.lat, state.lon], 15);
+  if (siteMarker) map.removeLayer(siteMarker);
+  siteMarker = L.circleMarker([state.lat, state.lon], {
+    radius: 6, color: '#28536b', fillColor: '#28536b', fillOpacity: 1, weight: 2
+  }).addTo(map);
+
+  // ── Auto-generate analysis grid: pedestrian level (1.5m) + mid-height (10m) ──
+  const pts = [];
+  // Pedestrian grid covering the street canyon and surrounds
+  for (let x = -55; x <= 55; x += 2.5)
+    for (let z = -55; z <= 55; z += 2.5)
+      pts.push({ x, y: 2.5, z });
+  // Mid-height plane at 10m
+  for (let x = -50; x <= 50; x += 2.5)
+    for (let z = -50; z <= 50; z += 2.5)
+      pts.push({ x, y: 10, z });
+  // Rooftop plane at 60m (top of tower)
+  for (let x = -30; x <= -5; x += 2.5)
+    for (let z = -15; z <= 15; z += 2.5)
+      pts.push({ x, y: 62, z });
+
+  state.analysisPoints = sanitizeAnalysisPoints(ensurePointIds(pts));
+  updatePointsList([]);
+  spawnPointSpheres();
+  document.getElementById('pts-status').textContent = `${state.analysisPoints.length} points (3 levels)`;
+  document.getElementById('pill-pts').textContent = `${state.analysisPoints.length} PTS`;
+  document.getElementById('pill-pts').classList.add('active');
+
+  // Set terrain to suburban
+  document.getElementById('terrain').value = '0.3';
+  checkRunReady();
+  refreshWakeModelPreview();
+
+  // Add a large wind direction indicator arrow in the scene
+  addWindIndicatorArrow(state.windDir, state.windSpeed);
+
+  notify('Example scene loaded - click RUN FAST');
+}
+
+// ─────────────────────────────────────────────────────────
+// THREE.JS SETUP
+// ─────────────────────────────────────────────────────────
+const canvas = document.getElementById('three-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.setClearColor(0xffffff);
+
+const scene = new THREE.Scene();
+scene.fog = null;
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+camera.position.set(60, 50, 80);
+camera.lookAt(0, 0, 0);
+
+// Ground grid helper is hidden for a cleaner presentation
+const gridHelper = new THREE.GridHelper(200, 40, 0x1a2332, 0x0d1117);
+gridHelper.visible = false;
+scene.add(gridHelper);
+
+// Dark ground plane — shown only when flow particles are active (additive blending needs dark bg)
+const particleGroundPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(400, 400),
+  new THREE.MeshBasicMaterial({ color: 0x0a0f1a, side: THREE.DoubleSide })
+);
+particleGroundPlane.rotation.x = -Math.PI / 2;
+particleGroundPlane.position.y = -0.2;
+particleGroundPlane.visible = false;
+scene.add(particleGroundPlane);
+
+// Keep the scene bright, but let directional light define building faces clearly.
+scene.add(new THREE.AmbientLight(0xffffff, 1.05));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+dirLight.position.set(60, 120, 80);
+scene.add(dirLight);
+const fillLight = new THREE.DirectionalLight(0xd9ecff, 0.35);
+fillLight.position.set(-70, 80, -40);
+scene.add(fillLight);
+
+// Scene groups
+const geoGroup = new THREE.Group();
+const localArrowGroup  = new THREE.Group();
+const localStreamGroup = new THREE.Group();
+const localLabelGroup  = new THREE.Group();
+const localHeatGroup   = new THREE.Group();
+
+const foamArrowGroup   = new THREE.Group();
+const foamStreamGroup  = new THREE.Group();
+const foamLabelGroup   = new THREE.Group();
+const foamHeatGroup    = new THREE.Group();
+const foamDomainGroup  = new THREE.Group();
+
+const localParticleGroup = new THREE.Group();
+const foamParticleGroup  = new THREE.Group();
+
+const pointGroup = new THREE.Group();
+const loopGroup  = new THREE.Group();
+
+// Animated particle state and constants (must be before animate())
+const particleAnim = { local: null, openfoam: null, lastTime: null };
+const PARTICLE_COUNT      = 1400; // total live particles
+let PARTICLE_STEP         = 20.0; // scene units per second (base traversal speed)
+
+scene.add(
+  geoGroup,
+  localArrowGroup, localStreamGroup, localLabelGroup, localHeatGroup,
+  foamArrowGroup,  foamStreamGroup,  foamLabelGroup,  foamHeatGroup, foamDomainGroup,
+  localParticleGroup, foamParticleGroup,
+  pointGroup, loopGroup
+);
+
+// ORBIT CONTROLS (manual)
+let isDragging = false, isRight = false;
+let lastMouse = { x: 0, y: 0 };
+let mouseDown = { x: 0, y: 0, button: 0 };
+let spherical = { theta: 0.8, phi: 0.6, radius: 130 };
+let target = new THREE.Vector3(0, 0, 0);
+const drawPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const loopRaycaster = new THREE.Raycaster();
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('mousedown', e => {
+  isDragging = true; isRight = e.button === 2;
+  mouseDown = { x: e.clientX, y: e.clientY, button: e.button };
+  lastMouse = { x: e.clientX, y: e.clientY };
+});
+window.addEventListener('mouseup', e => {
+  const moved = Math.hypot(e.clientX - mouseDown.x, e.clientY - mouseDown.y);
+  const shouldPlaceLoopPoint = isDragging && state.loopDrawing && mouseDown.button === 0 && moved < 6;
+  isDragging = false;
+  if (shouldPlaceLoopPoint) addLoopPointFromScreen(e.clientX, e.clientY);
+});
+window.addEventListener('mousemove', e => {
+  if (!isDragging) { handleHover(e); return; }
+  if (state.loopDrawing && !isRight) return;
+  const dx = e.clientX - lastMouse.x, dy = e.clientY - lastMouse.y;
+  lastMouse = { x: e.clientX, y: e.clientY };
+  if (isRight) {
+    const right = new THREE.Vector3().crossVectors(
+      camera.getWorldDirection(new THREE.Vector3()), camera.up).normalize();
+    const up = camera.up.clone();
+    target.addScaledVector(right, -dx * 0.05);
+    target.addScaledVector(up, dy * 0.05);
+  } else {
+    spherical.theta -= dx * 0.005;
+    spherical.phi = Math.max(0.05, Math.min(Math.PI/2 - 0.05, spherical.phi - dy * 0.005));
+  }
+  updateCamera();
+});
+canvas.addEventListener('wheel', e => {
+  spherical.radius = Math.max(10, Math.min(500, spherical.radius + e.deltaY * 0.1));
+  updateCamera();
+});
+function updateCamera() {
+  camera.position.set(
+    target.x + spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta),
+    target.y + spherical.radius * Math.cos(spherical.phi),
+    target.z + spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta)
+  );
+  camera.lookAt(target);
+}
+updateCamera();
+
+function setViewPreset(view) {
+  state.activeView = view;
+  const radius = spherical.radius;
+  if (view === 'top') {
+    spherical.theta = 0;
+    spherical.phi = 0.08;
+  } else if (view === 'front') {
+    spherical.theta = 0;
+    spherical.phi = Math.PI / 2 - 0.08;
+  } else if (view === 'left') {
+    spherical.theta = -Math.PI / 2;
+    spherical.phi = Math.PI / 2 - 0.08;
+  } else {
+    spherical.theta = 0.8;
+    spherical.phi = 0.6;
+  }
+  spherical.radius = radius;
+  updateCamera();
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+}
+
+document.querySelectorAll('.view-btn').forEach(btn => {
+  btn.addEventListener('click', () => setViewPreset(btn.dataset.view));
+});
+
+// RESIZE
+function resize() {
+  const w = canvas.parentElement.clientWidth, h = canvas.parentElement.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ANIMATE
+function animate() {
+  requestAnimationFrame(animate);
+  updateAnimatedParticles();
+  renderer.render(scene, camera);
+}
+animate();
+
+// ─────────────────────────────────────────────────────────
+// BUILD SCENE MESH FROM OBJ
+// ─────────────────────────────────────────────────────────
+let objBoundingBox = null;
+let objVertices = []; // raw verts for CFD
+let objComponentBoxes = [];
+
+function getObstacleBoxes() {
+  return objComponentBoxes.length ? objComponentBoxes : (objBoundingBox ? [objBoundingBox] : []);
+}
+
+function getBuildingMesh() {
+  return geoGroup.children.find(child => child.isMesh) || null;
+}
+
+function uniqueIntersectionCount(hits, maxDistance = Infinity) {
+  const distances = [];
+  hits.forEach(hit => {
+    if (hit.distance > maxDistance) return;
+    if (!distances.some(d => Math.abs(d - hit.distance) < 0.05)) distances.push(hit.distance);
+  });
+  return distances.length;
+}
+
+function pointInsideBuilding(point) {
+  const mesh = getBuildingMesh();
+  if (!mesh) return false;
+
+  mesh.updateMatrixWorld(true);
+  const origin = new THREE.Vector3(point.x + 0.02, point.y + 0.01, point.z);
+  const dir = new THREE.Vector3(1, 0, 0);
+  const ray = new THREE.Raycaster(origin, dir, 0, 2000);
+  const hits = ray.intersectObject(mesh, false);
+  return uniqueIntersectionCount(hits) % 2 === 1;
+}
+
+function segmentHitsBuilding(from, to) {
+  const mesh = getBuildingMesh();
+  if (!mesh) return false;
+
+  const start = from instanceof THREE.Vector3 ? from.clone() : new THREE.Vector3(from.x, from.y, from.z);
+  const end = to instanceof THREE.Vector3 ? to.clone() : new THREE.Vector3(to.x, to.y, to.z);
+  const dir = end.clone().sub(start);
+  const len = dir.length();
+  if (len < 1e-6) return false;
+
+  dir.normalize();
+  mesh.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster(start.clone().addScaledVector(dir, 0.02), dir, 0, Math.max(0, len - 0.04));
+  const hits = ray.intersectObject(mesh, false);
+  return uniqueIntersectionCount(hits, len - 0.04) > 0 || pointInsideBuilding({ x: end.x, y: end.y, z: end.z });
+}
+
+function sanitizeAnalysisPoints(points) {
+  const mesh = getBuildingMesh();
+  if (!mesh) return points.slice();
+  return points.filter(pt => !pointInsideBuilding(pt));
+}
+
+function extractComponentBoxes(geo) {
+  const parent = new Map();
+
+  function find(x) {
+    const p = parent.get(x);
+    if (p === x) return x;
+    const root = find(p);
+    parent.set(x, root);
+    return root;
+  }
+
+  function union(a, b) {
+    if (!parent.has(a)) parent.set(a, a);
+    if (!parent.has(b)) parent.set(b, b);
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent.set(rb, ra);
+  }
+
+  for (let i = 0; i < geo.indices.length; i += 3) {
+    const a = geo.indices[i];
+    const b = geo.indices[i + 1];
+    const c = geo.indices[i + 2];
+    union(a, b);
+    union(b, c);
+    union(a, c);
+  }
+
+  const boxes = new Map();
+  for (let i = 0; i < geo.indices.length; i++) {
+    const idx = geo.indices[i];
+    if (!parent.has(idx)) parent.set(idx, idx);
+    const root = find(idx);
+    if (!boxes.has(root)) boxes.set(root, new THREE.Box3());
+    const x = geo.positions[idx * 3];
+    const y = geo.positions[idx * 3 + 1];
+    const z = geo.positions[idx * 3 + 2];
+    boxes.get(root).expandByPoint(new THREE.Vector3(x, y, z));
+  }
+
+  return [...boxes.values()].filter(box => !box.isEmpty());
+}
+
+function pointInsideAnyComponentBox(x, y, z, padding = 0) {
+  const boxes = getObstacleBoxes();
+  return boxes.some(bb =>
+    x >= bb.min.x - padding && x <= bb.max.x + padding &&
+    y >= bb.min.y - padding && y <= bb.max.y + padding &&
+    z >= bb.min.z - padding && z <= bb.max.z + padding
+  );
+}
+
+function pointInsideBuildingPlan(x, z, y = 1.5, padding = 0) {
+  if (!pointInsideAnyComponentBox(x, y, z, padding)) return false;
+  return pointInsideBuilding({ x, y, z });
+}
+
+function updateLoopStatus(msg) {
+  document.getElementById('loop-status').textContent = msg;
+}
+
+const loopSizeXInput = document.getElementById('loop-size-x');
+const loopSizeYInput = document.getElementById('loop-size-y');
+const DEFAULT_LOOP_GRID_STEP = 2.5;
+const DEFAULT_LOOP_GRID_HEIGHT = 2.5;
+const DEFAULT_LOOP_SIZE = 2.5;
+const LOOP_GENERATION_PADDING = 50;
+
+function setLoopSizeInputsEnabled(enabled) {
+  loopSizeXInput.disabled = !enabled;
+  loopSizeYInput.disabled = !enabled;
+}
+
+function updateAlignLoopWindButtonState() {
+  const btn = document.getElementById('btn-align-loop-wind');
+  if (!btn) return;
+  btn.disabled = !(state.windFetched && Number.isFinite(state.windDir));
+}
+
+function setLoopSizeInputs(xSize, ySize) {
+  loopSizeXInput.value = Number.isFinite(xSize) ? String(Math.round(xSize * 10) / 10) : '';
+  loopSizeYInput.value = Number.isFinite(ySize) ? String(Math.round(ySize * 10) / 10) : '';
+}
+
+function resetLoopSizeInputs() {
+  setLoopSizeInputs(DEFAULT_LOOP_SIZE, DEFAULT_LOOP_SIZE);
+  setLoopSizeInputsEnabled(false);
+}
+
+function getLoopSizeInputs() {
+  return {
+    xSize: parseFloat(loopSizeXInput.value),
+    ySize: parseFloat(loopSizeYInput.value)
+  };
+}
+
+function resetLoopRotateSlider() {
+  state.loopRotation = 0;
+  const el = document.getElementById('loop-rotate');
+  if (el) el.value = 0;
+  const val = document.getElementById('loop-rotate-val');
+  if (val) val.textContent = '0';
+}
+
+function onLoopRotate(input) {
+  state.loopRotation = parseFloat(input.value);
+  document.getElementById('loop-rotate-val').textContent = Math.round(state.loopRotation);
+  if (!state.loopBasePoints.length) return;
+  const cx = state.loopBasePoints.reduce((s, p) => s + p.x, 0) / state.loopBasePoints.length;
+  const cz = state.loopBasePoints.reduce((s, p) => s + p.z, 0) / state.loopBasePoints.length;
+  const rad = state.loopRotation * Math.PI / 180;
+  state.loopPoints = state.loopBasePoints.map(p => {
+    const dx = p.x - cx, dz = p.z - cz;
+    return {
+      x: cx + dx * Math.cos(rad) - dz * Math.sin(rad),
+      z: cz + dx * Math.sin(rad) + dz * Math.cos(rad)
+    };
+  });
+  renderLoopOverlay();
+}
+
+function alignLoopToWindDirection() {
+  if (!(state.windFetched && Number.isFinite(state.windDir))) {
+    notify('Fetch wind data before aligning the loop', true);
+    updateAlignLoopWindButtonState();
+    return;
+  }
+
+  if (state.loopPoints.length < 3) {
+    notify('Create a loop before aligning', true);
+    return;
+  }
+
+  if (!state.loopBasePoints.length) {
+    state.loopBasePoints = state.loopPoints.map(p => ({ ...p }));
+  }
+
+  const flowDeg = ((state.windDir + 90) % 360 + 360) % 360;
+  const slider = document.getElementById('loop-rotate');
+  if (slider) {
+    slider.value = String(flowDeg);
+    onLoopRotate(slider);
+  }
+
+  notify(`Loop aligned to wind flow (${Math.round(flowDeg)} deg)`);
+}
+
+function buildLoopPointsFromSize(center, xSize, ySize) {
+  const halfX = xSize / 2;
+  const halfY = ySize / 2;
+  return [
+    { x: center.x - halfX, z: center.z - halfY },
+    { x: center.x + halfX, z: center.z - halfY },
+    { x: center.x + halfX, z: center.z + halfY },
+    { x: center.x - halfX, z: center.z + halfY }
+  ];
+}
+
+function renderLoopOverlay() {
+  loopGroup.clear();
+  const elevated = state.loopPoints.map(p => new THREE.Vector3(p.x, 0.12, p.z));
+  if (elevated.length >= 2) {
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(elevated);
+    const lineMat = new THREE.LineBasicMaterial({
+      color: state.loopClosed ? 0x28536b : 0xb5613c,
+      transparent: true,
+      opacity: 0.9
+    });
+    loopGroup.add(state.loopClosed ? new THREE.LineLoop(lineGeo, lineMat) : new THREE.Line(lineGeo, lineMat));
+  }
+
+  const markerGeo = new THREE.SphereGeometry(0.55, 12, 12);
+  state.loopPoints.forEach((p, i) => {
+    const marker = new THREE.Mesh(
+      markerGeo,
+      new THREE.MeshBasicMaterial({ color: i === 0 ? 0xb5613c : 0x28536b })
+    );
+    marker.position.set(p.x, 0.12, p.z);
+    loopGroup.add(marker);
+  });
+
+  if (!state.loopPoints.length) updateLoopStatus('No loop drawn');
+  else if (state.loopClosed) updateLoopStatus(`Loop closed with ${state.loopPoints.length} vertices`);
+  else updateLoopStatus(`Loop drawing: ${state.loopPoints.length} vertices`);
+}
+
+function clearLoopDrawing() {
+  state.loopDrawing = false;
+  state.loopClosed = false;
+  state.loopPoints = [];
+  state.loopBasePoints = [];
+  state.loopSizingReady = false;
+  resetLoopSizeInputs();
+  resetLoopRotateSlider();
+  renderLoopOverlay();
+}
+
+function startLoopDrawing() {
+  state.loopDrawing = true;
+  state.loopClosed = false;
+  state.loopPoints = [];
+  state.loopBasePoints = [];
+  resetLoopRotateSlider();
+  renderLoopOverlay();
+  notify('Loop drawing enabled - click the viewport to place vertices');
+}
+
+function closeLoopDrawing() {
+  if (state.loopPoints.length < 3) {
+    notify('Need at least 3 points to close a loop', true);
+    return;
+  }
+  state.loopClosed = true;
+  state.loopDrawing = false;
+  state.loopBasePoints = state.loopPoints.map(p => ({ ...p }));
+  resetLoopRotateSlider();
+  renderLoopOverlay();
+  notify('Loop closed - generate loop grid when ready');
+}
+
+function generateBoundingLoop() {
+  if (!objBoundingBox) {
+    notify('Load geometry before generating a loop', true);
+    return;
+  }
+
+  const min = objBoundingBox.min;
+  const max = objBoundingBox.max;
+  const center = objBoundingBox.getCenter(new THREE.Vector3());
+
+  state.loopDrawing = false;
+  state.loopClosed = true;
+
+  if (!state.loopSizingReady) {
+    const offset = LOOP_GENERATION_PADDING;
+    const xSize = (max.x - min.x) + (offset * 2);
+    const ySize = (max.z - min.z) + (offset * 2);
+    state.loopPoints = [
+      { x: min.x - offset, z: min.z - offset },
+      { x: max.x + offset, z: min.z - offset },
+      { x: max.x + offset, z: max.z + offset },
+      { x: min.x - offset, z: max.z + offset }
+    ];
+    state.loopBasePoints = state.loopPoints.map(p => ({ ...p }));
+    resetLoopRotateSlider();
+    setLoopSizeInputs(xSize, ySize);
+    setLoopSizeInputsEnabled(true);
+    state.loopSizingReady = true;
+    renderLoopOverlay();
+    notify('Generated loop from the loaded geometry. You can now edit X and Y size.');
+    return;
+  }
+
+  const { xSize, ySize } = getLoopSizeInputs();
+  if (!(xSize > 0) || !(ySize > 0)) {
+    notify('Enter positive X and Y loop sizes', true);
+    return;
+  }
+
+  state.loopPoints = buildLoopPointsFromSize(center, xSize, ySize);
+  state.loopBasePoints = state.loopPoints.map(p => ({ ...p }));
+  resetLoopRotateSlider();
+
+  renderLoopOverlay();
+  notify(`Generated loop sized ${xSize} x ${ySize} m`);
+}
+
+function getWorldPointOnDrawPlane(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
+    return null;
+  }
+  const mouseNdc = new THREE.Vector2(
+    ((clientX - rect.left) / rect.width) * 2 - 1,
+    -((clientY - rect.top) / rect.height) * 2 + 1
+  );
+  loopRaycaster.setFromCamera(mouseNdc, camera);
+  const hit = new THREE.Vector3();
+  return loopRaycaster.ray.intersectPlane(drawPlane, hit) ? hit : null;
+}
+
+function addLoopPointFromScreen(clientX, clientY) {
+  if (!state.loopDrawing) return;
+  const hit = getWorldPointOnDrawPlane(clientX, clientY);
+  if (!hit) return;
+  state.loopPoints.push({ x: hit.x, z: hit.z });
+  renderLoopOverlay();
+}
+
+function pointInLoopXZ(x, z, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, zi = polygon[i].z;
+    const xj = polygon[j].x, zj = polygon[j].z;
+    const intersects = ((zi > z) !== (zj > z)) &&
+      (x < (xj - xi) * (z - zi) / ((zj - zi) || 1e-9) + xi);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function pointOnLoopEdgeXZ(x, z, polygon, tolerance = 0.2) {
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const ax = polygon[j].x, az = polygon[j].z;
+    const bx = polygon[i].x, bz = polygon[i].z;
+    const abx = bx - ax, abz = bz - az;
+    const apx = x - ax, apz = z - az;
+    const abLenSq = abx * abx + abz * abz;
+    if (abLenSq < 1e-9) continue;
+    const t = Math.max(0, Math.min(1, (apx * abx + apz * abz) / abLenSq));
+    const cx = ax + abx * t;
+    const cz = az + abz * t;
+    if (Math.hypot(x - cx, z - cz) <= tolerance) return true;
+  }
+  return false;
+}
+
+function pointInsideOrOnLoopXZ(x, z, polygon, tolerance = 0.2) {
+  return pointInLoopXZ(x, z, polygon) || pointOnLoopEdgeXZ(x, z, polygon, tolerance);
+}
+
+function generateLoopGrid() {
+  if (!state.loopClosed || state.loopPoints.length < 3) {
+    notify('Close the loop before generating a grid', true);
+    return;
+  }
+
+  const step = parseFloat(document.getElementById('loop-grid-size').value) || DEFAULT_LOOP_GRID_STEP;
+  const y = parseFloat(document.getElementById('loop-grid-height').value) || DEFAULT_LOOP_GRID_HEIGHT;
+  const xs = state.loopPoints.map(p => p.x);
+  const zs = state.loopPoints.map(p => p.z);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minZ = Math.min(...zs), maxZ = Math.max(...zs);
+  const pts = [];
+
+  const tolerance = Math.max(0.15, step * 0.08);
+  for (let x = minX; x <= maxX; x += step) {
+    for (let z = minZ; z <= maxZ; z += step) {
+      if (pointInsideOrOnLoopXZ(x, z, state.loopPoints, tolerance)) {
+        pts.push({ x, y, z });
+      }
+    }
+  }
+
+  const mesh = getBuildingMesh();
+  const filtered = mesh ? pts.filter(pt => !pointInsideBuilding(pt)) : pts;
+  state.analysisPoints = ensurePointIds(filtered);
+  updatePointsList([]);
+  spawnPointSpheres();
+  document.getElementById('pts-status').textContent = `${state.analysisPoints.length} loop grid points`;
+  refreshWakeModelPreview();
+  document.getElementById('pill-pts').textContent = `${state.analysisPoints.length} PTS`;
+  document.getElementById('pill-pts').classList.add('active');
+  checkRunReady();
+  updateOpenFoamDomainPreview();
+  notify(`Generated ${state.analysisPoints.length} loop grid points`);
+}
+
+function buildSceneMesh(geo) {
+  geoGroup.clear();
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(geo.positions, 3));
+  geometry.setIndex(new THREE.BufferAttribute(geo.indices, 1));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  objBoundingBox = geometry.boundingBox;
+  objComponentBoxes = extractComponentBoxes(geo);
+
+  // Store vertices for CFD
+  objVertices = [];
+  for (let i = 0; i < geo.positions.length; i += 3)
+    objVertices.push(new THREE.Vector3(geo.positions[i], geo.positions[i+1], geo.positions[i+2]));
+
+  const mat = new THREE.MeshLambertMaterial({
+    color: 0x6f8ea3,
+    emissive: 0x11202c,
+    emissiveIntensity: 0.18,
+    side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.name = 'building';
+  state.objMesh = mesh;
+  geoGroup.add(mesh);
+
+  if (state.analysisPoints.length) {
+    state.analysisPoints = sanitizeAnalysisPoints(state.analysisPoints);
+    updatePointsList([]);
+    spawnPointSpheres();
+    document.getElementById('pts-status').textContent = `${state.analysisPoints.length} valid points`;
+    refreshWakeModelPreview();
+    document.getElementById('pill-pts').textContent = `${state.analysisPoints.length} PTS`;
+  }
+  checkRunReady();
+  updateOpenFoamDomainPreview();
+
+  // Center camera on geometry
+  const center = new THREE.Vector3();
+  objBoundingBox.getCenter(center);
+  target.copy(center);
+  const size = new THREE.Vector3();
+  objBoundingBox.getSize(size);
+  spherical.radius = Math.max(size.x, size.y, size.z) * 2.5;
+  updateCamera();
+  refreshWakeModelPreview();
+}
+
+// ─────────────────────────────────────────────────────────
+// POINT SPHERES
+// ─────────────────────────────────────────────────────────
+function clearAllResults() {
+  state.localResults = [];
+  state.openfoamResults = [];
+  localArrowGroup.clear();  localStreamGroup.clear();  localLabelGroup.clear();  localHeatGroup.clear();
+  foamArrowGroup.clear();   foamStreamGroup.clear();   foamLabelGroup.clear();   foamHeatGroup.clear();
+  clearParticleStream('local');
+  clearParticleStream('openfoam');
+}
+
+function spawnPointSpheres() {
+  pointGroup.clear();
+  const geo = new THREE.SphereGeometry(0.3, 6, 6);
+  const mat = new THREE.MeshBasicMaterial({ color: 0x28536b });
+  state.analysisPoints.forEach(p => {
+    const m = new THREE.Mesh(geo, mat.clone());
+    m.position.set(p.x, p.y, p.z);
+    m.userData.pointId = p.id;
+    pointGroup.add(m);
+  });
+  const activeViz = state.activeSource ? getVizState(state.activeSource) : null;
+  pointGroup.visible = activeViz ? !!activeViz.points : true;
+}
+
+// ─────────────────────────────────────────────────────────
+// CFD-INSPIRED SIMULATION
+// ─────────────────────────────────────────────────────────
+function calculateWakeModel(points, windVec, refH, z0) {
+  const boxes = getObstacleBoxes();
+  const sampleHeights = points.length ? points.map(p => Math.max(1.5, p.y ?? 1.5)) : [Math.max(1.5, refH * 0.35)];
+  const sampleHeight = sampleHeights.reduce((sum, h) => sum + h, 0) / sampleHeights.length;
+  const wind2D = new THREE.Vector2(windVec.x, windVec.z).normalize();
+  const side2D = new THREE.Vector2(-wind2D.y, wind2D.x);
+
+  if (!boxes.length) {
+    return {
+      effectiveMultiplier: 1.6,
+      depthFactor: 1.85,
+      heightFactor: 0.28,
+      upwindFactor: 1.0,
+      upwindHeightFactor: 0.06,
+      spreadFactor: 1.05,
+      baseSpread: 1.2,
+      recoveryFactor: 0.45,
+      minWakeSpeed: 0.9,
+      velocityDeficit: 0.1,
+      vortexDecayFactor: 1.6,
+      vortexDecayOffset: 2.5,
+      sampleHeight,
+      terrainClass: 'terrain-only'
+    };
+  }
+
+  let totalWeight = 0;
+  let avgHeight = 0;
+  let avgDepth = 0;
+  let avgWidth = 0;
+  let avgSlenderness = 0;
+  let totalPlanArea = 0;
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+
+  boxes.forEach(bb => {
+    const size = new THREE.Vector3();
+    bb.getSize(size);
+    const halfDepth = 0.5 * (Math.abs(wind2D.x) * size.x + Math.abs(wind2D.y) * size.z);
+    const halfWidth = 0.5 * (Math.abs(side2D.x) * size.x + Math.abs(side2D.y) * size.z);
+    const depth = Math.max(halfDepth * 2, 1);
+    const width = Math.max(halfWidth * 2, 1);
+    const height = Math.max(size.y, 1);
+    const frontalArea = width * height;
+    const planArea = Math.max(size.x * size.z, 1);
+    const weight = Math.max(frontalArea, 1);
+
+    totalWeight += weight;
+    avgHeight += height * weight;
+    avgDepth += depth * weight;
+    avgWidth += width * weight;
+    avgSlenderness += (height / depth) * weight;
+    totalPlanArea += planArea;
+    minX = Math.min(minX, bb.min.x);
+    maxX = Math.max(maxX, bb.max.x);
+    minZ = Math.min(minZ, bb.min.z);
+    maxZ = Math.max(maxZ, bb.max.z);
+  });
+
+  avgHeight /= totalWeight;
+  avgDepth /= totalWeight;
+  avgWidth /= totalWeight;
+  avgSlenderness /= totalWeight;
+
+  const envelopeArea = Math.max((maxX - minX) * (maxZ - minZ), totalPlanArea);
+  const density = THREE.MathUtils.clamp(totalPlanArea / envelopeArea, 0.08, 0.9);
+  const terrainExposure = THREE.MathUtils.clamp(1 + 0.18 * Math.log10(0.3 / Math.max(z0, 0.01)), 0.82, 1.28);
+  const heightInfluence = THREE.MathUtils.clamp(1.15 - 0.38 * Math.sqrt(sampleHeight / Math.max(avgHeight, 2)), 0.72, 1.18);
+  const densityInfluence = 1 + density * 0.45;
+  const shapeInfluence = THREE.MathUtils.clamp(0.92 + 0.16 * Math.log1p(avgSlenderness), 0.9, 1.28);
+  const refInfluence = THREE.MathUtils.clamp(0.96 + 0.08 * Math.log1p(refH / Math.max(avgHeight, 2)), 0.92, 1.12);
+
+  const effectiveMultiplier = THREE.MathUtils.clamp(
+    2.1 * terrainExposure * heightInfluence * shapeInfluence * refInfluence + density * 1.2,
+    1.4,
+    5.8
+  );
+
+  return {
+    effectiveMultiplier,
+    depthFactor: THREE.MathUtils.clamp(1.1 + effectiveMultiplier * 0.34, 1.5, 3.3),
+    heightFactor: THREE.MathUtils.clamp(0.14 + 0.16 * shapeInfluence + 0.08 * densityInfluence, 0.22, 0.65),
+    upwindFactor: THREE.MathUtils.clamp(0.8 + density * 0.55 + (terrainExposure - 1) * 0.35, 0.8, 1.45),
+    upwindHeightFactor: THREE.MathUtils.clamp(0.04 + density * 0.04, 0.04, 0.09),
+    spreadFactor: THREE.MathUtils.clamp(0.92 + density * 0.4 + (terrainExposure - 1) * 0.25, 0.95, 1.4),
+    baseSpread: THREE.MathUtils.clamp(0.8 + avgWidth * 0.05, 0.8, 2.4),
+    recoveryFactor: THREE.MathUtils.clamp(0.35 + 0.08 * terrainExposure + 0.05 * densityInfluence, 0.35, 0.58),
+    minWakeSpeed: THREE.MathUtils.clamp(0.82 + sampleHeight / Math.max(avgHeight, 10) * 0.08, 0.82, 0.93),
+    velocityDeficit: THREE.MathUtils.clamp(0.12 + density * 0.06 + (terrainExposure - 1) * 0.05, 0.1, 0.22),
+    vortexDecayFactor: THREE.MathUtils.clamp(1.35 + effectiveMultiplier * 0.16, 1.45, 2.4),
+    vortexDecayOffset: THREE.MathUtils.clamp(1.8 + avgWidth * 0.04, 1.8, 4.5),
+    sampleHeight,
+    terrainClass: z0 <= 0.02 ? 'open' : z0 <= 0.08 ? 'rural' : z0 <= 0.5 ? 'suburban' : 'dense urban'
+  };
+}
+
+function updateWakeModelDisplay(model) {
+  state.wakeModel = model || null;
+}
+
+function refreshWakeModelPreview() {
+  const refH = DEFAULT_REF_HEIGHT;
+  const z0 = parseFloat(document.getElementById('terrain')?.value) || 0.3;
+  const dirDeg = state.windDir ?? 270;
+  const dirRad = (dirDeg + 90) * Math.PI / 180;
+  const windVec = new THREE.Vector3(Math.cos(dirRad), 0, Math.sin(dirRad)).normalize();
+  const model = calculateWakeModel(state.analysisPoints, windVec, refH, z0);
+  state.wakeModel = model;
+  updateWakeModelDisplay(model);
+}
+
+function simulateWindAtPoint(pt, windVec, refH, z0, wakeModel) {
+  const pos = new THREE.Vector3(pt.x, pt.y, pt.z);
+  const z = Math.max(pos.y, z0 * 1.01);
+  const profileFactor = Math.log(z / z0) / Math.log(refH / z0);
+
+  let speedDelta = 0;
+  let deflectX = 0;
+  let deflectZ = 0;
+
+  const boxes = objComponentBoxes.length ? objComponentBoxes : (objBoundingBox ? [objBoundingBox] : []);
+  if (boxes.length) {
+    const windDir2D = new THREE.Vector2(windVec.x, windVec.z).normalize();
+    const sideDir2D = new THREE.Vector2(-windDir2D.y, windDir2D.x);
+
+    for (const bb of boxes) {
+      const bbSize = new THREE.Vector3();
+      bb.getSize(bbSize);
+      const bbCenter = new THREE.Vector3();
+      bb.getCenter(bbCenter);
+      const roofY = bb.max.y;
+      const baseY = bb.min.y;
+
+      // Treat elevated analysis as a true horizontal slice:
+      // only buildings intersecting the current point height affect it.
+      if (pos.y < baseY || pos.y > roofY) continue;
+
+      const rel = new THREE.Vector2(pos.x - bbCenter.x, pos.z - bbCenter.z);
+      const along = rel.dot(windDir2D);
+      const cross = rel.dot(sideDir2D);
+
+      const halfDepth = 0.5 * (Math.abs(windDir2D.x) * bbSize.x + Math.abs(windDir2D.y) * bbSize.z);
+      const halfWidth = 0.5 * (Math.abs(sideDir2D.x) * bbSize.x + Math.abs(sideDir2D.y) * bbSize.z);
+      const buildingHeight = bbSize.y;
+      const verticalFactor = 1;
+
+      // Upwind stagnation just in front of the facade.
+      const frontLen = Math.max(4, halfDepth * 0.8 + buildingHeight * 0.08);
+      if (along >= -halfDepth - frontLen && along <= -halfDepth * 0.05) {
+        const frontLong = 1 - Math.abs(along + halfDepth) / frontLen;
+        const frontCross = Math.max(0, 1 - Math.abs(cross) / (halfWidth * 1.05 + 1));
+        speedDelta -= 0.16 * frontLong * frontCross * verticalFactor;
+      }
+
+      // Downwind wake with gradual recovery and Gaussian lateral spread.
+      const wakeStart = halfDepth;
+      const wakeLen = Math.max(10, halfDepth * wakeModel.depthFactor + buildingHeight * wakeModel.heightFactor);
+      if (along > wakeStart && along < wakeStart + wakeLen) {
+        const wakeDist = along - wakeStart;
+        const sigma = halfWidth * (0.55 + 0.02 * wakeDist) * wakeModel.spreadFactor + wakeModel.baseSpread;
+        const lateral = Math.exp(-0.5 * Math.pow(cross / sigma, 2));
+        const recovery = Math.exp(-wakeDist / Math.max(wakeLen * wakeModel.recoveryFactor, 1));
+        speedDelta -= (0.28 + wakeModel.velocityDeficit) * lateral * recovery * verticalFactor;
+      }
+
+      // Shoulder acceleration along the sides of the obstacle.
+      const edgeBand = Math.max(2, halfWidth * 0.45);
+      const edgeDist = Math.abs(Math.abs(cross) - halfWidth);
+      const alongBand = halfDepth + Math.max(3, halfDepth * 0.7);
+      if (edgeDist < edgeBand && Math.abs(along) < alongBand) {
+        const edgeT = 1 - edgeDist / edgeBand;
+        const alongT = 1 - Math.abs(along) / alongBand;
+        const shoulder = edgeT * alongT * verticalFactor;
+        speedDelta += 0.18 * shoulder;
+        const sideSign = Math.sign(cross) || 1;
+        deflectX += sideDir2D.x * sideSign * shoulder * 0.1;
+        deflectZ += sideDir2D.y * sideSign * shoulder * 0.1;
+      }
+
+      // Front-corner steering to bend streamlines around the obstacle.
+      const cornerZoneAlong = along > -halfDepth - frontLen * 0.7 && along < halfDepth * 0.4;
+      const cornerZoneCross = Math.abs(cross) > halfWidth * 0.75 && Math.abs(cross) < halfWidth + edgeBand;
+      if (cornerZoneAlong && cornerZoneCross) {
+        const cornerLong = 1 - Math.abs(along) / (halfDepth + frontLen * 0.7);
+        const cornerCross = 1 - (Math.abs(cross) - halfWidth * 0.75) / (halfWidth * 0.25 + edgeBand);
+        const cornerT = Math.max(0, cornerLong) * Math.max(0, cornerCross) * verticalFactor;
+        const sideSign = Math.sign(cross) || 1;
+        deflectX += sideDir2D.x * sideSign * cornerT * 0.08;
+        deflectZ += sideDir2D.y * sideSign * cornerT * 0.08;
+      }
+    }
+  }
+
+  const speedFactor = THREE.MathUtils.clamp(profileFactor * (1 + speedDelta), 0.5, 1.45);
+  const speed = state.windSpeed * speedFactor;
+
+  let vx = windVec.x + deflectX;
+  let vz = windVec.z + deflectZ;
+  const len = Math.sqrt(vx * vx + vz * vz) || 1;
+  vx /= len;
+  vz /= len;
+
+  const dirDeg = (Math.atan2(vz, vx) * 180 / Math.PI + 90 + 360) % 360;
+  return { ...pt, speed, dir: dirDeg, vx, vy: 0, vz, ratio: speedFactor };
+}
+
+function estimatePlanGridStep(points) {
+  const xs = [...new Set(points.map(p => Number(p.x.toFixed(3))))].sort((a, b) => a - b);
+  const zs = [...new Set(points.map(p => Number(p.z.toFixed(3))))].sort((a, b) => a - b);
+  let minStep = Infinity;
+  for (let i = 1; i < xs.length; i++) {
+    const d = xs[i] - xs[i - 1];
+    if (d > 1e-6) minStep = Math.min(minStep, d);
+  }
+  for (let i = 1; i < zs.length; i++) {
+    const d = zs[i] - zs[i - 1];
+    if (d > 1e-6) minStep = Math.min(minStep, d);
+  }
+  return Number.isFinite(minStep) ? THREE.MathUtils.clamp(minStep, 1.5, 6) : 3;
+}
+
+
+function samplePlanFlowField(field, x, z, windVec) {
+  const fx = (x - field.minX) / field.dx;
+  const fz = (z - field.minZ) / field.dz;
+  const ix = THREE.MathUtils.clamp(Math.floor(fx), 0, field.nx - 2);
+  const iz = THREE.MathUtils.clamp(Math.floor(fz), 0, field.nz - 2);
+  const tx = THREE.MathUtils.clamp(fx - ix, 0, 1);
+  const tz = THREE.MathUtils.clamp(fz - iz, 0, 1);
+  const idx = (cx, cz) => cz * field.nx + cx;
+
+  const corners = [
+    idx(ix, iz),
+    idx(ix + 1, iz),
+    idx(ix, iz + 1),
+    idx(ix + 1, iz + 1),
+  ];
+
+  const bilerp = arr => {
+    const a = arr[corners[0]] * (1 - tx) + arr[corners[1]] * tx;
+    const b = arr[corners[2]] * (1 - tx) + arr[corners[3]] * tx;
+    return a * (1 - tz) + b * tz;
+  };
+
+  let vx = bilerp(field.vx);
+  let vz = bilerp(field.vz);
+  if (Math.hypot(vx, vz) < 1e-4) {
+    vx = windVec.x;
+    vz = windVec.z;
+  }
+  return { vx, vz, speedFactor: Math.max(0.72, Math.min(1.22, Math.hypot(vx, vz))) };
+}
+
+// ─────────────────────────────────────────────────────────
+// RENDER RESULTS
+// ─────────────────────────────────────────────────────────
+function arrowDisplayColor(ratio, minR, maxR) {
+  return speedColor(ratio, minR, maxR).lerp(new THREE.Color(0xffffff), 0.45);
+}
+
+function renderSource(source) {
+  const results   = source === 'openfoam' ? state.openfoamResults : state.localResults;
+  const viz       = getVizState(source);
+  const isOF      = source === 'openfoam';
+
+  const aGroup = isOF ? foamArrowGroup  : localArrowGroup;
+  const sGroup = isOF ? foamStreamGroup : localStreamGroup;
+  const lGroup = isOF ? foamLabelGroup  : localLabelGroup;
+  const hGroup = isOF ? foamHeatGroup   : localHeatGroup;
+
+  aGroup.clear(); sGroup.clear(); lGroup.clear(); hGroup.clear();
+
+  if (results.length === 0) return;
+
+  // Use percentile-based range to prevent CFD outliers from collapsing the color scale
+  const sortedSpeeds = results.map(r => r.speed).filter(s => isFinite(s) && s >= 0).sort((a, b) => a - b);
+  const minS = sortedSpeeds[0] ?? 0;
+  const maxS = sortedSpeeds[Math.floor(sortedSpeeds.length * 0.98)] ?? 1; // 98th percentile cap
+  const colorRange = getHeatmapRange(source, minS, maxS);
+
+  // Color point spheres by best available result (active source preferred)
+  const colorSource = state.activeSource === 'openfoam' ? 'openfoam' : 'local';
+  const colorSrc = colorSource === 'openfoam' ? state.openfoamResults : state.localResults;
+  const colorSorted = colorSrc.map(r => r.speed).filter(s => isFinite(s) && s >= 0).sort((a, b) => a - b);
+  const colorMinAuto = colorSorted[0] ?? 0;
+  const colorMaxAuto = colorSorted[Math.floor(colorSorted.length * 0.98)] ?? 1;
+  const pointColorRange = getHeatmapRange(colorSource, colorMinAuto, colorMaxAuto);
+  const resultById  = new Map(colorSrc.map(r => [r.id, r]));
+  pointGroup.children.forEach(mesh => {
+    const r = resultById.get(mesh.userData.pointId);
+    if (r) mesh.material.color = speedColor(r.speed, pointColorRange.min, pointColorRange.max);
+  });
+
+  // ARROWS
+  if (viz.arrows) {
+    const step = 1;
+    for (let i = 0; i < results.length; i += step) {
+      const r = results[i];
+      const dirVec = isOF
+        ? new THREE.Vector3(r.vx, 0, r.vz)
+        : new THREE.Vector3(r.vx, r.vy, r.vz);
+      if (dirVec.lengthSq() < 1e-10) continue;
+      const dir = dirVec.normalize();
+      const col = arrowDisplayColor(r.speed, colorRange.min, colorRange.max);
+      const len = isOF
+        ? Math.max(3.0, (r.speed / maxS) * 10 * state.arrowScale)
+        : Math.max(1.8, (r.speed / maxS) * 7  * state.arrowScale);
+      const arrow = new THREE.ArrowHelper(dir,
+        new THREE.Vector3(r.x, r.y + (isOF ? 0.9 : 0.35), r.z), len, col, len * 0.35, len * 0.2);
+      arrow.line.material.transparent = true;
+      arrow.line.material.opacity = isOF ? 1.0 : 0.9;
+      arrow.line.material.depthTest = true;
+      arrow.cone.material.transparent = true;
+      arrow.cone.material.opacity = isOF ? 1.0 : 0.95;
+      arrow.cone.material.depthTest = true;
+      aGroup.add(arrow);
+    }
+  }
+
+  // STREAMLINES
+  if (viz.stream) {
+    const dirRad = (state.windDir + 90) * Math.PI / 180;
+    const wv = new THREE.Vector3(Math.cos(dirRad), 0, Math.sin(dirRad));
+    const streamStarts = getStreamlineSeeds(results, wv, 42);
+    streamStarts.forEach(seed => drawStreamline(seed, results, wv, colorRange.min, colorRange.max, sGroup));
+  }
+
+  // FLOW PARTICLES
+  if (viz.particles) {
+    initParticleStream(results, source, colorRange.min, colorRange.max);
+  } else {
+    clearParticleStream(source);
+  }
+
+  // VELOCITY CONTOUR PLANE
+  if (viz.heatmap) {
+    buildVelocityPlane(results, colorRange.min, colorRange.max, hGroup);
+  }
+
+  // LABELS
+  if (viz.labels) {
+    renderLabels(results, colorRange.min, colorRange.max, lGroup);
+  }
+
+  // Apply source visibility — only the active source's groups are shown
+  const isActive = (state.activeSource === source);
+  aGroup.visible = isActive;
+  sGroup.visible = isActive;
+  lGroup.visible = isActive;
+  hGroup.visible = isActive;
+}
+
+function getStreamlineSeeds(results, windVec, count) {
+  const along = r => r.x * windVec.x + r.z * windVec.z;
+  const cross = r => r.x * (-windVec.z) + r.z * windVec.x;
+  const sorted = [...results].sort((a, b) => along(a) - along(b));
+  const upwindLimit = Math.max(1, Math.floor(sorted.length * 0.22));
+  const candidates = sorted.slice(0, upwindLimit);
+  const levels = [...new Set(candidates.map(r => r.y))].sort((a, b) => a - b);
+  const perLevel = Math.max(6, Math.ceil(count / Math.max(1, levels.length)));
+  const seeds = [];
+
+  levels.forEach(level => {
+    const band = candidates
+      .filter(r => Math.abs(r.y - level) < 0.01)
+      .sort((a, b) => cross(a) - cross(b));
+    if (!band.length) return;
+    const step = Math.max(1, Math.floor(band.length / perLevel));
+    for (let i = 0; i < band.length; i += step) seeds.push(band[i]);
+  });
+
+  return seeds.slice(0, count);
+}
+
+function sampleFlowField(pos, results, globalWind, maxS) {
+  const nearest = [];
+  for (const r of results) {
+    const d = Math.hypot(r.x - pos.x, (r.y - pos.y) * 0.7, r.z - pos.z);
+    nearest.push({ r, d });
+  }
+  nearest.sort((a, b) => a.d - b.d);
+  const neighbors = nearest.slice(0, 8);
+  if (!neighbors.length || neighbors[0].d > 22) return null;
+
+  let totalW = 0;
+  let vx = 0, vy = 0, vz = 0, speed = 0, preferredY = 0;
+  neighbors.forEach(({ r, d }) => {
+    const w = 1 / Math.max(d * d, 0.35);
+    totalW += w;
+    vx += r.vx * w;
+    vz += r.vz * w;
+    speed += r.speed * w;
+    preferredY += r.y * r.speed * w;
+  });
+
+  vx /= totalW;
+  vz /= totalW;
+  speed /= totalW;
+  preferredY /= Math.max(speed * totalW, 0.001);
+
+  // Add a subtle vertical drift toward faster nearby layers for a CFD-like ribbon effect.
+  vy = THREE.MathUtils.clamp((preferredY - pos.y) * 0.14, -0.3, 0.3);
+
+  const len = Math.hypot(vx, vy, vz) || 1;
+  return {
+    vx: vx / len,
+    vy: vy / len,
+    vz: vz / len,
+    speed: Math.max(speed, maxS * 0.08)
+  };
+}
+
+function drawStreamline(start, results, globalWind, minS, maxS, group) {
+  const steps = 48, dt = 1.7;
+  const rawPts = [new THREE.Vector3(start.x, start.y, start.z)];
+  const samples = [start.speed];
+  let pos = { x: start.x, y: start.y, z: start.z };
+
+  for (let i = 0; i < steps; i++) {
+    const flow = sampleFlowField(pos, results, globalWind, maxS);
+    if (!flow) break;
+
+    const nextPos = {
+      x: pos.x + flow.vx * dt * (0.75 + flow.speed / maxS),
+      y: pos.y + flow.vy * dt * 1.2,
+      z: pos.z + flow.vz * dt * (0.75 + flow.speed / maxS)
+    };
+
+    if (segmentHitsBuilding(pos, nextPos)) break;
+
+    pos = nextPos;
+
+    rawPts.push(new THREE.Vector3(pos.x, pos.y, pos.z));
+    samples.push(flow.speed);
+  }
+
+  if (rawPts.length < 4) return;
+
+  const curve = new THREE.CatmullRomCurve3(rawPts);
+  const pts = curve.getPoints(rawPts.length * 6);
+  const colors = new Float32Array(pts.length * 3);
+
+  pts.forEach((pt, i) => {
+    const t = i / Math.max(pts.length - 1, 1);
+    const sampleIdx = Math.min(samples.length - 1, Math.floor(t * (samples.length - 1)));
+    const col = speedColor(samples[sampleIdx], minS, maxS);
+    colors[i * 3] = col.r;
+    colors[i * 3 + 1] = col.g;
+    colors[i * 3 + 2] = col.b;
+  });
+
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const mat = new THREE.LineBasicMaterial({
+    vertexColors: true,
+    opacity: 0.6,
+    transparent: true
+  });
+  group.add(new THREE.Line(geo, mat));
+}
+
+// ─────────────────────────────────────────────────────────
+// ANIMATED FLOW PARTICLES
+// ─────────────────────────────────────────────────────────
+
+// Fast flow field sample — nearest-point lookup keeps it light and stable.
+function sampleFlowFieldFast(pos, results, maxS) {
+  const MAX_D = 40;
+  let best = null;
+  let bestD = Infinity;
+
+  for (const r of results) {
+    const d = Math.hypot(r.x - pos.x, (r.y - pos.y) * 0.7, r.z - pos.z);
+    if (d > MAX_D || d >= bestD) continue;
+    best = r;
+    bestD = d;
+    if (bestD < 0.15) break;
+  }
+  if (!best) return null;
+
+  const vy = THREE.MathUtils.clamp((best.y - pos.y) * 0.12, -0.25, 0.25);
+  const len = Math.hypot(best.vx, vy, best.vz) || 1;
+  return {
+    vx: best.vx / len,
+    vy: vy / len,
+    vz: best.vz / len,
+    speed: Math.max(best.speed, maxS * 0.08)
+  };
+}
+
+// Identify which polygon edges face into the wind (upwind edges) and their weights
+function getUpwindEdges(polygon, windVec) {
+  const cx = polygon.reduce((s, p) => s + p.x, 0) / polygon.length;
+  const cz = polygon.reduce((s, p) => s + p.z, 0) / polygon.length;
+  const edges = [];
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i], b = polygon[(i + 1) % polygon.length];
+    const dx = b.x - a.x, dz = b.z - a.z;
+    let nx = dz, nz = -dx;
+    // Flip to outward-facing
+    const midX = (a.x + b.x) / 2, midZ = (a.z + b.z) / 2;
+    if (nx * (cx - midX) + nz * (cz - midZ) > 0) { nx = -nx; nz = -nz; }
+    const dot = nx * windVec.x + nz * windVec.z;
+    if (dot < -0.05) edges.push({ a, b, weight: -dot });
+  }
+  return edges;
+}
+
+// Spawn a particle position at a random upwind edge point
+function spawnAtUpwindBoundary(upwindEdges, heights) {
+  if (!upwindEdges.length) return null;
+  const totalW = upwindEdges.reduce((s, e) => s + e.weight, 0);
+  let r = Math.random() * totalW;
+  let edge = upwindEdges[upwindEdges.length - 1];
+  for (const e of upwindEdges) { r -= e.weight; if (r <= 0) { edge = e; break; } }
+  const t = Math.random();
+  return {
+    x: edge.a.x + (edge.b.x - edge.a.x) * t,
+    y: heights[Math.floor(Math.random() * heights.length)],
+    z: edge.a.z + (edge.b.z - edge.a.z) * t,
+  };
+}
+
+// Trace a unique spline route through the flow field from a start position.
+// Returns { curve: CatmullRomCurve3, speeds: Float32Array, length } or null if too short.
+function computeRoute(startPos, results, maxS, polygon, domainDiameter) {
+  const ROUTE_STEP = 7.0;  // scene units between waypoints
+  const MAX_STEPS  = Math.ceil(domainDiameter / ROUTE_STEP) + 4; // just enough to cross the domain
+  const waypts = [new THREE.Vector3(startPos.x, startPos.y, startPos.z)];
+  const speeds = [startPos.speed || maxS * 0.5];
+  let pos = { x: startPos.x, y: startPos.y, z: startPos.z };
+
+  for (let i = 0; i < MAX_STEPS; i++) {
+    const flow = sampleFlowFieldFast(pos, results, maxS);
+    if (!flow) break;
+    pos = {
+      x: pos.x + flow.vx * ROUTE_STEP,
+      y: pos.y + flow.vy * ROUTE_STEP * 0.5,
+      z: pos.z + flow.vz * ROUTE_STEP,
+    };
+    if (!pointInLoopXZ(pos.x, pos.z, polygon)) break;
+    waypts.push(new THREE.Vector3(pos.x, pos.y, pos.z));
+    speeds.push(flow.speed);
+  }
+
+  if (waypts.length < 4) return null;
+  const curve = new THREE.CatmullRomCurve3(waypts);
+  return { curve, speeds, length: Math.max(curve.getLength(), 1) };
+}
+
+function initParticleStream(results, source, minS, maxS) {
+  clearParticleStream(source);
+  const group = source === 'openfoam' ? foamParticleGroup : localParticleGroup;
+  if (!results.length) return;
+
+  const dirRad = (state.windDir + 90) * Math.PI / 180;
+  const windVec = { x: Math.cos(dirRad), z: Math.sin(dirRad) };
+
+  // Use the drawn loop polygon (scaled 10%) or fall back to results bounding box
+  let polygon;
+  if (state.loopClosed && state.loopPoints.length >= 3) {
+    const cx = state.loopPoints.reduce((s, p) => s + p.x, 0) / state.loopPoints.length;
+    const cz = state.loopPoints.reduce((s, p) => s + p.z, 0) / state.loopPoints.length;
+    polygon = state.loopPoints.map(p => ({ x: cx + (p.x - cx) * 1.1, z: cz + (p.z - cz) * 1.1 }));
+  } else {
+    const xs = results.map(r => r.x), zs = results.map(r => r.z);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+    const hw = (Math.max(...xs) - Math.min(...xs)) / 2 * 1.15;
+    const hd = (Math.max(...zs) - Math.min(...zs)) / 2 * 1.15;
+    polygon = [
+      { x: cx - hw, z: cz - hd }, { x: cx + hw, z: cz - hd },
+      { x: cx + hw, z: cz + hd }, { x: cx - hw, z: cz + hd },
+    ];
+  }
+
+  const upwindEdges = getUpwindEdges(polygon, windVec);
+  const heights = [...new Set(results.map(r => Math.round(r.y * 10) / 10))].sort((a, b) => a - b);
+  if (!heights.length) heights.push(1.5);
+
+  // Compute domain diameter along wind direction → drives route step budget
+  const projections = polygon.map(p => p.x * windVec.x + p.z * windVec.z);
+  const domainDiameter = Math.max(...projections) - Math.min(...projections);
+
+  // Each particle gets its own unique pre-computed spline route.
+  // 70% start at upwind boundary (main flow), 30% start at random interior points
+  // so recirculation / wake zones behind buildings are also covered.
+  const particles = [];
+  const N = PARTICLE_COUNT;
+  const bboxXs = polygon.map(p => p.x), bboxZs = polygon.map(p => p.z);
+  const bboxMinX = Math.min(...bboxXs), bboxMaxX = Math.max(...bboxXs);
+  const bboxMinZ = Math.min(...bboxZs), bboxMaxZ = Math.max(...bboxZs);
+
+  for (let i = 0; i < N; i++) {
+    let route = null, attempts = 0;
+    const useInterior = i >= N * 0.7; // 30% interior seeds for wake/recirculation coverage
+
+    while (!route && attempts < 5) {
+      let sp;
+      if (useInterior) {
+        // Random point inside polygon — finds recirculation zones the upwind seeds miss
+        let px, pz, tries = 0;
+        do {
+          px = bboxMinX + Math.random() * (bboxMaxX - bboxMinX);
+          pz = bboxMinZ + Math.random() * (bboxMaxZ - bboxMinZ);
+          tries++;
+        } while (!pointInLoopXZ(px, pz, polygon) && tries < 15);
+        sp = { x: px, y: heights[Math.floor(Math.random() * heights.length)], z: pz };
+      } else {
+        sp = spawnAtUpwindBoundary(upwindEdges, heights);
+      }
+      if (sp) {
+        const initFlow = sampleFlowFieldFast(sp, results, maxS);
+        sp.speed = initFlow ? initFlow.speed : minS;
+        route = computeRoute(sp, results, maxS, polygon, domainDiameter);
+      }
+      attempts++;
+    }
+    if (!route) continue;
+    const t = Math.random(); // spread particles along their routes at start
+    const si = Math.min(Math.floor(t * route.speeds.length), route.speeds.length - 1);
+    particles.push({ route, t, speed: route.speeds[si] });
+  }
+
+  // Build GPU geometry — one point per particle
+  const dotPos = new Float32Array(N * 3);
+  const dotCol = new Float32Array(N * 3);
+  const dotGeo = new THREE.BufferGeometry();
+  dotGeo.setAttribute('position', new THREE.BufferAttribute(dotPos, 3));
+  dotGeo.setAttribute('color',    new THREE.BufferAttribute(dotCol, 3));
+  const dotMat = new THREE.PointsMaterial({
+    size: 5.0,
+    vertexColors: true,
+    transparent: true,
+    opacity: 1.0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    sizeAttenuation: true,
+  });
+  const dotMesh = new THREE.Points(dotGeo, dotMat);
+  group.add(dotMesh);
+
+  particleAnim[source] = {
+    results, polygon, upwindEdges, heights, domainDiameter,
+    bboxMinX, bboxMaxX, bboxMinZ, bboxMaxZ,
+    particles, N,
+    dotMesh, dotGeo, dotPos, dotCol,
+    minS, maxS,
+  };
+}
+
+function clearParticleStream(source) {
+  const group = source === 'openfoam' ? foamParticleGroup : localParticleGroup;
+  group.clear();
+  const data = particleAnim[source];
+  if (data) {
+    data.dotGeo.dispose();
+    data.dotMesh?.material?.dispose();
+    particleAnim[source] = null;
+  }
+}
+
+function updateAnimatedParticles() {
+  const now = performance.now();
+  const rawDt = particleAnim.lastTime ? (now - particleAnim.lastTime) / 1000 : 0.016;
+  particleAnim.lastTime = now;
+  const dt = Math.min(rawDt, 0.05);
+
+  ['local', 'openfoam'].forEach(source => {
+    const data = particleAnim[source];
+    if (!data) return;
+    const grp = source === 'openfoam' ? foamParticleGroup : localParticleGroup;
+    if (!grp.visible) return;
+
+    const { results, polygon, upwindEdges, heights, domainDiameter,
+            bboxMinX, bboxMaxX, bboxMinZ, bboxMaxZ,
+            particles, dotPos, dotCol, minS, maxS } = data;
+
+    const maxSpeedRef = Math.max(maxS, 0.001);
+
+    particles.forEach((p, pi) => {
+      // Interpolate speed from pre-sampled route speeds
+      const rawIdx = p.t * (p.route.speeds.length - 1);
+      const lo = Math.floor(rawIdx), hi = Math.min(lo + 1, p.route.speeds.length - 1);
+      p.speed = p.route.speeds[lo] * (1 - (rawIdx - lo)) + p.route.speeds[hi] * (rawIdx - lo);
+
+      // Advance t proportional to local speed and base speed setting
+      const speedRatio = 0.6 + 0.6 * (p.speed / maxSpeedRef);
+      p.t += (dt * PARTICLE_STEP * speedRatio) / p.route.length;
+
+      // Respawn with a fresh unique route when this one is done
+      if (p.t >= 1) {
+        let newRoute = null, attempts = 0;
+        const useInterior = Math.random() < 0.3;
+        while (!newRoute && attempts < 3) {
+          let sp;
+          if (useInterior) {
+            let px, pz, tries = 0;
+            do {
+              px = bboxMinX + Math.random() * (bboxMaxX - bboxMinX);
+              pz = bboxMinZ + Math.random() * (bboxMaxZ - bboxMinZ);
+              tries++;
+            } while (!pointInLoopXZ(px, pz, polygon) && tries < 15);
+            sp = { x: px, y: heights[Math.floor(Math.random() * heights.length)], z: pz };
+          } else {
+            sp = spawnAtUpwindBoundary(upwindEdges, heights);
+          }
+          if (sp) {
+            const f = sampleFlowFieldFast(sp, results, maxS);
+            sp.speed = f ? f.speed : minS;
+            newRoute = computeRoute(sp, results, maxS, polygon, domainDiameter);
+          }
+          attempts++;
+        }
+        if (newRoute) { p.route = newRoute; p.t = 0; p.speed = newRoute.speeds[0]; }
+        else p.t = 0; // reuse same route rather than disappear
+      }
+
+      // Read world position from the smooth spline
+      const pos3 = p.route.curve.getPoint(Math.min(p.t, 1));
+      const col = speedColor(p.speed, minS, maxS);
+      dotPos[pi * 3]     = pos3.x;
+      dotPos[pi * 3 + 1] = pos3.y;
+      dotPos[pi * 3 + 2] = pos3.z;
+      dotCol[pi * 3]     = col.r;
+      dotCol[pi * 3 + 1] = col.g;
+      dotCol[pi * 3 + 2] = col.b;
+    });
+
+    data.dotGeo.attributes.position.needsUpdate = true;
+    data.dotGeo.attributes.color.needsUpdate    = true;
+  });
+}
+
+function renderLabels(results, minS, maxS, group) {
+  // Use canvas sprites
+  results.forEach(r => {
+    const canvas2 = document.createElement('canvas');
+    canvas2.width = 128; canvas2.height = 40;
+    const ctx = canvas2.getContext('2d');
+    const col = speedColor(r.speed, minS, maxS);
+    ctx.fillStyle = `rgb(${(col.r*255)|0},${(col.g*255)|0},${(col.b*255)|0})`;
+    ctx.font = '500 18px Roboto';
+    ctx.fillText(`${r.speed.toFixed(1)}`, 4, 28);
+    const tex = new THREE.CanvasTexture(canvas2);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+    const sprite = new THREE.Sprite(mat);
+    sprite.position.set(r.x, r.y + 2, r.z);
+    sprite.scale.set(6, 2, 1);
+    group.add(sprite);
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// HOVER TOOLTIP
+// ─────────────────────────────────────────────────────────
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+function handleHover(e) {
+  const allResults = state.activeSource === 'openfoam' ? state.openfoamResults
+                   : state.activeSource === 'local'    ? state.localResults
+                   : [];
+  if (allResults.length === 0) return;
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObjects(pointGroup.children);
+  const tip = document.getElementById('tooltip');
+  if (hits.length > 0) {
+    const resultById = new Map(allResults.map(r => [r.id, r]));
+    const r = resultById.get(hits[0].object.userData.pointId);
+    if (r) {
+      tip.style.display = 'block';
+      tip.style.left = (e.clientX - rect.left + 12) + 'px';
+      tip.style.top = (e.clientY - rect.top - 10) + 'px';
+      tip.innerHTML = `
+        <strong>${r.speed.toFixed(2)} m/s</strong><br>
+        DIR ${Math.round(r.dir)}°<br>
+        POS (${r.x.toFixed(1)}, ${r.y.toFixed(1)}, ${r.z.toFixed(1)})<br>
+        RATIO ${(r.ratio*100).toFixed(0)}% of ref
+      `;
+    }
+  } else {
+    tip.style.display = 'none';
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// VIZ TOGGLES
+// ─────────────────────────────────────────────────────────
+function toggleGhostBuildings(btn) {
+  const mesh = getBuildingMesh();
+  if (!mesh) return;
+  const ghosted = btn.classList.toggle('on');
+  mesh.material.transparent = ghosted;
+  mesh.material.opacity = ghosted ? 0.18 : 1.0;
+  mesh.material.needsUpdate = true;
+}
+
+function toggleLoop(btn) {
+  state.loopVisible = btn.classList.toggle('on');
+  loopGroup.visible = state.loopVisible;
+}
+
+function buildParticleGroundGeometry() {
+  const pts = state.loopClosed && state.loopPoints.length >= 3
+    ? state.loopPoints
+    : null;
+
+  if (pts) {
+    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    const cz = pts.reduce((s, p) => s + p.z, 0) / pts.length;
+    // Scale each vertex 10% outward from centroid
+    const scaled = pts.map(p => ({
+      x: cx + (p.x - cx) * 1.1,
+      z: cz + (p.z - cz) * 1.1,
+    }));
+    // ShapeGeometry lives in local XY; after rotation.x=-PI/2, local Y maps to world -Z
+    const shape = new THREE.Shape(scaled.map(p => new THREE.Vector2(p.x, -p.z)));
+    particleGroundPlane.position.set(0, -0.2, 0);
+    return new THREE.ShapeGeometry(shape);
+  }
+
+  // Fallback: no loop yet — use bounding box of active results × 1.1
+  const results = (state.activeSource === 'openfoam' ? state.openfoamResults : state.localResults);
+  if (results && results.length) {
+    const xs = results.map(r => r.x), zs = results.map(r => r.z);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+    const hw  = (Math.max(...xs) - Math.min(...xs)) / 2 * 1.1;
+    const hd  = (Math.max(...zs) - Math.min(...zs)) / 2 * 1.1;
+    particleGroundPlane.position.set(cx, -0.2, cz);
+    return new THREE.PlaneGeometry(hw * 2, hd * 2);
+  }
+
+  // Last resort: large square
+  particleGroundPlane.position.set(0, -0.2, 0);
+  return new THREE.PlaneGeometry(400, 400);
+}
+
+function updateParticleGroundPlane() {
+  const localOn = state.activeSource === 'local'    && !!state.localViz.particles;
+  const foamOn  = state.activeSource === 'openfoam' && !!state.openfoamViz.particles;
+  const show = localOn || foamOn;
+
+  if (show) {
+    const oldGeo = particleGroundPlane.geometry;
+    particleGroundPlane.geometry = buildParticleGroundGeometry();
+    oldGeo.dispose();
+  }
+
+  particleGroundPlane.visible = show;
+}
+
+function toggleViz(source, key, btn) {
+  const viz = getVizState(source);
+  viz[key] = !viz[key];
+  btn.classList.toggle('on', viz[key]);
+  if (key === 'points') {
+    // pointGroup is shared — apply the active source's points state
+    if (state.activeSource === source) pointGroup.visible = viz[key];
+    return;
+  }
+  if (key === 'particles') updateParticleGroundPlane();
+  const results = source === 'openfoam' ? state.openfoamResults : state.localResults;
+  if (results.length > 0) renderSource(source);
+}
+
+const LOCAL_TOG_IDS  = ['tog-local-arrows',   'tog-local-stream',   'tog-local-labels',   'tog-local-heatmap',   'tog-local-points',   'tog-local-particles'];
+const FOAM_TOG_IDS   = ['tog-openfoam-arrows', 'tog-openfoam-stream', 'tog-openfoam-labels', 'tog-openfoam-heatmap', 'tog-openfoam-points', 'tog-openfoam-particles'];
+const VIZ_KEYS = ['arrows', 'stream', 'labels', 'heatmap', 'points', 'particles'];
+
+function applySourceToggles(source, active) {
+  const ids  = source === 'local' ? LOCAL_TOG_IDS : FOAM_TOG_IDS;
+  const viz  = getVizState(source);
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = !active;
+    el.classList.toggle('on', active && !!viz[VIZ_KEYS[i]]);
+  });
+}
+
+function setActiveSource(src) {
+  // Radio-button: clicking active source toggles it off; clicking inactive switches to it
+  state.activeSource = (state.activeSource === src) ? null : src;
+
+  document.getElementById('src-local').classList.toggle('on', state.activeSource === 'local');
+  document.getElementById('src-openfoam').classList.toggle('on', state.activeSource === 'openfoam');
+
+  const localOn = state.activeSource === 'local';
+  const foamOn  = state.activeSource === 'openfoam';
+
+  applySourceToggles('local',    localOn);
+  applySourceToggles('openfoam', foamOn);
+
+  localArrowGroup.visible   = localOn;
+  localStreamGroup.visible  = localOn;
+  localLabelGroup.visible   = localOn;
+  localHeatGroup.visible    = localOn;
+  localParticleGroup.visible = localOn;
+
+  foamArrowGroup.visible   = foamOn;
+  foamStreamGroup.visible  = foamOn;
+  foamLabelGroup.visible   = foamOn;
+  foamHeatGroup.visible    = foamOn;
+  foamParticleGroup.visible = foamOn;
+  updateParticleGroundPlane();
+  syncOpenFoamDomainOverlayVisibility();
+
+  // Sync point sphere visibility to the active source's points toggle
+  const activeViz = state.activeSource ? getVizState(state.activeSource) : null;
+  pointGroup.visible = activeViz ? !!activeViz.points : false;
+
+  refreshStatsDisplay();
+  updatePointsList();
+}
+
+function refreshStatsDisplay() {
+  const stats = state.activeSource === 'openfoam' ? state.openfoamStats
+              : state.activeSource === 'local'    ? state.localStats
+              : null;
+  if (stats) {
+    document.getElementById('stat-max').textContent = `MAX  ${stats.max.toFixed(2)} m/s`;
+    document.getElementById('stat-min').textContent = `MIN  ${stats.min.toFixed(2)} m/s`;
+    document.getElementById('hud-stats').style.display = 'block';
+
+    const src = state.activeSource;
+    const range = src ? getHeatmapRange(src, stats.min, stats.max) : { min: stats.min, max: stats.max };
+    document.getElementById('leg-min').textContent = `${range.min.toFixed(1)} m/s`;
+    document.getElementById('leg-max').textContent = `${range.max.toFixed(1)} m/s`;
+    syncLegendRangeInputs(src, range);
+    document.getElementById('legend').style.display = 'block';
+  } else {
+    document.getElementById('hud-stats').style.display = 'none';
+    document.getElementById('legend').style.display = 'none';
+  }
+}
+
+function getHeatmapRange(source, autoMin, autoMax) {
+  const srcKey = source === 'openfoam' ? 'openfoam' : 'local';
+  const preset = state.legendRange[srcKey] || { min: null, max: null };
+  const min = Number.isFinite(preset.min) ? preset.min : autoMin;
+  const max = Number.isFinite(preset.max) ? preset.max : autoMax;
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
+    return { min: autoMin, max: autoMax };
+  }
+  return { min, max };
+}
+
+function syncLegendRangeInputs(source, range) {
+  const minInput = document.getElementById('leg-min-input');
+  const maxInput = document.getElementById('leg-max-input');
+  if (!minInput || !maxInput) return;
+  const active = source === 'openfoam' || source === 'local';
+  minInput.disabled = !active;
+  maxInput.disabled = !active;
+  if (!active) return;
+  minInput.value = Number.isFinite(range.min) ? range.min.toFixed(1) : '';
+  maxInput.value = Number.isFinite(range.max) ? range.max.toFixed(1) : '';
+}
+
+function onLegendRangeInputChange() {
+  const src = state.activeSource;
+  if (src !== 'local' && src !== 'openfoam') return;
+  const srcKey = src === 'openfoam' ? 'openfoam' : 'local';
+  const minInput = document.getElementById('leg-min-input');
+  const maxInput = document.getElementById('leg-max-input');
+  const minVal = parseFloat(minInput.value);
+  const maxVal = parseFloat(maxInput.value);
+
+  state.legendRange[srcKey].min = Number.isFinite(minVal) ? minVal : null;
+  state.legendRange[srcKey].max = Number.isFinite(maxVal) ? maxVal : null;
+
+  if (src === 'local' && state.localResults.length > 0) renderSource('local');
+  if (src === 'openfoam' && state.openfoamResults.length > 0) renderSource('openfoam');
+  refreshStatsDisplay();
+  updatePointsList();
+}
+
+
+function onParticleSpeed(input) {
+  PARTICLE_STEP = parseFloat(input.value);
+  document.getElementById('particle-speed-val').textContent = input.value;
+}
+
+function onArrowScale(input) {
+  state.arrowScale = parseFloat(input.value);
+  document.getElementById('arrow-scale-val').textContent = state.arrowScale.toFixed(1);
+  if (state.localResults.length > 0) renderSource('local');
+  if (state.openfoamResults.length > 0) renderSource('openfoam');
+}
+
+document.getElementById('terrain').addEventListener('change', refreshWakeModelPreview);
+document.getElementById('leg-min-input').addEventListener('change', onLegendRangeInputChange);
+document.getElementById('leg-max-input').addEventListener('change', onLegendRangeInputChange);
+
+// ─────────────────────────────────────────────────────────
+// POINTS LIST UI
+// ─────────────────────────────────────────────────────────
+renderLoopOverlay();
+loopGroup.visible = state.loopVisible;
+resetLoopSizeInputs();
+setViewPreset('3d');
+refreshGridButtonState();
+refreshWakeModelPreview();
+
+function updatePointsList() {
+  const list = document.getElementById('points-list');
+  list.innerHTML = '';
+  const results = state.activeSource === 'openfoam' ? state.openfoamResults
+                : state.activeSource === 'local'    ? state.localResults
+                : [];
+  const src = results.length > 0 ? results : state.analysisPoints;
+  const sortedSpeeds = results.map(r => r.speed).filter(s => isFinite(s) && s >= 0).sort((a, b) => a - b);
+  const autoMin = sortedSpeeds[0] ?? 0;
+  const autoMax = sortedSpeeds[Math.floor(sortedSpeeds.length * 0.98)] ?? 1;
+  const range = getHeatmapRange(state.activeSource || 'local', autoMin, autoMax);
+  const resultById = new Map(results.map(r => [r.id, r]));
+
+  src.slice(0, 50).forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'point-row';
+    const r = resultById.get(p.id) || results[i];
+    const col = r ? speedColor(r.speed, range.min, range.max) : null;
+    const colorHex = col ? `#${col.getHexString()}` : '#4a5568';
+    row.innerHTML = `
+      <span style="color:var(--muted)">#${i+1}</span>
+      <span style="color:var(--muted)">${p.x.toFixed(1)},${p.y?.toFixed(1)||'—'},${p.z?.toFixed(1)||'—'}</span>
+      ${r ? `<span class="point-speed" style="color:${colorHex}">${r.speed.toFixed(1)}</span>` : ''}
+    `;
+    list.appendChild(row);
+  });
+  if (src.length > 50) {
+    const more = document.createElement('div');
+    more.className = 'point-row';
+    more.style.color = 'var(--muted)';
+    more.textContent = `+${src.length - 50} more…`;
+    list.appendChild(more);
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// EXPORT
+// ─────────────────────────────────────────────────────────
+document.getElementById('btn-export').addEventListener('click', () => {
+  const rows = ['x,y,z,speed_ms,direction_deg,vx,vy,vz,speed_ratio'];
+  const exportData = state.openfoamResults.length > 0 ? state.openfoamResults : state.localResults;
+  exportData.forEach(r => {
+    rows.push(`${r.x},${r.y},${r.z},${r.speed.toFixed(3)},${r.dir.toFixed(1)},${r.vx.toFixed(3)},${r.vy.toFixed(3)},${r.vz.toFixed(3)},${r.ratio.toFixed(4)}`);
+  });
+  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'windflow_results.csv';
+  a.click();
+  notify('Results exported');
+});
+
+// btn-export-local removed
+// btn-export-points removed
+
+document.getElementById('btn-stop-python').addEventListener('click', stopPythonServer);
+
+// ─────────────────────────────────────────────────────────
+// RUN BUTTON
+// ─────────────────────────────────────────────────────────
+
+document.getElementById('btn-run').addEventListener('click', runSimulation);
+document.getElementById('btn-run-openfoam').addEventListener('click', runOpenFoamSimulation);
+
+async function stopPythonServer() {
+  const button = document.getElementById('btn-stop-python');
+  const previousLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = 'STOPPING SERVER...';
+
+  try {
+    const response = await fetch('/api/system/stop', { method: 'POST' });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    notify('Python server stopping');
+  } catch (err) {
+    button.disabled = false;
+    button.textContent = previousLabel;
+    notify(`Failed to stop Python server: ${err.message || err}`, true);
+  }
+}
+
+function getCurrentSceneOBJText() {
+  const mesh = state.objMesh;
+  if (!mesh) return null;
+  const geometry = mesh.geometry;
+  const positions = geometry.attributes.position.array;
+  const indices = geometry.index ? geometry.index.array : null;
+  let objText = 'o WINDFLOW_buildings\n';
+  for (let i = 0; i < positions.length; i += 3) {
+    objText += `v ${positions[i].toFixed(6)} ${positions[i + 1].toFixed(6)} ${positions[i + 2].toFixed(6)}\n`;
+  }
+  if (indices) {
+    for (let i = 0; i < indices.length; i += 3) {
+      objText += `f ${indices[i] + 1} ${indices[i + 1] + 1} ${indices[i + 2] + 1}\n`;
+    }
+  }
+  return objText;
+}
+
+function readNumberInput(id, fallback, minVal = null, maxVal = null) {
+  const el = document.getElementById(id);
+  if (!el) return fallback;
+  const v = parseFloat(el.value);
+  if (!Number.isFinite(v)) return fallback;
+  let out = v;
+  if (minVal !== null) out = Math.max(minVal, out);
+  if (maxVal !== null) out = Math.min(maxVal, out);
+  return out;
+}
+
+function getOpenFoamSettings() {
+  return {
+    pad_up_factor: readNumberInput('of-pad-up-factor', 0.4, 0.0, 5.0),
+    pad_down_factor: readNumberInput('of-pad-down-factor', 1.2, 0.0, 8.0),
+    pad_cross_factor: readNumberInput('of-pad-cross-factor', 0.5, 0.0, 5.0),
+    cap_along_max: Math.round(readNumberInput('of-cap-along-max', 80, 24, 240)),
+    cap_cross_max: Math.round(readNumberInput('of-cap-cross-max', 64, 24, 200)),
+    cap_vert_max: Math.round(readNumberInput('of-cap-vert-max', 48, 16, 160)),
+    end_time: Math.round(readNumberInput('of-end-time', 200, 20, 2000)),
+  };
+}
+
+function foamPlanToScene(x, y, z = 0) {
+  return new THREE.Vector3(x, z, -y);
+}
+
+function scenePlanToFoam(x, z) {
+  return { x, y: -z };
+}
+
+function buildOpenFoamDomainPreviewMeta() {
+  if (!state.analysisPoints.length) return null;
+
+  const settings = getOpenFoamSettings();
+  const windDir = Number.isFinite(state.windDir) ? state.windDir : 270;
+  // Match backend met_wind_to_flow_unit(): meteorological FROM direction -> foam flow vector
+  const dirRad = (270 - windDir) * Math.PI / 180;
+  const flowU = [Math.cos(dirRad), Math.sin(dirRad)];
+  const crossU = [-flowU[1], flowU[0]];
+
+  const xySamples = state.analysisPoints.map(pt => {
+    const foamPt = scenePlanToFoam(pt.x, pt.z);
+    return [foamPt.x, foamPt.y];
+  });
+  const zSamples = state.analysisPoints.map(pt => pt.y);
+
+  if (objBoundingBox) {
+    const corners = [
+      [objBoundingBox.min.x, objBoundingBox.min.z],
+      [objBoundingBox.min.x, objBoundingBox.max.z],
+      [objBoundingBox.max.x, objBoundingBox.min.z],
+      [objBoundingBox.max.x, objBoundingBox.max.z],
+    ];
+    corners.forEach(([sx, sz]) => {
+      const foamPt = scenePlanToFoam(sx, sz);
+      xySamples.push([foamPt.x, foamPt.y]);
+    });
+    zSamples.push(objBoundingBox.min.y, objBoundingBox.max.y);
+  }
+
+  if (!xySamples.length) return null;
+
+  const sVals = xySamples.map(([x, y]) => x * flowU[0] + y * flowU[1]);
+  const tVals = xySamples.map(([x, y]) => x * crossU[0] + y * crossU[1]);
+  const sMinData = Math.min(...sVals);
+  const sMaxData = Math.max(...sVals);
+  const tMinData = Math.min(...tVals);
+  const tMaxData = Math.max(...tVals);
+
+  const spanS = Math.max(20, sMaxData - sMinData);
+  const spanT = Math.max(20, tMaxData - tMinData);
+  const upstreamPad = Math.max(20, settings.pad_up_factor * spanS);
+  const downstreamPad = Math.max(40, settings.pad_down_factor * spanS);
+  const crossPad = Math.max(15, settings.pad_cross_factor * spanT);
+
+  const s0 = sMinData - upstreamPad;
+  const s1 = sMaxData + downstreamPad;
+  const t0 = tMinData - crossPad;
+  const t1 = tMaxData + crossPad;
+
+  const zMinData = zSamples.length ? Math.min(...zSamples) : 0;
+  const zMaxData = zSamples.length ? Math.max(...zSamples) : 80;
+  let z0 = Math.min(0, Math.floor((zMinData - 2) / 2) * 2);
+  let z1 = Math.ceil((zMaxData + 30) / 5) * 5;
+  if (z1 - z0 < 40) z1 = z0 + 40;
+
+  const length = s1 - s0;
+  const width = t1 - t0;
+  const height = z1 - z0;
+  const targetH = 2.5;
+  const targetV = 2.0;
+  const nx = Math.max(40, Math.min(settings.cap_along_max, Math.ceil(length / targetH)));
+  const ny = Math.max(32, Math.min(settings.cap_cross_max, Math.ceil(width / targetH)));
+  const nz = Math.max(20, Math.min(settings.cap_vert_max, Math.ceil(height / targetV)));
+
+  return {
+    flowUnit: flowU,
+    crossUnit: crossU,
+    sRange: [s0, s1],
+    tRange: [t0, t1],
+    zRange: [z0, z1],
+    cellCount: [nx, ny, nz],
+  };
+}
+
+function updateOpenFoamDomainPreview() {
+  renderOpenFoamDomainOverlay(buildOpenFoamDomainPreviewMeta());
+}
+
+function syncOpenFoamDomainOverlayVisibility() {
+  foamDomainGroup.visible = !!(
+    state.openfoamDomainOverlay &&
+    state.openfoamDomainMeta
+  );
+}
+
+function toggleOpenFoamDomainOverlay(btn) {
+  state.openfoamDomainOverlay = btn.classList.toggle('on');
+  syncOpenFoamDomainOverlayVisibility();
+}
+
+function renderOpenFoamDomainOverlay(meta) {
+  foamDomainGroup.clear();
+  state.openfoamDomainMeta = meta || null;
+  if (!meta) {
+    syncOpenFoamDomainOverlayVisibility();
+    return;
+  }
+
+  const flowU = meta.flowUnit || [1, 0];
+  const crossU = meta.crossUnit || [0, 1];
+  const [s0, s1] = meta.sRange || [-80, 80];
+  const [t0, t1] = meta.tRange || [-80, 80];
+  const [z0, z1] = meta.zRange || [0, 80];
+  const [nx, ny, nz] = meta.cellCount || [40, 32, 20];
+  const stToScene = (s, t, z) => {
+    const x = flowU[0] * s + crossU[0] * t;
+    const y = flowU[1] * s + crossU[1] * t;
+    return foamPlanToScene(x, y, z);
+  };
+
+  const bottomCorners = [
+    stToScene(s0, t0, z0),
+    stToScene(s1, t0, z0),
+    stToScene(s1, t1, z0),
+    stToScene(s0, t1, z0),
+    stToScene(s0, t0, z0),
+  ];
+  const topCorners = [
+    stToScene(s0, t0, z1),
+    stToScene(s1, t0, z1),
+    stToScene(s1, t1, z1),
+    stToScene(s0, t1, z1),
+    stToScene(s0, t0, z1),
+  ];
+  const verticalEdges = [
+    [stToScene(s0, t0, z0), stToScene(s0, t0, z1)],
+    [stToScene(s1, t0, z0), stToScene(s1, t0, z1)],
+    [stToScene(s1, t1, z0), stToScene(s1, t1, z1)],
+    [stToScene(s0, t1, z0), stToScene(s0, t1, z1)],
+  ];
+
+  const boundaryMat = new THREE.LineDashedMaterial({
+    color: 0x0f8c6d,
+    transparent: true,
+    opacity: 0.7,
+    depthTest: false,
+    depthWrite: false,
+    dashSize: 3.2,
+    gapSize: 1.4,
+  });
+
+  const boundaryBottom = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(bottomCorners),
+    boundaryMat
+  );
+  boundaryBottom.computeLineDistances();
+  foamDomainGroup.add(boundaryBottom);
+
+  const boundaryTop = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(topCorners),
+    boundaryMat
+  );
+  boundaryTop.computeLineDistances();
+  foamDomainGroup.add(boundaryTop);
+
+  verticalEdges.forEach(([a, b]) => {
+    const edge = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), boundaryMat);
+    edge.computeLineDistances();
+    foamDomainGroup.add(edge);
+  });
+
+  const gridMat = new THREE.LineDashedMaterial({
+    color: 0x0f8c6d,
+    transparent: true,
+    opacity: 0.22,
+    depthTest: false,
+    depthWrite: false,
+    dashSize: 0.9,
+    gapSize: 1.6,
+  });
+
+  const sStride = Math.max(1, Math.ceil(nx / 18));
+  const tStride = Math.max(1, Math.ceil(ny / 18));
+  const ds = (s1 - s0) / Math.max(nx, 1);
+  const dt = (t1 - t0) / Math.max(ny, 1);
+
+  for (let i = 0; i <= nx; i += sStride) {
+    const s = s0 + ds * i;
+    const pts = [stToScene(s, t0, z0), stToScene(s, t1, z0)];
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat);
+    line.computeLineDistances();
+    foamDomainGroup.add(line);
+  }
+  for (let j = 0; j <= ny; j += tStride) {
+    const t = t0 + dt * j;
+    const pts = [stToScene(s0, t, z0), stToScene(s1, t, z0)];
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat);
+    line.computeLineDistances();
+    foamDomainGroup.add(line);
+  }
+
+  const zStride = Math.max(1, Math.ceil(nz / 10));
+  const dz = (z1 - z0) / Math.max(nz, 1);
+  for (let k = zStride; k < nz; k += zStride) {
+    const z = z0 + dz * k;
+    const ring = [
+      stToScene(s0, t0, z),
+      stToScene(s1, t0, z),
+      stToScene(s1, t1, z),
+      stToScene(s0, t1, z),
+      stToScene(s0, t0, z),
+    ];
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(ring), gridMat);
+    line.computeLineDistances();
+    foamDomainGroup.add(line);
+  }
+
+  syncOpenFoamDomainOverlayVisibility();
+}
+
+function checkRunReady() {
+  const hasPoints = state.analysisPoints.length > 0;
+  const hasWind = state.windSpeed !== null && state.windDir !== null;
+  document.getElementById('btn-run').disabled = !hasPoints;
+  document.getElementById('btn-run-openfoam').disabled = !(hasPoints && hasWind);
+  // btn-export-points removed
+}
+
+function getVizState(source = 'local') {
+  return source === 'openfoam' ? state.openfoamViz : state.localViz;
+}
+
+function syncVizControls() {
+  const localOn = state.activeSource === 'local';
+  const foamOn  = state.activeSource === 'openfoam';
+  applySourceToggles('local', localOn);
+  applySourceToggles('openfoam', foamOn);
+  const activeViz = state.activeSource ? getVizState(state.activeSource) : null;
+  pointGroup.visible = activeViz ? !!activeViz.points : false;
+}
+
+async function pollOpenFoamStatus(interval = 800) {
+  try {
+    const res = await fetch('/api/openfoam/status');
+    if (!res.ok) return;
+    const status = await res.json();
+    if (status.stage) {
+      const label = status.lastError ? `${status.stage.toUpperCase()}: ${status.lastError}` : `${status.stage.toUpperCase()}: ${status.detail}`;
+      showLoading(label || 'OPENFOAM RUNNING');
+      renderOpenFoamSteps(status.history || []);
+      if (status.stage === 'complete' || status.stage === 'error') {
+        if (state.openFoamStatusTimer) {
+          clearInterval(state.openFoamStatusTimer);
+          state.openFoamStatusTimer = null;
+        }
+        if (status.stage === 'complete') {
+          hideLoading();
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Status poll failed', err);
+  }
+}
+
+async function runOpenFoamSimulation() {
+  if (state.analysisPoints.length === 0) {
+    notify('No analysis points; generate or load points first', true);
+    return;
+  }
+  if (state.windSpeed === null || state.windDir === null) {
+    notify('Wind data missing; fetch wind data first', true);
+    return;
+  }
+
+  showLoading('RUNNING OPENFOAM SIMULATION...');
+  state.openFoamStatusTimer = setInterval(() => pollOpenFoamStatus(), 800);
+  const sceneOBJ = getCurrentSceneOBJText();
+  if (!sceneOBJ) {
+    notify('OpenFOAM run requires a scene geometry (load OBJ or example scene)', true);
+    clearInterval(state.openFoamStatusTimer);
+    state.openFoamStatusTimer = null;
+    hideLoading();
+    return;
+  }
+
+  const payload = {
+    site: { lat: state.lat, lon: state.lon },
+    wind: { speed: state.windSpeed, dir: state.windDir, gust: state.windGust },
+    terrain: parseFloat(document.getElementById('terrain').value),
+    openfoamSettings: getOpenFoamSettings(),
+    points: state.analysisPoints,
+    obj: sceneOBJ,
+  };
+
+  try {
+    const response = await fetch('/api/openfoam/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(err || `HTTP ${response.status}`);
+    }
+
+    // Run completed — fetch the written CSV directly and build everything from it
+    const csvText = await fetch('/openfoam_mvp/sample_results.csv?t=' + Date.now())
+      .then(r => { if (!r.ok) throw new Error('sample_results.csv not found'); return r.text(); });
+    const domainMeta = await fetch('/openfoam_mvp/foam_case/system/domainBounds.json?t=' + Date.now())
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null);
+
+    const lines = csvText.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    const rawRows = lines.slice(1).filter(l => l.trim()).map(line => {
+      const vals = line.split(',');
+      const row = {};
+      headers.forEach((h, i) => { row[h] = vals[i]?.trim(); });
+      // OpenFOAM is z-up — swap to scene y-up with North sign fix: pos(x,z,-y), vec(Ux,Uz,-Uy)
+      const fx = parseFloat(row.x), fy = parseFloat(row.y), fz = parseFloat(row.z);
+      const fUx = parseFloat(row.Ux), fUy = parseFloat(row.Uy), fUz = parseFloat(row.Uz);
+      const finiteIn = [fx, fy, fz, fUx, fUy, fUz].every(Number.isFinite);
+      if (!finiteIn) return null;
+      const sx = fx, sy = fz, sz = -fy;
+      const vx = fUx, vy = fUz, vz = -fUy;
+      const finiteOut = [vx, vy, vz].every(Number.isFinite);
+      const absurdOut = Math.abs(vx) > 1e6 || Math.abs(vy) > 1e6 || Math.abs(vz) > 1e6;
+      if (!finiteOut || absurdOut) return null;
+      const speed = Math.sqrt(vx*vx + vy*vy + vz*vz);
+      const dir = (Math.atan2(vz, vx) * 180 / Math.PI + 90 + 360) % 360;
+      return { id: row.id, x: sx, y: sy, z: sz, vx, vy, vz, speed, dir, ratio: 1.0 };
+    });
+    const foamResultsRaw = rawRows.filter(Boolean);
+    const invalidRows = rawRows.length - foamResultsRaw.length;
+    const foamResults = foamResultsRaw;
+    if (!foamResults.length) {
+      throw new Error('OpenFOAM CSV did not contain any valid velocity rows.');
+    }
+
+    // Rebuild analysis points and point spheres from the CSV rows
+    // Only clear foam data — local results are preserved
+    state.openfoamResults = [];
+    foamArrowGroup.clear(); foamStreamGroup.clear(); foamLabelGroup.clear(); foamHeatGroup.clear();
+    state.analysisPoints = foamResults.map(r => ({ id: r.id, x: r.x, y: r.y, z: r.z }));
+    spawnPointSpheres();
+
+    state.openfoamResults = foamResults;
+    renderOpenFoamDomainOverlay(domainMeta);
+    state.activeSource = null;
+    setActiveSource('openfoam');
+    state.openfoamViz.arrows = true;
+    state.openfoamViz.heatmap = true;
+    state.openfoamViz.points = false;
+    syncVizControls();
+    renderSource('openfoam');
+    updatePointsList();
+    document.getElementById('btn-export').disabled = false;
+
+    const speeds = foamResults.map(r => r.speed);
+    const maxS = Math.max(...speeds);
+    const minS = Math.min(...speeds);
+    const avgS = speeds.reduce((a,b)=>a+b,0)/speeds.length;
+    state.openfoamStats = { avg: avgS, max: maxS, min: minS };
+    refreshStatsDisplay();
+
+    const parts = [];
+    if (invalidRows > 0) parts.push(`skipped ${invalidRows} invalid`);
+    notify(`OpenFOAM results loaded from CSV (${foamResults.length} points${parts.length ? `, ${parts.join(', ')}` : ''})`);
+  } catch (err) {
+    console.error('runOpenFoamSimulation failed:', err);
+    notify(`OpenFOAM run failed: ${err.message || err}`, true);
+  } finally {
+    if (state.openFoamStatusTimer) {
+      clearInterval(state.openFoamStatusTimer);
+      state.openFoamStatusTimer = null;
+    }
+    hideLoading();
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// LOADING
+// ─────────────────────────────────────────────────────────
+function renderOpenFoamSteps(history) {
+  const el = document.getElementById('loading-steps');
+  if (!history || history.length === 0) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  el.style.display = 'block';
+  el.innerHTML = history.map(item =>
+    `<div class="loading-step"><strong>${String(item.stage || '').toUpperCase()}</strong>${item.detail || ''}</div>`
+  ).join('');
+}
+
+function showLoading(txt) {
+  const svgLabel = document.getElementById('loading-text-svg');
+  if (svgLabel) {
+    // Replace text node only (preserve child animate element)
+    for (const node of svgLabel.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) { node.textContent = txt; break; }
+    }
+  }
+  const headerLabel = document.getElementById('header-loading-text');
+  if (headerLabel) {
+    headerLabel.textContent = txt;
+    headerLabel.classList.add('show');
+  }
+  document.getElementById('loading').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loading').classList.remove('show');
+  const headerLabel = document.getElementById('header-loading-text');
+  if (headerLabel) {
+    headerLabel.classList.remove('show');
+    headerLabel.textContent = '';
+  }
+  renderOpenFoamSteps([]);
+}
+
+function formatWindDirectionLabel(dirDeg) {
+  const labels = ['NORTH', 'NORTHEAST', 'EAST', 'SOUTHEAST', 'SOUTH', 'SOUTHWEST', 'WEST', 'NORTHWEST'];
+  const normalized = ((dirDeg % 360) + 360) % 360;
+  return labels[Math.round(normalized / 45) % labels.length];
+}
+
+function updateSceneWindUI(dirDeg, speed) {
+  const sceneLegend = document.getElementById('scene-legend');
+  if (!sceneLegend) return;
+  const windLine = sceneLegend.children[5];
+  if (!windLine) return;
+
+  windLine.textContent = `WIND FROM ${formatWindDirectionLabel(dirDeg)}  ${Math.round(dirDeg)} deg  ${speed.toFixed(1)} m/s`;
+}
+
+function addWindIndicatorArrow(dirDeg, speed = state.windSpeed ?? 8.5) {
+  const old = scene.getObjectByName('windIndicator');
+  if (old) scene.remove(old);
+
+  const group = new THREE.Group();
+  group.name = 'windIndicator';
+
+  // Point the scene indicator in the actual flow direction so it matches the field arrows.
+  const dirRad = (dirDeg + 90) * Math.PI / 180;
+  const wx = Math.cos(dirRad);
+  const wz = Math.sin(dirRad);
+  const dir = new THREE.Vector3(wx, 0, wz).normalize();
+
+  const origin = new THREE.Vector3(-55, 0.5, -50);
+  const arrow = new THREE.ArrowHelper(dir, origin, 20, 0xb5613c, 5, 4);
+  group.add(arrow);
+
+  const canvas2 = document.createElement('canvas');
+  canvas2.width = 256;
+  canvas2.height = 64;
+  const ctx = canvas2.getContext('2d');
+  ctx.fillStyle = 'rgba(181,97,60,0.12)';
+  ctx.fillRect(0, 0, 256, 64);
+  ctx.strokeStyle = 'rgba(181,97,60,0.45)';
+  ctx.strokeRect(1, 1, 254, 62);
+  ctx.fillStyle = '#b5613c';
+  ctx.font = '500 18px Roboto';
+  ctx.fillText(`WIND FROM ${Math.round(dirDeg)} deg  ${speed.toFixed(1)} m/s`, 14, 38);
+
+  const tex = new THREE.CanvasTexture(canvas2);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  sprite.position.set(origin.x + wx * 10, 5, origin.z + wz * 10);
+  sprite.scale.set(20, 5, 1);
+  group.add(sprite);
+
+  scene.add(group);
+}
+
+function speedColor(ratio, minR, maxR) {
+  const rawT = maxR === minR ? 0.5 : (ratio - minR) / (maxR - minR);
+  const t = THREE.MathUtils.smoothstep(THREE.MathUtils.clamp(rawT, 0, 1), 0, 1);
+  const stops = [
+    { t: 0.00, c: new THREE.Color('#00008f') },
+    { t: 0.16, c: new THREE.Color('#0000ff') },
+    { t: 0.34, c: new THREE.Color('#00cfff') },
+    { t: 0.54, c: new THREE.Color('#00ff66') },
+    { t: 0.74, c: new THREE.Color('#fff200') },
+    { t: 0.88, c: new THREE.Color('#ff8a00') },
+    { t: 1.00, c: new THREE.Color('#ff1a1a') }
+  ];
+
+  for (let i = 0; i < stops.length - 1; i++) {
+    const a = stops[i];
+    const b = stops[i + 1];
+    if (t <= b.t) {
+      const localT = THREE.MathUtils.smootherstep((t - a.t) / Math.max(b.t - a.t, 1e-6), 0, 1);
+      return a.c.clone().lerp(b.c, localT);
+    }
+  }
+
+  return stops[stops.length - 1].c.clone();
+}
+
+function buildVelocityPlane(results, minS, maxS, group) {
+  if (results.length < 4) return;
+
+  const levelMap = new Map();
+  results.forEach(r => {
+    const key = Math.round(r.y * 100) / 100;
+    if (!levelMap.has(key)) levelMap.set(key, []);
+    levelMap.get(key).push(r);
+  });
+
+  levelMap.forEach((levelResults, y) => {
+    const xs = [...new Set(levelResults.map(r => Math.round(r.x * 1000) / 1000))].sort((a, b) => a - b);
+    const zs = [...new Set(levelResults.map(r => Math.round(r.z * 1000) / 1000))].sort((a, b) => a - b);
+    if (xs.length < 2 || zs.length < 2) return;
+
+    const lookup = {};
+    levelResults.forEach(r => {
+      const key = `${Math.round(r.x * 1000) / 1000},${Math.round(r.z * 1000) / 1000}`;
+      lookup[key] = r;
+    });
+
+    const speedGrid = xs.map(x => zs.map(z => {
+      const r = lookup[`${x},${z}`];
+      return r ? r.speed : (minS + maxS) * 0.5;
+    }));
+
+    const subDiv = 4;
+    const denseXCount = (xs.length - 1) * subDiv + 1;
+    const denseZCount = (zs.length - 1) * subDiv + 1;
+    const positions = [];
+    const colors = [];
+    const insideMask = new Uint8Array(denseXCount * denseZCount);
+    const loopPoly = state.loopPoints;
+    const hasLoop = state.loopClosed && loopPoly.length >= 3;
+
+    const sampleDenseSpeed = (gx, gz) => {
+      const lastX = xs.length - 1;
+      const lastZ = zs.length - 1;
+      const cellX = Math.min(Math.floor(gx / subDiv), lastX - 1);
+      const cellZ = Math.min(Math.floor(gz / subDiv), lastZ - 1);
+      const fx = gx === denseXCount - 1 ? 1 : (gx % subDiv) / subDiv;
+      const fz = gz === denseZCount - 1 ? 1 : (gz % subDiv) / subDiv;
+
+      const s00 = speedGrid[cellX][cellZ];
+      const s10 = speedGrid[Math.min(cellX + 1, lastX)][cellZ];
+      const s01 = speedGrid[cellX][Math.min(cellZ + 1, lastZ)];
+      const s11 = speedGrid[Math.min(cellX + 1, lastX)][Math.min(cellZ + 1, lastZ)];
+
+      const sx0 = THREE.MathUtils.lerp(s00, s10, fx);
+      const sx1 = THREE.MathUtils.lerp(s01, s11, fx);
+      return THREE.MathUtils.lerp(sx0, sx1, fz);
+    };
+
+    for (let xi = 0; xi < denseXCount; xi++) {
+      const baseXi = Math.min(Math.floor(xi / subDiv), xs.length - 2);
+      const fracX = xi === denseXCount - 1 ? 1 : (xi % subDiv) / subDiv;
+      const x = THREE.MathUtils.lerp(xs[baseXi], xs[Math.min(baseXi + 1, xs.length - 1)], fracX);
+
+      for (let zi = 0; zi < denseZCount; zi++) {
+        const baseZi = Math.min(Math.floor(zi / subDiv), zs.length - 2);
+        const fracZ = zi === denseZCount - 1 ? 1 : (zi % subDiv) / subDiv;
+        const z = THREE.MathUtils.lerp(zs[baseZi], zs[Math.min(baseZi + 1, zs.length - 1)], fracZ);
+        const speed = sampleDenseSpeed(xi, zi);
+        const col = speedColor(speed, minS, maxS);
+
+        insideMask[xi * denseZCount + zi] = (!hasLoop || pointInsideOrOnLoopXZ(x, z, loopPoly, 0.3)) ? 1 : 0;
+        positions.push(x, y + 0.18, z);
+        colors.push(col.r, col.g, col.b);
+      }
+    }
+
+    const indices = [];
+    for (let xi = 0; xi < denseXCount - 1; xi++) {
+      for (let zi = 0; zi < denseZCount - 1; zi++) {
+        const a = xi * denseZCount + zi;
+        const b = xi * denseZCount + zi + 1;
+        const c = (xi + 1) * denseZCount + zi;
+        const d = (xi + 1) * denseZCount + zi + 1;
+        if (insideMask[a] && insideMask[c] && insideMask[b]) indices.push(a, c, b);
+        if (insideMask[b] && insideMask[c] && insideMask[d]) indices.push(b, c, d);
+      }
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+
+    const mat = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.92,
+    });
+
+    group.add(new THREE.Mesh(geo, mat));
+  });
+}
+
+function getObstacleBoxesAtHeight(sampleY) {
+  return getObstacleBoxes().filter(bb => sampleY >= bb.min.y && sampleY <= bb.max.y);
+}
+
+function buildPlanFlowField(points, windVec, wakeModel, sampleY = null) {
+  const resolvedY = sampleY ?? Math.max(1.5, Math.min(...points.map(p => p.y ?? 1.5)));
+  const boxes = getObstacleBoxesAtHeight(resolvedY);
+  const pointXs = points.map(p => p.x);
+  const pointZs = points.map(p => p.z);
+  const margin = 10;
+  let minX = Math.min(...pointXs) - margin;
+  let maxX = Math.max(...pointXs) + margin;
+  let minZ = Math.min(...pointZs) - margin;
+  let maxZ = Math.max(...pointZs) + margin;
+
+  boxes.forEach(bb => {
+    minX = Math.min(minX, bb.min.x - margin);
+    maxX = Math.max(maxX, bb.max.x + margin);
+    minZ = Math.min(minZ, bb.min.z - margin);
+    maxZ = Math.max(maxZ, bb.max.z + margin);
+  });
+
+  const step = estimatePlanGridStep(points);
+  const nx = Math.max(30, Math.min(150, Math.ceil((maxX - minX) / step) + 1));
+  const nz = Math.max(30, Math.min(150, Math.ceil((maxZ - minZ) / step) + 1));
+  const dx = (maxX - minX) / Math.max(nx - 1, 1);
+  const dz = (maxZ - minZ) / Math.max(nz - 1, 1);
+  const count = nx * nz;
+
+  const phi = new Float32Array(count);
+  const obstacle = new Uint8Array(count);
+  const idx = (ix, iz) => iz * nx + ix;
+  const boundaryPotential = (x, z) => windVec.x * x + windVec.z * z;
+
+  for (let iz = 0; iz < nz; iz++) {
+    for (let ix = 0; ix < nx; ix++) {
+      const x = minX + ix * dx;
+      const z = minZ + iz * dz;
+      const k = idx(ix, iz);
+      phi[k] = boundaryPotential(x, z);
+      obstacle[k] = pointInsideBuildingPlan(x, z, resolvedY, Math.max(dx, dz) * 0.2) ? 1 : 0;
+    }
+  }
+
+  const SOR_OMEGA = 1.7;
+  for (let iter = 0; iter < 400; iter++) {
+    for (let iz = 0; iz < nz; iz++) {
+      for (let ix = 0; ix < nx; ix++) {
+        const k = idx(ix, iz);
+        const x = minX + ix * dx;
+        const z = minZ + iz * dz;
+        if (ix === 0 || iz === 0 || ix === nx - 1 || iz === nz - 1) {
+          phi[k] = boundaryPotential(x, z);
+          continue;
+        }
+        if (obstacle[k]) continue;
+
+        const left = obstacle[idx(ix - 1, iz)] ? phi[k] : phi[idx(ix - 1, iz)];
+        const right = obstacle[idx(ix + 1, iz)] ? phi[k] : phi[idx(ix + 1, iz)];
+        const down = obstacle[idx(ix, iz - 1)] ? phi[k] : phi[idx(ix, iz - 1)];
+        const up = obstacle[idx(ix, iz + 1)] ? phi[k] : phi[idx(ix, iz + 1)];
+        const gs = 0.25 * (left + right + down + up);
+        phi[k] += SOR_OMEGA * (gs - phi[k]);
+      }
+    }
+  }
+
+  const vx = new Float32Array(count);
+  const vz = new Float32Array(count);
+  const wakeScale = new Float32Array(count);
+  const disturbance = new Float32Array(count);
+  wakeScale.fill(1);
+
+  for (let iz = 1; iz < nz - 1; iz++) {
+    for (let ix = 1; ix < nx - 1; ix++) {
+      const k = idx(ix, iz);
+      if (obstacle[k]) continue;
+      const kL = idx(ix - 1, iz), kR = idx(ix + 1, iz);
+      const kD = idx(ix, iz - 1), kU = idx(ix, iz + 1);
+      let dphidx;
+      if (!obstacle[kL] && !obstacle[kR]) dphidx = (phi[kR] - phi[kL]) / (2 * dx);
+      else if (obstacle[kL]) dphidx = (phi[kR] - phi[k]) / dx;
+      else dphidx = (phi[k] - phi[kL]) / dx;
+
+      let dphidz;
+      if (!obstacle[kD] && !obstacle[kU]) dphidz = (phi[kU] - phi[kD]) / (2 * dz);
+      else if (obstacle[kD]) dphidz = (phi[kU] - phi[k]) / dz;
+      else dphidz = (phi[k] - phi[kD]) / dz;
+
+      vx[k] = dphidx;
+      vz[k] = dphidz;
+    }
+  }
+
+  const wind2D = new THREE.Vector2(windVec.x, windVec.z).normalize();
+  const side2D = new THREE.Vector2(-wind2D.y, wind2D.x);
+  boxes.forEach(bb => {
+    const center = new THREE.Vector2((bb.min.x + bb.max.x) * 0.5, (bb.min.z + bb.max.z) * 0.5);
+    const sizeX = bb.max.x - bb.min.x;
+    const sizeZ = bb.max.z - bb.min.z;
+    const height = bb.max.y - bb.min.y;
+    const halfDepth = 0.5 * (Math.abs(wind2D.x) * sizeX + Math.abs(wind2D.y) * sizeZ);
+    const halfWidth = 0.5 * (Math.abs(side2D.x) * sizeX + Math.abs(side2D.y) * sizeZ);
+    const wakeLen = Math.max(10, halfDepth * wakeModel.depthFactor + height * wakeModel.heightFactor);
+    const upwindReach = Math.max(5, halfDepth * wakeModel.upwindFactor + height * wakeModel.upwindHeightFactor);
+    const sideSigma = Math.max(3.5, halfWidth * wakeModel.spreadFactor + wakeModel.baseSpread);
+
+    for (let iz = 0; iz < nz; iz++) {
+      for (let ix = 0; ix < nx; ix++) {
+        const k = idx(ix, iz);
+        if (obstacle[k]) continue;
+        const x = minX + ix * dx;
+        const z = minZ + iz * dz;
+        const rel = new THREE.Vector2(x - center.x, z - center.y);
+        const along = rel.dot(wind2D);
+        const cross = rel.dot(side2D);
+        const crossTail = Math.max(0, Math.abs(cross) - halfWidth);
+        const crossWeight = Math.exp(-0.5 * Math.pow(crossTail / sideSigma, 2));
+        let alongWeight = 0;
+        if (along >= -upwindReach && along < -halfDepth) {
+          alongWeight = (along + upwindReach) / Math.max(upwindReach - halfDepth, 1e-6);
+        } else if (along >= -halfDepth && along <= halfDepth) {
+          alongWeight = 1;
+        } else if (along > halfDepth && along < halfDepth + wakeLen) {
+          alongWeight = Math.exp(-(along - halfDepth) / Math.max(wakeLen * wakeModel.recoveryFactor, 1));
+        }
+        disturbance[k] = Math.max(disturbance[k], alongWeight * crossWeight);
+        if (along <= halfDepth || along >= halfDepth + wakeLen) continue;
+        const sigma = halfWidth * (0.55 + 0.018 * (along - halfDepth)) * wakeModel.spreadFactor + wakeModel.baseSpread;
+        const lateral = Math.exp(-0.5 * Math.pow(cross / sigma, 2));
+        const recovery = Math.exp(-(along - halfDepth) / Math.max(wakeLen * wakeModel.recoveryFactor, 1));
+        wakeScale[k] = Math.min(wakeScale[k], Math.max(wakeModel.minWakeSpeed, 1 - wakeModel.velocityDeficit * lateral * recovery));
+      }
+    }
+  });
+
+  const INV_2PI = 1 / (2 * Math.PI);
+  boxes.forEach(bb => {
+    const cx = (bb.min.x + bb.max.x) * 0.5;
+    const cz = (bb.min.z + bb.max.z) * 0.5;
+    const bsx = bb.max.x - bb.min.x;
+    const bsz = bb.max.z - bb.min.z;
+    const halfD = 0.5 * (Math.abs(wind2D.x) * bsx + Math.abs(wind2D.y) * bsz);
+    const halfW = 0.5 * (Math.abs(side2D.x) * bsx + Math.abs(side2D.y) * bsz);
+    const v1x = cx + wind2D.x * halfD + side2D.x * halfW + wind2D.x * 0.5;
+    const v1z = cz + wind2D.y * halfD + side2D.y * halfW + wind2D.y * 0.5;
+    const v2x = cx + wind2D.x * halfD - side2D.x * halfW + wind2D.x * 0.5;
+    const v2z = cz + wind2D.y * halfD - side2D.y * halfW + wind2D.y * 0.5;
+    const gamma = halfW * 1.1;
+    const coreRsq = Math.max(0.9, halfW * 0.14) ** 2;
+    const decayLen = halfW * wakeModel.vortexDecayFactor + wakeModel.vortexDecayOffset;
+
+    for (let iz = 0; iz < nz; iz++) {
+      for (let ix = 0; ix < nx; ix++) {
+        const k = idx(ix, iz);
+        if (obstacle[k]) continue;
+        const x = minX + ix * dx;
+        const z = minZ + iz * dz;
+        const along = (x - cx) * wind2D.x + (z - cz) * wind2D.y;
+        if (along < halfD * 0.9) continue;
+        const wakeDecay = Math.exp(-Math.max(0, along - halfD) / decayLen);
+        if (wakeDecay < 0.015) continue;
+
+        const ddx1 = x - v1x, ddz1 = z - v1z;
+        const ddx2 = x - v2x, ddz2 = z - v2z;
+        const r1sq = Math.max(coreRsq, ddx1 * ddx1 + ddz1 * ddz1);
+        const r2sq = Math.max(coreRsq, ddx2 * ddx2 + ddz2 * ddz2);
+        const a1 = gamma * INV_2PI / r1sq;
+        const a2 = gamma * INV_2PI / r2sq;
+        vx[k] += (a1 * ddz1 - a2 * ddz2) * wakeDecay;
+        vz[k] += (-a1 * ddx1 + a2 * ddx2) * wakeDecay;
+      }
+    }
+  });
+
+  for (let k = 0; k < count; k++) {
+    if (obstacle[k]) continue;
+    vx[k] *= wakeScale[k];
+    vz[k] *= wakeScale[k];
+    const w = THREE.MathUtils.smoothstep(disturbance[k], 0.02, 0.75);
+    vx[k] = windVec.x + (vx[k] - windVec.x) * w;
+    vz[k] = windVec.z + (vz[k] - windVec.z) * w;
+  }
+
+  return { minX, minZ, dx, dz, nx, nz, vx, vz, obstacle };
+}
+
+function runSimulation() {
+  const mesh = getBuildingMesh();
+  if (mesh) state.analysisPoints = state.analysisPoints.filter(pt => !pointInsideBuilding(pt));
+  state.localResults = [];
+  localArrowGroup.clear(); localStreamGroup.clear(); localLabelGroup.clear(); localHeatGroup.clear();
+  spawnPointSpheres();
+  updatePointsList([]);
+  checkRunReady();
+  if (state.analysisPoints.length === 0) {
+    notify('No valid analysis points available', true);
+    return;
+  }
+  if (state.windSpeed === null || state.windSpeed === undefined) {
+    notify('Load wind data before running the simulation', true);
+    return;
+  }
+
+  showLoading('RUNNING SIMULATION');
+  setTimeout(() => {
+    try {
+      const refH = DEFAULT_REF_HEIGHT;
+      const z0 = parseFloat(document.getElementById('terrain').value);
+      const dirRad = (state.windDir + 90) * Math.PI / 180;
+      const windVec = new THREE.Vector3(Math.cos(dirRad), 0, Math.sin(dirRad)).normalize();
+      const wakeModel = calculateWakeModel(state.analysisPoints, windVec, refH, z0);
+      state.wakeModel = wakeModel;
+      updateWakeModelDisplay(wakeModel);
+
+      const fieldByLevel = new Map();
+      const results = state.analysisPoints.map(pt => {
+        const levelKey = (Math.round((pt.y ?? 0) * 100) / 100).toFixed(2);
+        if (!fieldByLevel.has(levelKey)) {
+          const levelPoints = state.analysisPoints.filter(p => (Math.round((p.y ?? 0) * 100) / 100).toFixed(2) === levelKey);
+          fieldByLevel.set(levelKey, buildPlanFlowField(levelPoints, windVec, wakeModel, pt.y ?? 1.5));
+        }
+        const flow = samplePlanFlowField(fieldByLevel.get(levelKey), pt.x, pt.z, windVec);
+        const z = Math.max(pt.y, z0 * 1.01);
+        const profileFactor = Math.log(z / z0) / Math.log(refH / z0);
+        let vx = flow.vx;
+        let vz = flow.vz;
+        const len = Math.sqrt(vx * vx + vz * vz) || 1;
+        vx /= len;
+        vz /= len;
+        const speedFactor = THREE.MathUtils.clamp(profileFactor * flow.speedFactor, 0.08, 1.45);
+        const speed = state.windSpeed * speedFactor;
+        const dirDeg = (Math.atan2(vz, vx) * 180 / Math.PI + 270 + 360) % 360;
+        return { ...pt, speed, dir: dirDeg, vx, vy: 0, vz, ratio: speedFactor };
+      });
+
+      state.localResults = results;
+      state.activeSource = null; // force setActiveSource to switch to local
+      setActiveSource('local');
+      requestAnimationFrame(() => {
+        renderSource('local');
+        updatePointsList();
+        document.getElementById('btn-export').disabled = false;
+        // btn-export-local removed
+
+        const speeds = results.map(r => r.speed);
+        const maxS = Math.max(...speeds);
+        const minS = Math.min(...speeds);
+        const avgS = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+        state.localStats = { avg: avgS, max: maxS, min: minS };
+        refreshStatsDisplay();
+        notify(`Simulation complete - ${results.length} points`);
+      });
+    } catch (err) {
+      console.error('Simulation failed:', err);
+      notify(`Simulation failed: ${err?.message || err}`, true);
+    } finally {
+      hideLoading();
+    }
+  }, 50);
+}
+
+// ─────────────────────────────────────────────────────────
+// INIT — apply default source state (local active, openfoam disabled)
+// ─────────────────────────────────────────────────────────
+applySourceToggles('local',    true);
+applySourceToggles('openfoam', false);
+
+</script>
+</body>
+</html>
