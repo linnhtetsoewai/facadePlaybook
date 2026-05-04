@@ -770,15 +770,130 @@ body {
 /* ── PLAN MASSING ── */
 .plan-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: start;
 }
 .plan-stage {
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, #fff, #fbf8f2);
+  overflow: visible;
+}
+.three-shell {
+  height: 460px;
+  border-radius: var(--radius);
+  overflow: visible;
+  background: #f8f4ed;
+}
+.three-viewport-wrap {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  border-radius: var(--radius);
   overflow: hidden;
+  background: #f8f4ed;
+}
+.viewcube {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 3;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100% - 24px);
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+.three-stats-rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: auto;
+  max-height: 100%;
+  overflow: auto;
+  pointer-events: auto;
+}
+.paint-stats-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+  transition: width 0.2s ease, min-width 0.2s ease;
+  width: 420px;
+  min-width: 420px;
+  font-size: 0.8rem;
+}
+.paint-stats-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.paint-stats-head-left {
+  min-width: 0;
+}
+.paint-stats-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-2);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.paint-stats-toggle:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.paint-stats-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-top: 1px solid var(--border);
+}
+.paint-stats-stack.hidden {
+  display: none;
+}
+.paint-stats-panel.collapsed {
+  width: 40px;
+  min-width: 40px;
+}
+.paint-stats-panel.collapsed .paint-stats-head {
+  justify-content: center;
+  padding: 10px 6px;
+}
+.paint-stats-panel.collapsed .paint-stats-head-left {
+  display: none;
+}
+.paint-stats-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+.paint-stats-card .paint-stats-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.paint-stats-card .paint-stats-body {
+  padding: 12px;
+}
+.paint-stats-card.collapsed .paint-stats-head {
+  border-bottom: 0;
+}
+.paint-stats-card.collapsed .paint-stats-body {
+  display: none;
 }
 .plan-toolbar {
   padding: 12px 14px;
@@ -825,13 +940,6 @@ body {
   background: #f8f4ed;
   cursor: crosshair;
   touch-action: none;
-}
-.three-shell {
-  position: relative;
-  height: 460px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: #f8f4ed;
 }
 .three-shell.is-draw .three-viewport {
   cursor: crosshair;
@@ -925,6 +1033,119 @@ body {
   font-size: 12px;
   color: var(--text-2);
   backdrop-filter: blur(6px);
+}
+.paint-stats-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 14px;
+}
+.paint-stats-title {
+  font-size: 0.95em;
+  font-weight: 600;
+}
+.paint-stats-sub {
+  font-size: 0.78em;
+  color: var(--text-2);
+  margin-top: 3px;
+  line-height: 1.45;
+}
+.paint-pie-wrap {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+}
+.paint-pie {
+  position: relative;
+  width: 112px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(#ddd 0 100%);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45);
+}
+.paint-pie::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--border);
+}
+.paint-pie-center {
+  position: absolute;
+  inset: 16px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 8px;
+}
+.paint-pie-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.paint-pie-label {
+  font-size: 0.78em;
+  color: var(--text-2);
+  margin-top: 3px;
+  line-height: 1.35;
+}
+.paint-stat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 210px;
+  overflow: auto;
+  padding-right: 2px;
+}
+.paint-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8em;
+}
+.paint-stat-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.paint-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.12);
+}
+.paint-stat-name {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.paint-stat-meta {
+  font-size: 0.78em;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.paint-stat-empty {
+  font-size: 0.78em;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.paint-stat-foot {
+  font-size: 0.78em;
+  color: var(--text-2);
+  margin-top: 8px;
 }
 .three-loading {
   height: 100%;
@@ -1096,7 +1317,9 @@ body {
   padding-top: 14px;
 }
 @media (max-width: 1100px) {
-  .plan-layout { grid-template-columns: 1fr; }
+  .plan-layout { grid-template-columns: minmax(0, 1fr) auto; }
+  .three-stats-rail { width: auto; }
+  .paint-stats-panel { width: 360px; min-width: 360px; }
 }
 
 /* ── SUMMARY PAGE ── */
@@ -1391,25 +1614,6 @@ body {
           <div class="step-sub">Set up the overall building form before assigning facade zones.</div>
         </div>
         <div id="zone-modeling-root"></div>
-        <div class="section-heading" style="margin-top:18px">Optional zones later</div>
-        <div class="tag-group mb-24" id="zone-tags">
-          <span class="tag" data-v="tower" onclick="toggleZone(this)">Tower</span>
-          <span class="tag" data-v="podium" onclick="toggleZone(this)">Podium</span>
-          <span class="tag" data-v="roof_crown" onclick="toggleZone(this)">Roof Crown</span>
-          <span class="tag" data-v="penthouse" onclick="toggleZone(this)">Penthouse</span>
-          <span class="tag" data-v="lobby" onclick="toggleZone(this)">Lobby</span>
-          <span class="tag" data-v="retail" onclick="toggleZone(this)">Retail</span>
-          <span class="tag" data-v="canopy" onclick="toggleZone(this)">Canopy</span>
-          <span class="tag" data-v="bridge" onclick="toggleZone(this)">Bridge</span>
-          <span class="tag" data-v="carpark_screen" onclick="toggleZone(this)">Carpark Screen</span>
-          <span class="tag" data-v="mep_screen" onclick="toggleZone(this)">MEP Screen</span>
-          <span class="tag" data-v="balcony" onclick="toggleZone(this)">Balcony</span>
-          <span class="tag" data-v="roof" onclick="toggleZone(this)">Roof</span>
-          <span class="tag" data-v="skylight" onclick="toggleZone(this)">Skylight</span>
-          <span class="tag" data-v="amenity_deck" onclick="toggleZone(this)">Amenity Deck</span>
-          <span class="tag" data-v="feature_wall" onclick="toggleZone(this)">Feature Wall</span>
-          <span class="tag" data-v="fin" onclick="toggleZone(this)">Fin</span>
-        </div>
         <div class="config-nav">
           <button class="btn" onclick="prevStep()">← Back</button>
           <button class="btn btn-primary" onclick="nextStep()" id="s2-next">See systems →</button>
@@ -1421,7 +1625,7 @@ body {
         <div class="step-header">
           <div class="step-num">Step 4 of 8</div>
           <div class="step-q">Select facade systems</div>
-          <div class="step-sub">Ranked by fit to your type, budget and zones. Select all systems you intend to use.</div>
+          <div class="step-sub">Ranked by fit to your type, budget and zones. Select one facade system to use.</div>
         </div>
         <div class="sys-grid" id="sys-grid"></div>
         <div class="config-nav">
@@ -1435,7 +1639,7 @@ body {
         <div class="step-header">
           <div class="step-num">Step 5 of 8</div>
           <div class="step-q">Access & maintenance</div>
-          <div class="step-sub">Choose the access systems needed for the selected facade systems</div>
+          <div class="step-sub">Choose the access systems needed for the selected facade system</div>
         </div>
         <div id="access-questions"></div>
         <div class="config-nav">
@@ -2088,12 +2292,6 @@ function pick(key, val, el) {
   }
 }
 
-function toggleZone(el) {
-  el.classList.toggle('sel');
-  CFG.zones = Array.from(document.querySelectorAll('#zone-tags .tag.sel')).map(t=>t.dataset.v);
-  refreshZoneMassing();
-}
-
 function nextStep() {
   if(CFG.step === 3) buildAccessQuestions();
   if(CFG.step === 4) buildConfigQuestions();
@@ -2125,7 +2323,6 @@ function resetConfig() {
   CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null, massing:null };
   document.querySelectorAll('.config-step').forEach((s,i)=>{ s.classList.toggle('active', i===0); });
   document.querySelectorAll('.choice-card').forEach(c=>c.classList.remove('sel'));
-  document.querySelectorAll('#zone-tags .tag').forEach(t=>t.classList.remove('sel'));
   document.querySelectorAll('[id^="s"][id$="-next"]').forEach(b=>b.disabled=true);
   const nextZoneBtn = document.getElementById('s2-next');
   if(nextZoneBtn) nextZoneBtn.disabled = false;
@@ -2198,7 +2395,7 @@ function buildSystemCards() {
 
   grid.innerHTML = ranked.map(({id,s,score,hasFitMeta,availableCount})=>{
     if(!availableCount) return '';
-    const isSel = CFG.systems.includes(id);
+    const isSel = CFG.systems[0] === id;
     const answered = Object.keys(CFG.configs[id]||{}).length;
     const totalQs = (FOLLOW_UPS[id]||[]).length;
     const { answeredCount, recommendedCount } = getRecommendationSummary(id, CFG.configs[id]||{});
@@ -2220,16 +2417,16 @@ function buildSystemCards() {
 }
 
 function toggleSystem(id) {
-  const idx = CFG.systems.indexOf(id);
-  if(idx>=0) {
-    CFG.systems.splice(idx,1);
+  const isSelected = CFG.systems[0] === id;
+  if(isSelected) {
+    CFG.systems = [];
     if(CFG.activeSystem===id) closeModal('modal-system');
   } else {
-    CFG.systems.push(id);
+    CFG.systems = [id];
     openSystemQuestions(id);
   }
   const card = document.getElementById('sc-'+id);
-  if(card) card.classList.toggle('sel', CFG.systems.includes(id));
+  if(card) card.classList.toggle('sel', CFG.systems[0] === id);
   document.getElementById('s3-next').disabled = CFG.systems.length===0;
   refreshZoneMassing();
 }

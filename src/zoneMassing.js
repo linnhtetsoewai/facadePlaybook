@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const DEFAULTS = {
     loops: [],
     points: [],
@@ -25,6 +25,9 @@
     selectedPaintFaces: [],
     selectedLoopIndices: [],
     selectedLoopIdx: null,
+    paintStatsCollapsed: false,
+    paintOverallCollapsed: false,
+    paintSelectedCollapsed: false,
     extrudeInput: {
       floors: 40,
       typicalFloorHeight: 3.3
@@ -39,22 +42,22 @@
   };
 
   const ZONE_COLORS = {
-    tower:          0x2d6a8f,
-    podium:         0x8a6a30,
-    lobby:          0x4a7a5a,
-    retail:         0xc47830,
-    roof_crown:     0x7a5a8a,
-    penthouse:      0x5a8a7a,
-    canopy:         0x5a7a9a,
-    bridge:         0x7a8a9a,
-    carpark_screen: 0x8a8a7a,
-    mep_screen:     0x9a8a7a,
-    balcony:        0x6a8a5a,
-    roof:           0x8a7a6a,
-    skylight:       0x4a8ab0,
-    amenity_deck:   0x5a9a8a,
-    feature_wall:   0xb04a5a,
-    fin:            0x7a6a9a
+    tower:          0x1f77b4,
+    podium:         0xff7f0e,
+    lobby:          0x2ca02c,
+    retail:         0xd62728,
+    roof_crown:     0x9467bd,
+    penthouse:      0x8c564b,
+    canopy:         0xe377c2,
+    bridge:         0x17becf,
+    carpark_screen: 0xbcbd22,
+    mep_screen:     0x7f7f7f,
+    balcony:        0xbc3c29,
+    roof:           0x2f4b7c,
+    skylight:       0x00a6d6,
+    amenity_deck:   0x6aa84f,
+    feature_wall:   0xf4b400,
+    fin:            0x6f42c1
   };
   const DEFAULT_MESH_COLOR = 0xc6b8a6;
 
@@ -152,6 +155,9 @@
       if (typeof s.selectedLoopIdx === 'number') s.selectedLoopIndices = [s.selectedLoopIdx];
       else s.selectedLoopIndices = [];
     }
+    if (typeof s.paintStatsCollapsed !== 'boolean') s.paintStatsCollapsed = true;
+    if (typeof s.paintOverallCollapsed !== 'boolean') s.paintOverallCollapsed = false;
+    if (typeof s.paintSelectedCollapsed !== 'boolean') s.paintSelectedCollapsed = false;
     if (!s.extrudeInput || typeof s.extrudeInput !== 'object') s.extrudeInput = { ...DEFAULTS.extrudeInput };
     s.extrudeInput.floors = clamp(round(num(s.extrudeInput.floors, DEFAULTS.extrudeInput.floors)), 1, 120);
     s.extrudeInput.typicalFloorHeight = clamp(num(s.extrudeInput.typicalFloorHeight, DEFAULTS.extrudeInput.typicalFloorHeight), 2.4, 6.0);
@@ -362,7 +368,7 @@
   }
 
   // Z is negated so that after ExtrudeGeometry + rotateX(-PI/2), world Z matches the footprint outline.
-  // ExtrudeGeometry places shape in local XY, extrudes along +Z; rotateX(-PI/2) maps local Y → -worldZ,
+  // ExtrudeGeometry places shape in local XY, extrudes along +Z; rotateX(-PI/2) maps local Y â†’ -worldZ,
   // so negating Z here gives the correct world position: (px, 0, pz).
   function getFootprintShape(points) {
     const shape = new THREE.Shape();
@@ -614,6 +620,64 @@
     pushHistoryState();
     state().paintZone = zone;
     render();
+  }
+
+  function getPaintFaceStateKey(face) {
+    if (!face) return null;
+    const s = state();
+    const hasGrid = !!s.faceGrids?.[face.loopIdx]?.[face.faceKey];
+    if (hasGrid && Number.isInteger(face.row) && Number.isInteger(face.col)) {
+      return faceGridStateKey(face.loopIdx, face.faceKey, face.row, face.col);
+    }
+    return faceStateKey(face.loopIdx, face.faceKey);
+  }
+
+  function applyPaintToSelectedFaces() {
+    const s = state();
+    const faces = Array.isArray(s.selectedPaintFaces)
+      ? s.selectedPaintFaces.filter(face => face && Number.isInteger(face.loopIdx) && typeof face.faceKey === 'string')
+      : [];
+    if (!faces.length) {
+      if (typeof window.notify === 'function') window.notify('Select one or more faces first');
+      return false;
+    }
+    if (!s.paintZone) {
+      if (typeof window.notify === 'function') window.notify('Choose a zone first');
+      return false;
+    }
+
+    pushHistoryState();
+    faces.forEach(face => {
+      const key = getPaintFaceStateKey(face);
+      if (!key) return;
+      s.facePaints[key] = s.paintZone;
+    });
+    render();
+    updateScene();
+    if (typeof window.notify === 'function') window.notify(`Applied ${s.paintZone} to ${faces.length} face${faces.length === 1 ? '' : 's'}`);
+    return true;
+  }
+
+  function clearPaintFromSelectedFaces() {
+    const s = state();
+    const faces = Array.isArray(s.selectedPaintFaces)
+      ? s.selectedPaintFaces.filter(face => face && Number.isInteger(face.loopIdx) && typeof face.faceKey === 'string')
+      : [];
+    if (!faces.length) {
+      if (typeof window.notify === 'function') window.notify('Select one or more faces first');
+      return false;
+    }
+
+    pushHistoryState();
+    faces.forEach(face => {
+      const key = getPaintFaceStateKey(face);
+      if (!key) return;
+      delete s.facePaints[key];
+    });
+    render();
+    updateScene();
+    if (typeof window.notify === 'function') window.notify(`Cleared ${faces.length} face${faces.length === 1 ? '' : 's'}`);
+    return true;
   }
 
   function samePaintFace(a, b) {
@@ -956,6 +1020,300 @@
     return s.facePaints?.[faceStateKey(face.loopIdx, facePath)]
       || (Number.isInteger(face.row) && Number.isInteger(face.col) ? s.facePaints?.[faceGridStateKey(face.loopIdx, facePath, face.row, face.col)] : null)
       || null;
+  }
+
+  function togglePaintStatsPanel(scope = 'panel') {
+    const s = state();
+    if (scope === 'overall') {
+      s.paintOverallCollapsed = !s.paintOverallCollapsed;
+    } else if (scope === 'selected') {
+      s.paintSelectedCollapsed = !s.paintSelectedCollapsed;
+    } else {
+      s.paintStatsCollapsed = !s.paintStatsCollapsed;
+    }
+    render();
+  }
+
+  function getStatsZoneLabel(zoneKey) {
+    if (!zoneKey) return 'Unassigned';
+    const labelFn = window.getZoneLabel || (z => String(z).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+    return labelFn(zoneKey);
+  }
+
+  function getStatsZoneColor(zoneKey) {
+    if (!zoneKey) return '#c8b8a6';
+    return `#${((ZONE_COLORS && ZONE_COLORS[zoneKey]) ? ZONE_COLORS[zoneKey] : DEFAULT_MESH_COLOR).toString(16).padStart(6, '0')}`;
+  }
+
+  function getFrameArea(frame) {
+    if (!frame) return 0;
+    if (Number.isFinite(frame.width) && Number.isFinite(frame.height)) return Math.max(0, frame.width * frame.height);
+    if (!frame.uVec || !frame.vVec) return 0;
+    return frame.uVec.clone().cross(frame.vVec).length();
+  }
+
+  function addPaintPiece(stats, face, frame, zoneKey) {
+    if (face && face.faceType === 'bottom') return;
+    let area = getFrameArea(frame);
+    if (face && face.faceType !== 'side' && frame) {
+      const clipped = buildClippedFaceRegionGeometry(face, frame);
+      if (!clipped) return;
+      area = clipped.area;
+    }
+    if (area <= 0) return;
+    stats.pieces.push({
+      area,
+      zoneKey: zoneKey || null,
+      faceKey: face.facePath || face.faceKey || '',
+      label: face.faceLabel || face.faceKey || ''
+    });
+  }
+
+  function collectPaintFaceGridPieces(stats, loopIdx, face, facePath, frame, grid) {
+    const s = state();
+    if (!grid || !frame) return;
+    const parentZone = s.facePaints?.[faceStateKey(loopIdx, facePath)] || null;
+
+    for (let row = 0; row < (grid.rows || 0); row++) {
+      for (let col = 0; col < (grid.cols || 0); col++) {
+        const mergedRegion = findMergedRegion(loopIdx, facePath, row, col);
+        if (mergedRegion && (mergedRegion.row !== row || mergedRegion.col !== col)) continue;
+
+        const cellFrame = splitFaceFrame(frame, row, col, grid.rows, grid.cols);
+        if (!cellFrame) continue;
+        const cellPath = makeFacePath(facePath, row, col);
+
+        if (mergedRegion) {
+          const mergedFacePathValue = mergedRegion.facePath || mergedFacePath(facePath, mergedRegion.row, mergedRegion.col, mergedRegion.rows, mergedRegion.cols);
+          const mergedFace = {
+            ...face,
+            faceKey: mergedFacePathValue,
+            facePath: mergedFacePathValue,
+            row: mergedRegion.row,
+            col: mergedRegion.col,
+            rows: mergedRegion.rows,
+            cols: mergedRegion.cols
+          };
+          const mergedFrame = {
+            faceType: cellFrame.faceType,
+            origin: cellFrame.origin.clone(),
+            uVec: cellFrame.uVec.clone().multiplyScalar(mergedRegion.cols),
+            vVec: cellFrame.vVec.clone().multiplyScalar(mergedRegion.rows),
+            width: cellFrame.width * mergedRegion.cols,
+            height: cellFrame.height * mergedRegion.rows
+          };
+          const nestedGrid = s.faceGrids?.[loopIdx]?.[mergedFacePathValue];
+          if (nestedGrid) {
+            collectPaintFaceGridPieces(stats, loopIdx, mergedFace, mergedFacePathValue, mergedFrame, nestedGrid);
+          } else {
+            addPaintPiece(stats, mergedFace, mergedFrame, getPaintZoneForFace(mergedFace) || parentZone);
+          }
+          continue;
+        }
+
+        const nestedGrid = s.faceGrids?.[loopIdx]?.[cellPath];
+        const cellFace = {
+          ...face,
+          faceKey: cellPath,
+          facePath: cellPath,
+          row,
+          col,
+          rows: grid.rows,
+          cols: grid.cols
+        };
+        if (nestedGrid) {
+          collectPaintFaceGridPieces(stats, loopIdx, cellFace, cellPath, cellFrame, nestedGrid);
+        } else {
+          addPaintPiece(stats, cellFace, cellFrame, getPaintZoneForFace(cellFace) || parentZone);
+        }
+      }
+    }
+  }
+
+  function collectPaintPiecesForScope(selectedFaces = null) {
+    const s = state();
+    const stats = { pieces: [], totalArea: 0 };
+    const loops = Array.isArray(s.loops) ? s.loops : [];
+    const filterSet = Array.isArray(selectedFaces) && selectedFaces.length
+      ? new Set(selectedFaces.map(face => `${face.loopIdx}:${face.facePath || face.faceKey}`))
+      : null;
+
+    const considerFace = face => !filterSet || filterSet.has(`${face.loopIdx}:${face.facePath || face.faceKey}`);
+    loops.forEach((loop, loopIdx) => {
+      if (!loop || loop.length < 3) return;
+      const extrData = s.loopExtrusions?.[loopIdx];
+      if (!extrData) return;
+      const faceDefs = [
+        { faceKey: 'top', faceType: 'top', faceLabel: 'Top', edgeIdx: null },
+        { faceKey: 'bottom', faceType: 'bottom', faceLabel: 'Bottom', edgeIdx: null }
+      ];
+      loop.forEach((_, edgeIdx) => {
+        faceDefs.push({
+          faceKey: `side-${edgeIdx}`,
+          faceType: 'side',
+          faceLabel: faceKeyToLabel(`side-${edgeIdx}`),
+          edgeIdx
+        });
+      });
+
+      faceDefs.forEach(face => {
+        const facePath = face.faceKey;
+        const faceInfo = { ...face, loopIdx, facePath };
+        if (!considerFace(faceInfo)) return;
+        const root = getFaceRegionFrame(faceInfo, facePath);
+        if (!root || !root.frame) return;
+        const grid = s.faceGrids?.[loopIdx]?.[face.faceKey];
+        if (grid) {
+          collectPaintFaceGridPieces(stats, loopIdx, faceInfo, facePath, root.frame, grid);
+        } else {
+          addPaintPiece(stats, faceInfo, root.frame, getPaintZoneForFace(faceInfo));
+        }
+      });
+    });
+
+    stats.totalArea = stats.pieces.reduce((sum, piece) => sum + piece.area, 0);
+    return stats;
+  }
+
+  function summarizePaintPieces(pieces) {
+    const buckets = {};
+    let totalArea = 0;
+    pieces.forEach(piece => {
+      const key = piece.zoneKey || '__unassigned__';
+      if (!buckets[key]) buckets[key] = 0;
+      buckets[key] += piece.area;
+      totalArea += piece.area;
+    });
+    if (!Object.prototype.hasOwnProperty.call(buckets, '__unassigned__')) buckets.__unassigned__ = 0;
+    const rows = Object.entries(buckets)
+      .map(([zoneKey, area]) => ({
+        zoneKey: zoneKey === '__unassigned__' ? null : zoneKey,
+        label: getStatsZoneLabel(zoneKey === '__unassigned__' ? null : zoneKey),
+        color: getStatsZoneColor(zoneKey === '__unassigned__' ? null : zoneKey),
+        area,
+        pct: totalArea > 0 ? (area / totalArea) * 100 : 0
+      }))
+      .filter(row => row.area > 0)
+      .sort((a, b) => {
+        if (!a.zoneKey && b.zoneKey) return 1;
+        if (!b.zoneKey && a.zoneKey) return -1;
+        return b.area - a.area;
+      });
+    return { totalArea, rows };
+  }
+
+  function buildPaintPieStyle(rows) {
+    if (!rows.length) return 'background: conic-gradient(#ddd 0 100%)';
+    let cursor = 0;
+    const parts = rows.map(row => {
+      const start = cursor;
+      cursor += row.pct;
+      return `${row.color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
+    });
+    return `background: conic-gradient(${parts.join(', ')})`;
+  }
+
+  function buildPaintStatsCardHtml(title, subtitle, summary, emptyText, scope, percentBaseArea = summary.totalArea) {
+    const s = state();
+    const collapsed = scope === 'overall'
+      ? !!s.paintOverallCollapsed
+      : scope === 'selected'
+        ? !!s.paintSelectedCollapsed
+        : false;
+    const rows = summary.rows || [];
+    const topRow = rows[0] || null;
+    const formatPct = area => percentBaseArea > 0 ? (area / percentBaseArea) * 100 : 0;
+    return `
+      <div class="paint-stats-card${collapsed ? ' collapsed' : ''}">
+        <div class="paint-stats-head">
+          <div class="paint-stats-head-left">
+            <div class="paint-stats-title">${escapeHtml(title)}</div>
+          </div>
+          <button class="paint-stats-toggle" data-action="toggle-paint-stats" data-scope="${escapeHtml(scope)}" aria-label="${collapsed ? 'Show ' + escapeHtml(title) : 'Hide ' + escapeHtml(title)}">${collapsed ? '▸' : '▾'}</button>
+        </div>
+        <div class="paint-stats-body">
+          <div class="paint-pie-wrap">
+            <div class="paint-pie" style="${buildPaintPieStyle(rows)}">
+              <div class="paint-pie-center" aria-hidden="true"></div>
+            </div>
+            <div>
+              ${rows.length ? `
+                <div class="paint-stat-list">
+                  ${rows.map(row => `
+                    <div class="paint-stat-row">
+                      <div class="paint-stat-left">
+                        <span class="paint-swatch" style="background:${row.color}"></span>
+                        <span class="paint-stat-name">${escapeHtml(row.label)}</span>
+                      </div>
+                      <div class="paint-stat-meta">${formatPct(row.area).toFixed(1)}% - ${formatArea(row.area)}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : `<div class="paint-stat-empty">${escapeHtml(emptyText)}</div>`}
+            </div>
+          </div>
+          <div class="paint-stat-foot">${summary.totalArea ? `${formatArea(summary.totalArea)} total analyzed` : 'No analyzed surface yet'}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildPaintStatsRailHtml() {
+    const s = state();
+    const overall = summarizePaintPieces(collectPaintPiecesForScope().pieces);
+    const selectedFaces = Array.isArray(s.selectedPaintFaces)
+      ? s.selectedPaintFaces.filter(face => face && Number.isInteger(face.loopIdx) && typeof face.faceKey === 'string')
+      : [];
+    const selectedSummary = selectedFaces.length
+      ? summarizePaintPieces(selectedFaces.map(face => {
+          if (face.faceType === 'bottom') return null;
+          const region = getFaceRegionFrame(face, face.facePath || face.faceKey);
+          if (!region || !region.frame) return null;
+          const clipped = face.faceType !== 'side' ? buildClippedFaceRegionGeometry(face, region.frame) : null;
+          return {
+            area: clipped?.area ?? getFrameArea(region.frame),
+            zoneKey: getPaintZoneForFace(face),
+            faceKey: face.facePath || face.faceKey,
+            label: face.faceLabel || face.faceKey
+          };
+        }).filter(Boolean))
+      : { totalArea: 0, rows: [] };
+
+    return `
+      ${buildPaintStatsCardHtml(
+        'Overall project',
+        'All face areas in the current massing model. Unassigned surfaces are included in gray.',
+        overall,
+        'No massing geometry available yet.',
+        'overall'
+      )}
+      ${selectedFaces.length ? buildPaintStatsCardHtml(
+        'Selected faces',
+        `${selectedFaces.length} selected face${selectedFaces.length === 1 ? '' : 's'}`,
+        selectedSummary,
+        'Select faces to see the zone mix for just those faces.',
+        'selected',
+        overall.totalArea
+      ) : ''}
+    `;
+  }
+
+  function buildPaintStatsPanelHtml() {
+    const s = state();
+    const collapsed = !!s.paintStatsCollapsed;
+    return `
+      <div class="paint-stats-panel${collapsed ? ' collapsed' : ''}" data-role="paint-stats-panel">
+        <div class="paint-stats-head">
+          <div class="paint-stats-head-left">
+            <div class="paint-stats-title">Facade stats</div>
+          </div>
+          <button class="paint-stats-toggle" data-action="toggle-paint-stats" aria-label="${collapsed ? 'Show stats' : 'Hide stats'}">${collapsed ? '▸' : '▾'}</button>
+        </div>
+        <div class="paint-stats-stack${collapsed ? ' hidden' : ''}">
+          ${buildPaintStatsRailHtml()}
+        </div>
+      </div>
+    `;
   }
 
   function getMergedFaceRegionFrame(face) {
@@ -1335,6 +1693,31 @@
     };
   }
 
+  function deriveFaceGridFromTarget(frame, requestedGrid) {
+    if (!frame || !requestedGrid) return null;
+    const requestedRows = clamp(round(num(requestedGrid.rows, 3)), 1, 40);
+    const requestedCols = clamp(round(num(requestedGrid.cols, 4)), 1, 40);
+    if (frame.faceType === 'side') {
+      return { rows: requestedRows, cols: requestedCols };
+    }
+
+    const shortExtent = Math.min(frame.width || 0, frame.height || 0);
+    const shortDivisions = Math.max(1, Math.min(requestedRows, requestedCols));
+    if (!Number.isFinite(shortExtent) || shortExtent <= 1e-6) {
+      return { rows: requestedRows, cols: requestedCols };
+    }
+
+    const targetPanelSize = shortExtent / shortDivisions;
+    if (!Number.isFinite(targetPanelSize) || targetPanelSize <= 1e-6) {
+      return { rows: requestedRows, cols: requestedCols };
+    }
+
+    return {
+      rows: clamp(Math.max(1, Math.round(frame.height / targetPanelSize)), 1, 40),
+      cols: clamp(Math.max(1, Math.round(frame.width / targetPanelSize)), 1, 40)
+    };
+  }
+
   function getFaceFrameForPath(face, facePath = null) {
     const s = state();
     const parsed = parseFacePath(facePath || face.faceKey);
@@ -1392,7 +1775,7 @@
 
   function makeFaceMaterial(zoneKey, alpha = 0.95) {
     const color = (zoneKey && ZONE_COLORS[zoneKey]) ? ZONE_COLORS[zoneKey] : DEFAULT_MESH_COLOR;
-    return new THREE.MeshStandardMaterial({
+    const material = new THREE.MeshStandardMaterial({
       color,
       roughness: 0.82,
       metalness: 0.0,
@@ -1400,6 +1783,12 @@
       opacity: alpha,
       side: THREE.DoubleSide
     });
+    material.depthWrite = false;
+    material.depthTest = false;
+    material.polygonOffset = true;
+    material.polygonOffsetFactor = -1;
+    material.polygonOffsetUnits = -1;
+    return material;
   }
 
   function buildFaceGeometryFromFrame(frame) {
@@ -1419,7 +1808,7 @@
     return geometry;
   }
 
-  function buildFaceBorderLines(frame, color = 0xd9d0cf, opacity = 0.42) {
+  function buildFaceBorderLines(frame, color = 0xb1a292, opacity = 0.72) {
     const plane = new THREE.PlaneGeometry(frame.width, frame.height, 1, 1);
     const edges = new THREE.EdgesGeometry(plane);
     plane.dispose();
@@ -1443,7 +1832,135 @@
     });
     const lines = new THREE.LineSegments(edges, material);
     lines.raycast = () => {};
-    lines.renderOrder = 5;
+    lines.renderOrder = 40;
+    return lines;
+  }
+
+  function clipPolygonToRect(points, left, top, right, bottom) {
+    const clipAgainstEdge = (input, isInside, intersect) => {
+      const output = [];
+      if (!input.length) return output;
+      let prev = input[input.length - 1];
+      let prevInside = isInside(prev);
+      input.forEach(curr => {
+        const currInside = isInside(curr);
+        if (currInside) {
+          if (!prevInside) output.push(intersect(prev, curr));
+          output.push(curr);
+        } else if (prevInside) {
+          output.push(intersect(prev, curr));
+        }
+        prev = curr;
+        prevInside = currInside;
+      });
+      return output;
+    };
+
+    let output = points.slice();
+    output = clipAgainstEdge(output, p => p.x >= left, (a, b) => {
+      const dx = b.x - a.x;
+      const t = Math.abs(dx) < 1e-9 ? 0 : (left - a.x) / dx;
+      return { x: left, y: a.y + (b.y - a.y) * t };
+    });
+    output = clipAgainstEdge(output, p => p.x <= right, (a, b) => {
+      const dx = b.x - a.x;
+      const t = Math.abs(dx) < 1e-9 ? 0 : (right - a.x) / dx;
+      return { x: right, y: a.y + (b.y - a.y) * t };
+    });
+    output = clipAgainstEdge(output, p => p.y >= top, (a, b) => {
+      const dy = b.y - a.y;
+      const t = Math.abs(dy) < 1e-9 ? 0 : (top - a.y) / dy;
+      return { x: a.x + (b.x - a.x) * t, y: top };
+    });
+    output = clipAgainstEdge(output, p => p.y <= bottom, (a, b) => {
+      const dy = b.y - a.y;
+      const t = Math.abs(dy) < 1e-9 ? 0 : (bottom - a.y) / dy;
+      return { x: a.x + (b.x - a.x) * t, y: bottom };
+    });
+    return output;
+  }
+
+  function polygonArea2D(points) {
+    if (!Array.isArray(points) || points.length < 3) return 0;
+    let area = 0;
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i];
+      const b = points[(i + 1) % points.length];
+      area += (a.x * b.y) - (b.x * a.y);
+    }
+    return Math.abs(area) * 0.5;
+  }
+
+  function buildGeometryFromLocalPolygon(frame, points) {
+    if (!frame || !Array.isArray(points) || points.length < 3) return null;
+    const shape = new THREE.Shape(points.map(p => new THREE.Vector2(p.x, p.y)));
+    const geometry = new THREE.ShapeGeometry(shape);
+    const xAxis = frame.uVec.clone().normalize();
+    const yAxis = frame.vVec.clone().normalize();
+    const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis);
+    if (zAxis.lengthSq() < 1e-8) zAxis.set(0, 0, 1);
+    else zAxis.normalize();
+    const basis = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+    basis.setPosition(frame.origin.clone());
+    geometry.applyMatrix4(basis);
+    return geometry;
+  }
+
+  function buildClippedFaceRegionGeometry(face, frame) {
+    const s = state();
+    const loop = s.loops[face.loopIdx];
+    if (!loop || loop.length < 3 || !frame) return null;
+    if (face.faceType === 'side') return null;
+    const baseFace = {
+      ...face,
+      faceKey: face.faceType,
+      facePath: face.faceType
+    };
+    const baseFrame = getFaceRootFrame(baseFace);
+    if (!baseFrame) return null;
+    const bounds = getLoopBounds(loop);
+    const offset = s.loopOffsets?.[face.loopIdx] || { x: 0, y: 0, z: 0 };
+    const polygon = loop.map(p => ({ x: p.x - bounds.minX, y: p.y - bounds.minY }));
+    const left = frame.origin.x - offset.x - bounds.minX;
+    const top = frame.origin.y - offset.y - bounds.minY;
+    const right = left + frame.width;
+    const bottom = top + frame.height;
+    const clipped = clipPolygonToRect(polygon, left, top, right, bottom);
+    if (clipped.length < 3) return null;
+    const geometry = buildGeometryFromLocalPolygon(baseFrame, clipped);
+    if (!geometry) return null;
+    return {
+      geometry,
+      outline: clipped,
+      area: polygonArea2D(clipped)
+    };
+  }
+
+  function buildPolygonBorderLinesFromLocal(frame, points, color = 0xb1a292, opacity = 0.72) {
+    if (!frame || !Array.isArray(points) || points.length < 3) return null;
+    const xAxis = frame.uVec.clone().normalize();
+    const yAxis = frame.vVec.clone().normalize();
+    const worldPoints = points.map(p => frame.origin.clone()
+      .add(xAxis.clone().multiplyScalar(p.x))
+      .add(yAxis.clone().multiplyScalar(p.y)));
+    const positions = [];
+    for (let i = 0; i < worldPoints.length; i++) {
+      const a = worldPoints[i];
+      const b = worldPoints[(i + 1) % worldPoints.length];
+      positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const material = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+      depthTest: false
+    });
+    const lines = new THREE.LineSegments(geometry, material);
+    lines.raycast = () => {};
+    lines.renderOrder = 40;
     return lines;
   }
 
@@ -1480,7 +1997,19 @@
     const shouldUseFrame = !!options.frame || String(facePath || '').includes('__') || rows > 1 || cols > 1;
     const frame = options.frame || (shouldUseFrame ? getFaceRegionFrame(face, facePath)?.frame || null : null);
     if (frame) {
-      geometry = buildFaceGeometryFromFrame(frame);
+      if (face.faceType !== 'side') {
+        const clipped = buildClippedFaceRegionGeometry(face, frame);
+        if (!clipped) return null;
+        geometry = clipped.geometry;
+        if (options.showBoundary !== false) {
+          const baseFace = { ...face, faceKey: face.faceType, facePath: face.faceType };
+          const baseFrame = getFaceRootFrame(baseFace);
+          const border = baseFrame ? buildPolygonBorderLinesFromLocal(baseFrame, clipped.outline, options.boundaryColor || 0x8f7f72, options.boundaryOpacity ?? 0.92) : null;
+          if (border) mesh.add(border);
+        }
+      } else {
+        geometry = buildFaceGeometryFromFrame(frame);
+      }
     } else {
       const offset = s.loopOffsets?.[face.loopIdx] || { x: 0, y: 0, z: 0 };
       if (face.faceType === 'side') {
@@ -1523,9 +2052,9 @@
     }
 
     mesh.geometry = geometry;
-    mesh.renderOrder = 4;
-    if (options.showBoundary !== false && frame) {
-      const border = buildFaceBorderLines(frame, options.boundaryColor || 0xc1b6aa, options.boundaryOpacity ?? 0.55);
+    mesh.renderOrder = options.renderOrder ?? 12;
+    if (options.showBoundary !== false && frame && face.faceType === 'side') {
+      const border = buildFaceBorderLines(frame, options.boundaryColor || 0x8f7f72, options.boundaryOpacity ?? 0.92);
       if (border) mesh.add(border);
     }
     return mesh;
@@ -1611,7 +2140,13 @@
 
     const resolvedFrame = frame || getFaceRegionFrame(face, face.facePath || face.faceKey)?.frame || null;
     if (resolvedFrame) {
-      mesh.geometry = buildFaceGeometryFromFrame(resolvedFrame);
+      if (face.faceType !== 'side') {
+        const clipped = buildClippedFaceRegionGeometry(face, resolvedFrame);
+        if (!clipped) return null;
+        mesh.geometry = clipped.geometry;
+      } else {
+        mesh.geometry = buildFaceGeometryFromFrame(resolvedFrame);
+      }
       return mesh;
     }
 
@@ -1684,16 +2219,34 @@
     if (mergedFace) {
       const resolved = getMergedFaceRegionFrame(face);
       if (!resolved) return null;
-      mesh.geometry = buildFaceGeometryFromFrame(resolved);
-      mesh.add(buildFaceBorderLines(resolved, color, Math.min(0.85, opacity + 0.12)));
+      if (face.faceType !== 'side') {
+        const clipped = buildClippedFaceRegionGeometry(face, resolved);
+        if (!clipped) return null;
+        mesh.geometry = clipped.geometry;
+        const baseFace = { ...face, faceKey: face.faceType, facePath: face.faceType };
+        const baseFrame = getFaceRootFrame(baseFace);
+        if (baseFrame) mesh.add(buildPolygonBorderLinesFromLocal(baseFrame, clipped.outline, color, Math.min(0.85, opacity + 0.12)));
+      } else {
+        mesh.geometry = buildFaceGeometryFromFrame(resolved);
+        mesh.add(buildFaceBorderLines(resolved, color, Math.min(0.85, opacity + 0.12)));
+      }
       mesh.renderOrder = 20;
       return mesh;
     }
     if (facePath && facePath.includes('__')) {
       const resolved = getFaceRegionFrame(face, facePath);
       if (!resolved) return null;
-      mesh.geometry = buildFaceGeometryFromFrame(resolved.frame);
-      mesh.add(buildFaceBorderLines(resolved.frame, color, Math.min(0.8, opacity + 0.18)));
+      if (face.faceType !== 'side') {
+        const clipped = buildClippedFaceRegionGeometry(face, resolved.frame);
+        if (!clipped) return null;
+        mesh.geometry = clipped.geometry;
+        const baseFace = { ...face, faceKey: face.faceType, facePath: face.faceType };
+        const baseFrame = getFaceRootFrame(baseFace);
+        if (baseFrame) mesh.add(buildPolygonBorderLinesFromLocal(baseFrame, clipped.outline, color, Math.min(0.85, opacity + 0.12)));
+      } else {
+        mesh.geometry = buildFaceGeometryFromFrame(resolved.frame);
+        mesh.add(buildFaceBorderLines(resolved.frame, color, Math.min(0.8, opacity + 0.18)));
+      }
       mesh.renderOrder = 20;
       return mesh;
     }
@@ -1736,9 +2289,11 @@
     const rows = meshifyGrid?.rows;
     const cols = meshifyGrid?.cols;
     if (!Number.isFinite(rows) || !Number.isFinite(cols)) return false;
+    const resolvedFrame = getFaceFrameForPath(face, face.facePath || face.faceKey)?.frame || getFaceRootFrame(face);
+    const resolvedGrid = deriveFaceGridFromTarget(resolvedFrame, { rows, cols }) || { rows, cols };
     if (!s.faceGrids) s.faceGrids = {};
     if (!s.faceGrids[face.loopIdx]) s.faceGrids[face.loopIdx] = {};
-    s.faceGrids[face.loopIdx][face.faceKey] = { rows, cols };
+    s.faceGrids[face.loopIdx][face.faceKey] = resolvedGrid;
     render();
     updateScene();
     return true;
@@ -1786,8 +2341,8 @@
               frame: mergedFrame,
               facePath: mergedFacePathValue,
               showBoundary: true,
-              boundaryColor: zoneKey ? 0xc3b4a7 : 0xd7d0c8,
-              boundaryOpacity: 0.95
+              boundaryColor: zoneKey ? 0x8c7b6b : 0x9d9184,
+              boundaryOpacity: 1.0
             });
             if (piece) app.paintFaceGroup.add(piece);
             const mergedHit = buildSelectableFaceRegionMesh(mergedFace, mergedRegion.row, mergedRegion.col, mergedRegion.rows, mergedRegion.cols, mergedFrame);
@@ -1811,8 +2366,8 @@
           frame: cellFrame,
           facePath: cellPath,
           showBoundary: true,
-          boundaryColor: zoneKey ? 0xc3b4a7 : 0xd7d0c8,
-          boundaryOpacity: 0.7
+          boundaryColor: zoneKey ? 0x8c7b6b : 0x9d9184,
+          boundaryOpacity: 1.0
         });
         if (piece) app.paintFaceGroup.add(piece);
         const hit = buildSelectableFaceRegionMesh(cellFace, row, col, grid.rows, grid.cols, cellFrame);
@@ -2329,11 +2884,17 @@
       const ALL_ZONES = ['tower','podium','lobby','retail','roof_crown','penthouse','canopy','bridge','carpark_screen','mep_screen','balcony','roof','skylight','amenity_deck','feature_wall','fin'];
       const zones = (Array.isArray(window.CFG?.zones) && window.CFG.zones.length) ? window.CFG.zones : ALL_ZONES;
       const getLabel = window.getZoneLabel || (z => z.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+      const selectedFaces = Array.isArray(s.selectedPaintFaces)
+        ? s.selectedPaintFaces.filter(face => face && Number.isInteger(face.loopIdx) && typeof face.faceKey === 'string')
+        : [];
       return `
         <span class="ln3-label">Zone:</span>
         ${zones.map(z =>
           `<button class="fn-btn${s.paintZone === z ? ' active' : ''}" data-action="set-paint-zone" data-zone="${escapeHtml(z)}">${escapeHtml(getLabel(z))}</button>`
         ).join('')}
+        <div style="flex:1"></div>
+        <button class="fn-btn fn-primary" data-action="apply-selected-paint" ${!selectedFaces.length || !s.paintZone ? 'disabled title="Select faces and choose a zone first"' : ''}>Apply</button>
+        <button class="fn-btn" data-action="clear-selected-paint" ${!selectedFaces.length ? 'disabled title="Select faces first"' : ''}>Clear</button>
       `;
     }
     if (s.mode === 'paint' && s.activeFunction === 'paint-select') {
@@ -2348,15 +2909,18 @@
         : '';
       const faceText = selectedCount > 1
         ? `${selectedCount} faces selected`
-        : face ? `Loop ${face.loopIdx + 1} · ${face.faceLabel || face.faceKey}${mergedText ? ` · ${mergedText}` : cellText ? ` · ${cellText}` : ''}` : 'No face selected';
+        : face ? `Loop ${face.loopIdx + 1} Â· ${face.faceLabel || face.faceKey}${mergedText ? ` Â· ${mergedText}` : cellText ? ` Â· ${cellText}` : ''}` : 'No face selected';
       return `
-        <span class="ln3-hint">Click a face or grid cell to select it · Meshify splits faces into selectable cells · Merge works on rectangular blocks</span>
+        <span class="ln3-hint">Click a face or grid cell to select it Â· Meshify splits faces into selectable cells Â· Merge works on rectangular blocks</span>
         <span class="ln3-readout">${escapeHtml(faceText)}</span>
+        <div style="flex:1"></div>
+        <button class="fn-btn fn-primary" data-action="apply-selected-paint" ${!selectedCount || !s.paintZone ? 'disabled title="Select faces and choose a zone first"' : ''}>Apply</button>
+        <button class="fn-btn" data-action="clear-selected-paint" ${!selectedCount ? 'disabled title="Select faces first"' : ''}>Clear</button>
       `;
     }
     if (s.mode === 'paint' && s.activeFunction === 'meshify') {
       const pending = s.meshifyInput || s.meshifyPending;
-      const gridText = pending ? `Meshify: ${pending.rows} rows × ${pending.cols} cols` : 'Meshify';
+      const gridText = pending ? `Meshify: ${pending.rows} rows Ã— ${pending.cols} cols` : 'Meshify';
       return `
         <span class="ln3-label">Meshify:</span>
         <span class="ln3-lbl">Rows</span>
@@ -2378,9 +2942,9 @@
     if (s.mode === '2d' && s.activeFunction === 'select') return selectedCount ? 'Drag the gizmo to move all selected - Delete removes the selection' : 'Click a footprint to select it - Shift-click adds more';
     if (s.mode === '3d' && s.activeFunction === 'select') return selectedCount ? 'Delete removes the selection - Shift-click adds more objects' : 'Click an object to select it - Shift-click adds more';
     if (s.mode === '3d' && s.activeFunction === 'extrude') return selectedCount ? 'Extruding the selected objects - Click Extrude to confirm' : 'Click objects to select them, or extrude all loops';
-    if (s.mode === 'paint' && s.activeFunction === 'paint-select') return 'Click a face or a divided cell to select it · Hover previews the target';
+    if (s.mode === 'paint' && s.activeFunction === 'paint-select') return 'Click a face or a divided cell to select it Â· Hover previews the target';
     if (s.mode === 'paint' && s.activeFunction === 'meshify') return 'Adjust rows and columns, then click a face or cell to subdivide it';
-    if (s.mode === 'paint' && s.activeFunction === 'paint') return s.selectedPaintFace ? 'Click a selected face or grid cell to assign the zone' : 'Select a face first, then click Paint to assign a zone';
+    if (s.mode === 'paint' && s.activeFunction === 'paint') return s.selectedPaintFace ? 'Choose a zone and click Apply to paint the selected faces' : 'Select faces, choose a zone, then click Apply';
     return '';
   }
 
@@ -2405,10 +2969,15 @@
               <div class="mode-line-3" data-role="mode-line-3">${buildLine3Html(s)}</div>
             </div>
             <div class="three-shell">
-              <div class="viewcube">${buildViewButtonsHtml()}</div>
-              <div class="three-hint" data-role="three-hint">${buildHintText(s)}</div>
-              <div class="three-viewport" id="massing-viewport"></div>
+              <div class="three-viewport-wrap">
+                <div class="viewcube">${buildViewButtonsHtml()}</div>
+                <div class="three-hint" data-role="three-hint">${buildHintText(s)}</div>
+                <div class="three-viewport" id="massing-viewport"></div>
+              </div>
             </div>
+          </div>
+          <div class="three-stats-rail">
+            ${buildPaintStatsPanelHtml()}
           </div>
         </div>
       </div>
@@ -2452,6 +3021,7 @@
     const modeText           = root.querySelector('[data-role="mode-text"]');
     const floorsText         = root.querySelector('[data-role="floors-text"]');
     const floorHeightText    = root.querySelector('[data-role="floor-height-text"]');
+    const paintStatsPanel    = root.querySelector('[data-role="paint-stats-panel"]');
 
     [statusBadge, statusBadgeSidebar].forEach(el => {
       if (!el) return;
@@ -2460,12 +3030,13 @@
     });
     if (footprint)       footprint.textContent = formatArea(metrics.footprintArea);
     if (perimeter)       perimeter.textContent = `${metrics.perimeter.toFixed(1)} m`;
-    if (height)          height.textContent = metrics.height ? `${metrics.height.toFixed(1)} m` : '—';
+    if (height)          height.textContent = metrics.height ? `${metrics.height.toFixed(1)} m` : 'â€”';
     if (cost)            cost.textContent = formatCurrency(metrics.totalCost);
-    if (loopStatus)      loopStatus.textContent = `${metrics.loopCount} closed${s.points.length ? ` · drafting ${s.points.length}` : ''}`;
+    if (loopStatus)      loopStatus.textContent = `${metrics.loopCount} closed${s.points.length ? ` Â· drafting ${s.points.length}` : ''}`;
     if (modeText)        modeText.textContent = s.mode;
-    if (floorsText)      floorsText.textContent = metrics.floors || '—';
-    if (floorHeightText) floorHeightText.textContent = metrics.typicalFloorHeight ? `${metrics.typicalFloorHeight.toFixed(2)} m` : '—';
+    if (floorsText)      floorsText.textContent = metrics.floors || 'â€”';
+    if (floorHeightText) floorHeightText.textContent = metrics.typicalFloorHeight ? `${metrics.typicalFloorHeight.toFixed(2)} m` : 'â€”';
+    if (paintStatsPanel) paintStatsPanel.outerHTML = buildPaintStatsPanelHtml();
 
     updateMode();
     updateContinueButton();
@@ -2498,6 +3069,9 @@
       if (action === 'merge-faces')    { mergeSelectedFaces(); return; }
       if (action === 'cancel-extrude') { cancelExtrude(); return; }
       if (action === 'set-paint-zone') { setPaintZone(actionEl.dataset.zone); return; }
+      if (action === 'toggle-paint-stats') { togglePaintStatsPanel(actionEl.dataset.scope || 'panel'); return; }
+      if (action === 'apply-selected-paint') { applyPaintToSelectedFaces(); return; }
+      if (action === 'clear-selected-paint') { clearPaintFromSelectedFaces(); return; }
       if (action === 'clear-paints')   { clearPaints(); return; }
       if (action === 'meshify-face')    { meshifyFace(); return; }
       if (action === 'cancel-meshify')  { cancelMeshify(); return; }
@@ -2542,6 +3116,17 @@
       if (e.key === 'Delete' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
         const s = state();
         if (getSelectedLoopIndices(s).length) { e.preventDefault(); deleteSelectedLoops(); }
+      }
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape' || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+      const s = state();
+      if (Array.isArray(s.selectedPaintFaces) && s.selectedPaintFaces.length) {
+        e.preventDefault();
+        clearSelectedPaintFace();
+        render();
+        updateScene();
       }
     });
   }
@@ -2689,7 +3274,7 @@
         event.stopPropagation();
         return;
       }
-      if (!(s.mode === 'paint' && (s.activeFunction === 'paint-select' || s.activeFunction === 'meshify'))) return;
+      if (!(s.mode === 'paint' && (s.activeFunction === 'paint' || s.activeFunction === 'paint-select' || s.activeFunction === 'meshify'))) return;
       const face = pickPaintFace(event, canvas);
       if (!face) return;
       selectPaintFace(face, event.shiftKey);
@@ -2698,14 +3283,6 @@
         if (success) {
           s.meshifyPending = null;
           s.activeFunction = 'paint-select';
-        }
-      } else if (s.activeFunction === 'paint' && s.paintZone) {
-        if (s.faceGrids?.[face.loopIdx]?.[face.faceKey]) {
-          const row = Number.isInteger(face.row) ? face.row : 0;
-          const col = Number.isInteger(face.col) ? face.col : 0;
-          s.facePaints[faceGridStateKey(face.loopIdx, face.faceKey, row, col)] = s.paintZone;
-        } else {
-          s.facePaints[faceStateKey(face.loopIdx, face.faceKey)] = s.paintZone;
         }
       }
       render();
@@ -2836,7 +3413,7 @@
         <div class="zone-kpi-grid">
           <div class="zone-kpi"><div class="v">${formatArea(m.footprintArea)}</div><div class="l">Footprint area</div></div>
           <div class="zone-kpi"><div class="v">${m.perimeter.toFixed(1)} m</div><div class="l">Perimeter</div></div>
-          <div class="zone-kpi"><div class="v">${m.height ? `${m.height.toFixed(1)} m` : '—'}</div><div class="l">Extruded height</div></div>
+          <div class="zone-kpi"><div class="v">${m.height ? `${m.height.toFixed(1)} m` : 'â€”'}</div><div class="l">Extruded height</div></div>
           <div class="zone-kpi"><div class="v">${formatCurrency(m.totalCost)}</div><div class="l">Facade cost</div></div>
         </div>
       </div>
@@ -2875,5 +3452,6 @@
     init();
   }
 })();
+
 
 
