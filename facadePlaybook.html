@@ -1651,6 +1651,8 @@ body {
 // ── DATA ──
 let DB = { meta:{}, projects:[], subcontractor_register:[], facade_systems:[] };
 let CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null, massing:null };
+let editingId = null;
+let DETAIL_PROJECT_ID = null;
 
 let SYSTEM_INFO = {};
 let FOLLOW_UPS = {};
@@ -2595,6 +2597,7 @@ function renderProjectsTable() {
 function showProjectDetail(id) {
   const p = DB.projects.find(x=>x.id===id);
   if(!p) return;
+  DETAIL_PROJECT_ID = id;
   const content = document.getElementById('detail-content');
   const sys = (p.systems||[]);
   content.innerHTML = `
@@ -2698,7 +2701,6 @@ function renderSubcontractors() {
 }
 
 // ── ADD / EDIT PROJECT ──
-let editingId = null;
 function openAddProjectModal() {
   editingId = null;
   document.getElementById('modal-add-title').textContent = 'Add new project';

@@ -12,6 +12,7 @@
     paintZone: null,
     loopPaints: {},
     facePaints: {},
+    faceMergedRegions: {},
     loopOffsets: {},
     loopExtrusions: {},
     meshifyPending: null,
@@ -69,6 +70,8 @@
   let mouseDown = null;
   let gizmoDrag = null; // { axis, loopIdx, prevMouse, origin }
   let paintHoverFace = null;
+  const HISTORY_LIMIT = 80;
+  const historyStack = [];
 
   const app = {
     renderer: null,
@@ -112,6 +115,7 @@
     if (typeof s.paintZone !== 'string' && s.paintZone !== null) s.paintZone = null;
     if (!s.loopPaints || typeof s.loopPaints !== 'object' || Array.isArray(s.loopPaints)) s.loopPaints = {};
     if (!s.facePaints || typeof s.facePaints !== 'object' || Array.isArray(s.facePaints)) s.facePaints = {};
+    if (!s.faceMergedRegions || typeof s.faceMergedRegions !== 'object' || Array.isArray(s.faceMergedRegions)) s.faceMergedRegions = {};
     if (!s.loopOffsets || typeof s.loopOffsets !== 'object' || Array.isArray(s.loopOffsets)) s.loopOffsets = {};
     if (!s.loopExtrusions || typeof s.loopExtrusions !== 'object' || Array.isArray(s.loopExtrusions)) s.loopExtrusions = {};
     if (!s.meshifyPending || typeof s.meshifyPending !== 'object' || Array.isArray(s.meshifyPending)) s.meshifyPending = null;
@@ -259,6 +263,104 @@
     return { x: x / points.length, y: y / points.length };
   }
 
+  function cloneValue(value) {
+    if (typeof structuredClone === 'function') return structuredClone(value);
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function snapshotViewportState() {
+    const snapshot = {
+      currentView: app.currentView || 'top',
+      camera: null,
+      controlsTarget: null,
+      controlsEnabled: null
+    };
+    if (app.camera) {
+      snapshot.camera = {
+        position: app.camera.position.clone().toArray(),
+        up: app.camera.up.clone().toArray()
+      };
+    }
+    if (app.controls?.target) {
+      snapshot.controlsTarget = app.controls.target.clone().toArray();
+      snapshot.controlsEnabled = app.controls.enabled;
+    }
+    return snapshot;
+  }
+
+  function applyViewportState(snapshot) {
+    if (!snapshot) return;
+    app.currentView = snapshot.currentView || app.currentView || 'top';
+    if (app.camera && snapshot.camera) {
+      const [px = 0, py = 0, pz = 0] = snapshot.camera.position || [];
+      const [ux = 0, uy = 0, uz = 1] = snapshot.camera.up || [];
+      app.camera.position.set(px, py, pz);
+      app.camera.up.set(ux, uy, uz);
+      app.camera.updateProjectionMatrix?.();
+    }
+    if (app.controls) {
+      if (snapshot.controlsTarget) {
+        const [tx = 0, ty = 0, tz = 0] = snapshot.controlsTarget;
+        app.controls.target.set(tx, ty, tz);
+      }
+      if (typeof snapshot.controlsEnabled === 'boolean') {
+        app.controls.enabled = snapshot.controlsEnabled;
+      }
+      app.controls.update();
+    }
+  }
+
+  function pushHistoryState() {
+    historyStack.push({
+      massing: cloneValue(getState()),
+      viewport: snapshotViewportState()
+    });
+    if (historyStack.length > HISTORY_LIMIT) historyStack.shift();
+  }
+
+  function isEditableTarget(target) {
+    return !!target && (
+      target.isContentEditable ||
+      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+    );
+  }
+
+  function undoHistory() {
+    const snapshot = historyStack.pop();
+    if (!snapshot) return false;
+    getCfg().massing = cloneValue(snapshot.massing);
+    applyViewportState(snapshot.viewport);
+    render();
+    updateSceneIfReady();
+    updateMode();
+    if (typeof window.notify === 'function') window.notify('Undid last modeling action');
+    return true;
+  }
+
+  function handleModelUndoShortcut(event) {
+    const key = (event.key || '').toLowerCase();
+    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && key === 'z') {
+      if (isEditableTarget(event.target)) return false;
+      const configuratorPage = document.getElementById('page-configurator');
+      if (configuratorPage && configuratorPage.classList.contains('page-hidden')) return false;
+      const root = document.getElementById('zone-modeling-root');
+      const canvas = app.renderer?.domElement || null;
+      const active = document.activeElement;
+      const inModelingContext =
+        !!root && (
+          root.contains(event.target) ||
+          root.contains(active) ||
+          canvas === event.target ||
+          canvas === active
+        );
+      if (!inModelingContext) return false;
+      event.preventDefault();
+      event.stopPropagation();
+      return undoHistory();
+    }
+    return false;
+  }
+
   // Z is negated so that after ExtrudeGeometry + rotateX(-PI/2), world Z matches the footprint outline.
   // ExtrudeGeometry places shape in local XY, extrudes along +Z; rotateX(-PI/2) maps local Y → -worldZ,
   // so negating Z here gives the correct world position: (px, 0, pz).
@@ -333,12 +435,14 @@
   }
 
   function resetModel() {
+    pushHistoryState();
     getCfg().massing = JSON.parse(JSON.stringify(DEFAULTS));
     render();
     updateScene();
   }
 
   function setMode(mode) {
+    pushHistoryState();
     const s = state();
     s.mode = mode;
     s.rectStart = null;
@@ -346,7 +450,7 @@
     if (mode === '2d') {
       s.activeFunction = 'draw';
       render();
-      setView('top');
+      setView('top', true);
     } else if (mode === '3d') {
       s.activeFunction = 'extrude';
       render();
@@ -361,16 +465,18 @@
   }
 
   function setDrawTool(tool) {
+    pushHistoryState();
     const s = state();
     s.drawTool = tool === 'rectangle' ? 'rectangle' : 'polyline';
     s.rectStart = null;
     if (s.mode !== '2d') { s.mode = '2d'; s.activeFunction = 'draw'; }
     render();
-    setView('top');
+    setView('top', true);
     updateMode();
   }
 
   function addPoint(point) {
+    pushHistoryState();
     const s = state();
     s.points.push(point);
     s.selected = true;
@@ -381,6 +487,7 @@
   }
 
   function setRectangleStart(point) {
+    pushHistoryState();
     const s = state();
     s.rectStart = { x: point.x, y: point.y };
     s.points = [point];
@@ -399,6 +506,7 @@
     const minY = Math.min(start.y, point.y);
     const maxY = Math.max(start.y, point.y);
     if (Math.abs(maxX - minX) < 0.5 || Math.abs(maxY - minY) < 0.5) return;
+    pushHistoryState();
     s.loops.push([
       { x: minX, y: minY },
       { x: maxX, y: minY },
@@ -415,6 +523,8 @@
 
   function undoPoint() {
     const s = state();
+    if (!s.points.length && !s.rectStart) return;
+    pushHistoryState();
     if (s.points.length) s.points.pop();
     else if (s.rectStart) s.rectStart = null;
     s.extrusion = null;
@@ -425,6 +535,7 @@
   function closeLoop() {
     const s = state();
     if (s.points.length < 3) return;
+    pushHistoryState();
     s.extrusion = null;
     s.loops.push(s.points.map(p => ({ ...p })));
     s.points = [];
@@ -437,6 +548,7 @@
   function confirmExtrude() {
     const s = state();
     if (!s.loops.length) return;
+    pushHistoryState();
     const floors = clamp(round(num(s.extrudeInput.floors, DEFAULTS.extrudeInput.floors)), 1, 120);
     const typicalFloorHeight = clamp(num(s.extrudeInput.typicalFloorHeight, DEFAULTS.extrudeInput.typicalFloorHeight), 2.4, 6.0);
     const extrData = { floors, typicalFloorHeight, height: floors * typicalFloorHeight };
@@ -489,6 +601,7 @@
   }
 
   function setFunction(fn) {
+    pushHistoryState();
     state().activeFunction = fn;
     if (!String(fn || '').startsWith('paint')) setPaintHoverFace(null);
     if (!String(fn || '').startsWith('paint')) state().meshifyPending = null;
@@ -498,6 +611,7 @@
   }
 
   function setPaintZone(zone) {
+    pushHistoryState();
     state().paintZone = zone;
     render();
   }
@@ -507,7 +621,9 @@
       (a.facePath || a.faceKey) === (b.facePath || b.faceKey) &&
       a.loopIdx === b.loopIdx &&
       (a.row ?? null) === (b.row ?? null) &&
-      (a.col ?? null) === (b.col ?? null);
+      (a.col ?? null) === (b.col ?? null) &&
+      (a.rows ?? null) === (b.rows ?? null) &&
+      (a.cols ?? null) === (b.cols ?? null);
   }
 
   function setPaintHoverFace(face) {
@@ -518,6 +634,7 @@
   }
 
   function meshifyFace() {
+    pushHistoryState();
     const s = state();
     if (!s.meshifyInput || typeof s.meshifyInput !== 'object') s.meshifyInput = { rows: 3, cols: 4 };
     s.meshifyPending = { rows: s.meshifyInput.rows, cols: s.meshifyInput.cols };
@@ -525,6 +642,118 @@
     render();
     updateScene();
     updateMode();
+  }
+
+  function mergeSelectedFaces() {
+    const s = state();
+    const faces = Array.isArray(s.selectedPaintFaces) ? s.selectedPaintFaces.filter(face => face && Number.isInteger(face.loopIdx) && typeof face.faceKey === 'string') : [];
+    if (faces.length < 2) {
+      if (typeof window.notify === 'function') window.notify('Select at least 2 faces to merge');
+      return false;
+    }
+
+    const first = faces[0];
+    const loopIdx = first.loopIdx;
+    const faceType = first.faceType || 'side';
+    const basePath = getFaceParentPath(first.facePath || first.faceKey);
+    const rows = first.rows;
+    const cols = first.cols;
+    const cells = [];
+
+    for (const face of faces) {
+      const facePath = face.facePath || face.faceKey;
+      if (face.loopIdx !== loopIdx || (face.faceType || 'side') !== faceType) {
+        if (typeof window.notify === 'function') window.notify('Merge needs faces from the same grid');
+        return false;
+      }
+      if (getFaceParentPath(facePath) !== basePath) {
+        if (typeof window.notify === 'function') window.notify('Merge needs a single rectangular block');
+        return false;
+      }
+      if (!Number.isInteger(face.row) || !Number.isInteger(face.col) || !Number.isInteger(face.rows) || !Number.isInteger(face.cols)) {
+        if (typeof window.notify === 'function') window.notify('Merge only works on meshified face cells');
+        return false;
+      }
+      if (face.rows !== rows || face.cols !== cols) {
+        if (typeof window.notify === 'function') window.notify('Merge needs cells from the same grid');
+        return false;
+      }
+      cells.push({ row: face.row, col: face.col });
+    }
+
+    const minRow = Math.min(...cells.map(c => c.row));
+    const maxRow = Math.max(...cells.map(c => c.row));
+    const minCol = Math.min(...cells.map(c => c.col));
+    const maxCol = Math.max(...cells.map(c => c.col));
+    const rectRows = maxRow - minRow + 1;
+    const rectCols = maxCol - minCol + 1;
+    const expectedCount = rectRows * rectCols;
+    const cellSet = new Set(cells.map(c => `${c.row}:${c.col}`));
+
+    if (cellSet.size !== faces.length || faces.length !== expectedCount) {
+      if (typeof window.notify === 'function') window.notify('Merge needs a rectangular selection');
+      return false;
+    }
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let c = minCol; c <= maxCol; c++) {
+        if (!cellSet.has(`${r}:${c}`)) {
+          if (typeof window.notify === 'function') window.notify('Merge needs a rectangular selection');
+          return false;
+        }
+      }
+    }
+
+    const mergedPath = mergedFacePath(basePath, minRow, minCol, rectRows, rectCols);
+    const mergedKey = mergedFaceKey(loopIdx, basePath, minRow, minCol, rectRows, rectCols);
+    const existingRegions = getMergedRegions(loopIdx, basePath);
+    const overlapsExisting = existingRegions.some(region =>
+      !(maxRow < region.row || minRow >= region.row + region.rows || maxCol < region.col || minCol >= region.col + region.cols)
+    );
+    if (overlapsExisting) {
+      if (typeof window.notify === 'function') window.notify('That area is already merged');
+      return false;
+    }
+
+    const zoneList = faces
+      .map(face => getPaintZoneForFace(face))
+      .filter(Boolean);
+    const commonZone = zoneList.length && zoneList.every(z => z === zoneList[0]) ? zoneList[0] : null;
+
+    pushHistoryState();
+    if (!s.faceMergedRegions[loopIdx]) s.faceMergedRegions[loopIdx] = {};
+    if (!Array.isArray(s.faceMergedRegions[loopIdx][basePath])) s.faceMergedRegions[loopIdx][basePath] = [];
+    s.faceMergedRegions[loopIdx][basePath].push({
+      row: minRow,
+      col: minCol,
+      rows: rectRows,
+      cols: rectCols,
+      facePath: mergedPath,
+      faceKey: mergedPath,
+      parentPath: basePath
+    });
+    if (commonZone) {
+      s.facePaints[mergedKey] = commonZone;
+    }
+
+    s.selectedPaintFaces = [{
+      loopIdx,
+      faceKey: mergedPath,
+      facePath: mergedPath,
+      faceType,
+      edgeIdx: null,
+      faceLabel: 'Merged face',
+      row: minRow,
+      col: minCol,
+      rows: rectRows,
+      cols: rectCols
+    }];
+    s.selectedPaintFace = s.selectedPaintFaces[0];
+    s.meshifyPending = null;
+    render();
+    updateScene();
+    updateMode();
+    if (typeof window.notify === 'function') window.notify('Faces merged');
+    return true;
   }
 
   function confirmMeshify() {
@@ -535,6 +764,8 @@
     const rows = s.meshifyInput?.rows ?? s.meshifyPending?.rows;
     const cols = s.meshifyInput?.cols ?? s.meshifyPending?.cols;
     if (!faces.length) return false;
+    if (!Number.isFinite(rows) || !Number.isFinite(cols)) return false;
+    pushHistoryState();
     let success = false;
     faces.forEach(face => {
       success = meshifySelectedFace(face, { rows, cols }) || success;
@@ -550,6 +781,7 @@
   }
 
   function cancelMeshify() {
+    pushHistoryState();
     const s = state();
     s.meshifyPending = null;
     s.activeFunction = 'paint-select';
@@ -559,9 +791,11 @@
   }
 
   function clearPaints() {
+    pushHistoryState();
     state().loopPaints = {};
     state().facePaints = {};
     state().faceGrids = {};
+    state().faceMergedRegions = {};
     state().selectedPaintFace = null;
     state().selectedPaintFaces = [];
     state().meshifyPending = null;
@@ -570,6 +804,7 @@
   }
 
   function cancelExtrude() {
+    pushHistoryState();
     state().activeFunction = null;
     render();
   }
@@ -591,6 +826,7 @@
   }
 
   function toggleLoopSelection(idx, additive = false) {
+    pushHistoryState();
     const s = state();
     const current = getSelectedLoopIndices(s);
     if (!additive) {
@@ -614,6 +850,7 @@
     const s = state();
     const selected = getSelectedLoopIndices(s).sort((a, b) => b - a);
     if (!selected.length) return;
+    pushHistoryState();
     selected.forEach(idx => s.loops.splice(idx, 1));
     // Remap per-loop dictionaries
     const remap = (src) => {
@@ -678,6 +915,53 @@
     return `${loopIdx}:${faceKey}`;
   }
 
+  function getFaceParentPath(facePath) {
+    const parts = String(facePath || '').split('__').filter(Boolean);
+    if (!parts.length) return '';
+    if (parts.length === 1) return parts[0];
+    return parts.slice(0, -1).join('__');
+  }
+
+  function isMergedFacePath(facePath) {
+    return String(facePath || '').includes('__merge_');
+  }
+
+  function mergedFacePath(parentPath, row, col, rows, cols) {
+    return `${parentPath}__merge_${row}_${col}_${rows}x${cols}`;
+  }
+
+  function mergedFaceKey(loopIdx, parentPath, row, col, rows, cols) {
+    return `${loopIdx}:${mergedFacePath(parentPath, row, col, rows, cols)}`;
+  }
+
+  function getMergedRegions(loopIdx, parentPath) {
+    const s = state();
+    return s.faceMergedRegions?.[loopIdx]?.[parentPath] || [];
+  }
+
+  function findMergedRegion(loopIdx, parentPath, row, col) {
+    return getMergedRegions(loopIdx, parentPath).find(region =>
+      row >= region.row &&
+      row < region.row + region.rows &&
+      col >= region.col &&
+      col < region.col + region.cols
+    ) || null;
+  }
+
+  function getPaintZoneForFace(face) {
+    const s = state();
+    if (!face) return null;
+    const facePath = face.facePath || face.faceKey;
+    if (!facePath) return null;
+    return s.facePaints?.[faceStateKey(face.loopIdx, facePath)]
+      || (Number.isInteger(face.row) && Number.isInteger(face.col) ? s.facePaints?.[faceGridStateKey(face.loopIdx, facePath, face.row, face.col)] : null)
+      || null;
+  }
+
+  function getMergedFaceRegionFrame(face) {
+    return getFaceRegionFrame(face, face.facePath || face.faceKey)?.frame || null;
+  }
+
   function setSelectedPaintFace(faceInfo) {
     setSelectedPaintFaces(faceInfo ? [faceInfo] : []);
   }
@@ -732,6 +1016,7 @@
       if (!additive) clearSelectedPaintFace();
       return;
     }
+    pushHistoryState();
     setSelectedPaintFaces(faceInfo, additive);
   }
 
@@ -958,15 +1243,32 @@
   function parseFacePath(facePath) {
     const parts = String(facePath || '').split('__').filter(Boolean);
     if (!parts.length) return { baseFaceKey: '', segments: [] };
+    const mergePartIndex = parts.findIndex(part => /^merge_\d+_\d+_\d+x\d+$/.test(part));
+    let merge = null;
+    const preParts = mergePartIndex >= 0 ? parts.slice(0, mergePartIndex) : parts;
+    const postParts = mergePartIndex >= 0 ? parts.slice(mergePartIndex + 1) : [];
+    if (mergePartIndex >= 0) {
+      const [row, col, rows, cols] = parts[mergePartIndex]
+        .replace(/^merge_/, '')
+        .split(/[_x]/)
+        .map(v => Number.parseInt(v, 10));
+      if ([row, col, rows, cols].every(Number.isInteger)) merge = { row, col, rows, cols };
+    }
+    const parseGridSegments = arr => arr.map(seg => {
+      const [rowStr, colStr] = String(seg).split('_');
+      return {
+        row: Number.parseInt(rowStr, 10),
+        col: Number.parseInt(colStr, 10)
+      };
+    }).filter(seg => Number.isInteger(seg.row) && Number.isInteger(seg.col));
+    const preSegments = parseGridSegments(preParts.slice(1));
+    const postSegments = parseGridSegments(postParts);
     return {
-      baseFaceKey: parts[0],
-      segments: parts.slice(1).map(seg => {
-        const [rowStr, colStr] = String(seg).split('_');
-        return {
-          row: Number.parseInt(rowStr, 10),
-          col: Number.parseInt(colStr, 10)
-        };
-      }).filter(seg => Number.isInteger(seg.row) && Number.isInteger(seg.col))
+      baseFaceKey: preParts[0],
+      segments: preSegments,
+      preSegments,
+      postSegments,
+      merge
     };
   }
 
@@ -1045,7 +1347,29 @@
     let frame = getFaceRootFrame(rootFace);
     if (!frame) return null;
     let currentPath = parsed.baseFaceKey;
-    for (const segment of parsed.segments) {
+    for (const segment of parsed.preSegments || parsed.segments || []) {
+      const grid = s.faceGrids?.[face.loopIdx]?.[currentPath];
+      if (!grid) return null;
+      frame = splitFaceFrame(frame, segment.row, segment.col, grid.rows, grid.cols);
+      if (!frame) return null;
+      currentPath = makeFacePath(currentPath, segment.row, segment.col);
+    }
+    if (parsed.merge) {
+      const grid = s.faceGrids?.[face.loopIdx]?.[currentPath];
+      if (!grid) return null;
+      const mergedTopLeft = splitFaceFrame(frame, parsed.merge.row, parsed.merge.col, grid.rows, grid.cols);
+      if (!mergedTopLeft) return null;
+      frame = {
+        faceType: mergedTopLeft.faceType,
+        origin: mergedTopLeft.origin.clone(),
+        uVec: mergedTopLeft.uVec.clone().multiplyScalar(parsed.merge.cols),
+        vVec: mergedTopLeft.vVec.clone().multiplyScalar(parsed.merge.rows),
+        width: mergedTopLeft.width * parsed.merge.cols,
+        height: mergedTopLeft.height * parsed.merge.rows
+      };
+      currentPath = `${currentPath}__merge_${parsed.merge.row}_${parsed.merge.col}_${parsed.merge.rows}x${parsed.merge.cols}`;
+    }
+    for (const segment of parsed.postSegments || []) {
       const grid = s.faceGrids?.[face.loopIdx]?.[currentPath];
       if (!grid) return null;
       frame = splitFaceFrame(frame, segment.row, segment.col, grid.rows, grid.cols);
@@ -1124,24 +1448,8 @@
   }
 
   function getFaceRegionFrame(face, facePath = null) {
-    const parsed = parseFacePath(facePath || face.faceKey);
-    if (!parsed.baseFaceKey) return null;
-    const rootFace = {
-      ...face,
-      faceKey: parsed.baseFaceKey,
-      facePath: parsed.baseFaceKey
-    };
-    let frame = getFaceRootFrame(rootFace);
-    if (!frame) return null;
-    let currentPath = parsed.baseFaceKey;
-    for (const segment of parsed.segments) {
-      const grid = state().faceGrids?.[face.loopIdx]?.[currentPath];
-      if (!grid) return null;
-      frame = splitFaceFrame(frame, segment.row, segment.col, grid.rows, grid.cols);
-      if (!frame) return null;
-      currentPath = makeFacePath(currentPath, segment.row, segment.col);
-    }
-    return { frame, facePath: currentPath };
+    const resolved = getFaceFrameForPath(face, facePath);
+    return resolved ? { frame: resolved.frame, facePath: resolved.facePath } : null;
   }
 
   function buildFacePatchMesh(face, row, col, rows, cols, zoneKey, options = {}) {
@@ -1274,6 +1582,82 @@
     return mesh;
   }
 
+  function buildSelectableFaceRegionMesh(face, row, col, rows, cols, frame) {
+    const s = state();
+    const loop = s.loops[face.loopIdx];
+    if (!loop || loop.length < 3) return null;
+    const extrData = s.loopExtrusions?.[face.loopIdx];
+    if (!extrData) return null;
+    const offset = s.loopOffsets?.[face.loopIdx] || { x: 0, y: 0, z: 0 };
+    const mesh = new THREE.Mesh();
+    mesh.material = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.001,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    mesh.userData = {
+      loopIdx: face.loopIdx,
+      faceKey: face.faceKey,
+      facePath: face.facePath || face.faceKey,
+      faceType: face.faceType,
+      faceLabel: face.faceLabel,
+      edgeIdx: Number.isInteger(face.edgeIdx) ? face.edgeIdx : null,
+      row,
+      col,
+      rows,
+      cols
+    };
+
+    const resolvedFrame = frame || getFaceRegionFrame(face, face.facePath || face.faceKey)?.frame || null;
+    if (resolvedFrame) {
+      mesh.geometry = buildFaceGeometryFromFrame(resolvedFrame);
+      return mesh;
+    }
+
+    let geometry = null;
+    if (face.faceType === 'side') {
+      const a = loop[face.edgeIdx];
+      const b = loop[(face.edgeIdx + 1) % loop.length];
+      const edgeVec = new THREE.Vector3(b.x - a.x, b.y - a.y, 0);
+      const len = edgeVec.length();
+      if (len < 1e-6) return null;
+      const xAxis = edgeVec.clone().normalize();
+      const yAxis = new THREE.Vector3(0, 0, 1);
+      const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
+      const cellW = len / cols;
+      const cellH = extrData.height / rows;
+      const localX = -len / 2 + (col + 0.5) * cellW;
+      const localY = -extrData.height / 2 + (row + 0.5) * cellH;
+      geometry = new THREE.PlaneGeometry(cellW, cellH, 1, 1);
+      const center = new THREE.Vector3(
+        offset.x + ((a.x + b.x) / 2) + xAxis.x * localX,
+        offset.y + ((a.y + b.y) / 2) + xAxis.y * localX,
+        offset.z + (extrData.height / 2) + localY
+      );
+      const basis = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+      basis.setPosition(center);
+      geometry.applyMatrix4(basis);
+    } else {
+      const bounds = getLoopBounds(loop);
+      const cellW = (bounds.maxX - bounds.minX) / cols;
+      const cellH = (bounds.maxY - bounds.minY) / rows;
+      const localX = bounds.minX + (col + 0.5) * cellW;
+      const localY = bounds.minY + (row + 0.5) * cellH;
+      if (!pointInPolygon({ x: localX, y: localY }, loop)) return null;
+      geometry = new THREE.PlaneGeometry(cellW, cellH, 1, 1);
+      geometry.rotateX(face.faceType === 'bottom' ? Math.PI : 0);
+      geometry.translate(
+        offset.x + localX,
+        offset.y + localY,
+        offset.z + (face.faceType === 'top' ? extrData.height : 0)
+      );
+    }
+
+    mesh.geometry = geometry;
+    return mesh;
+  }
+
   function buildFaceHighlightMesh(face, options = {}) {
     const s = state();
     const loop = s.loops[face.loopIdx];
@@ -1281,7 +1665,8 @@
     const extrData = s.loopExtrusions?.[face.loopIdx];
     if (!extrData) return null;
     const color = options.color || 0x4a7cff;
-    const opacity = options.opacity ?? 0.22;
+    const mergedFace = isMergedFacePath(face.facePath || face.faceKey) || (Number.isInteger(face.rows) && Number.isInteger(face.cols) && (face.rows > 1 || face.cols > 1));
+    const opacity = mergedFace ? Math.max(options.opacity ?? 0.22, 0.3) : (options.opacity ?? 0.22);
     const mesh = new THREE.Mesh();
     mesh.material = new THREE.MeshStandardMaterial({
       color,
@@ -1296,6 +1681,14 @@
     mesh.material.polygonOffsetUnits = -4;
     mesh.raycast = () => {};
     const facePath = face.facePath || face.faceKey;
+    if (mergedFace) {
+      const resolved = getMergedFaceRegionFrame(face);
+      if (!resolved) return null;
+      mesh.geometry = buildFaceGeometryFromFrame(resolved);
+      mesh.add(buildFaceBorderLines(resolved, color, Math.min(0.85, opacity + 0.12)));
+      mesh.renderOrder = 20;
+      return mesh;
+    }
     if (facePath && facePath.includes('__')) {
       const resolved = getFaceRegionFrame(face, facePath);
       if (!resolved) return null;
@@ -1357,9 +1750,51 @@
     const parentZone = s.facePaints?.[faceStateKey(loopIdx, facePath)] || null;
     for (let row = 0; row < (grid.rows || 0); row++) {
       for (let col = 0; col < (grid.cols || 0); col++) {
+        const mergedRegion = findMergedRegion(loopIdx, facePath, row, col);
+        if (mergedRegion && (mergedRegion.row !== row || mergedRegion.col !== col)) continue;
         const cellFrame = splitFaceFrame(frame, row, col, grid.rows, grid.cols);
         if (!cellFrame) continue;
         const cellPath = makeFacePath(facePath, row, col);
+        if (mergedRegion) {
+          const mergedFacePathValue = mergedRegion.facePath || mergedFacePath(facePath, mergedRegion.row, mergedRegion.col, mergedRegion.rows, mergedRegion.cols);
+          const mergedFace = {
+            ...face,
+            faceKey: mergedFacePathValue,
+            facePath: mergedFacePathValue,
+            faceType: face.faceType,
+            faceLabel: `${face.faceLabel || face.faceKey}`,
+            row: mergedRegion.row,
+            col: mergedRegion.col,
+            rows: mergedRegion.rows,
+            cols: mergedRegion.cols
+          };
+          const mergedFrame = {
+            faceType: cellFrame.faceType,
+            origin: cellFrame.origin.clone(),
+            uVec: cellFrame.uVec.clone().multiplyScalar(mergedRegion.cols),
+            vVec: cellFrame.vVec.clone().multiplyScalar(mergedRegion.rows),
+            width: cellFrame.width * mergedRegion.cols,
+            height: cellFrame.height * mergedRegion.rows
+          };
+          const nestedGrid = s.faceGrids?.[loopIdx]?.[mergedFacePathValue];
+          if (nestedGrid) {
+            renderFaceGridRegion(loopIdx, mergedFace, mergedFacePathValue, mergedFrame, nestedGrid);
+          } else {
+            const zoneKey = s.facePaints?.[faceStateKey(loopIdx, mergedFacePathValue)] || parentZone || null;
+            const piece = buildFacePatchMesh(mergedFace, mergedRegion.row, mergedRegion.col, mergedRegion.rows, mergedRegion.cols, zoneKey, {
+              alpha: 0.995,
+              frame: mergedFrame,
+              facePath: mergedFacePathValue,
+              showBoundary: true,
+              boundaryColor: zoneKey ? 0xc3b4a7 : 0xd7d0c8,
+              boundaryOpacity: 0.95
+            });
+            if (piece) app.paintFaceGroup.add(piece);
+            const mergedHit = buildSelectableFaceRegionMesh(mergedFace, mergedRegion.row, mergedRegion.col, mergedRegion.rows, mergedRegion.cols, mergedFrame);
+            if (mergedHit) app.paintFaceGroup.add(mergedHit);
+          }
+          continue;
+        }
         const nestedGrid = s.faceGrids?.[loopIdx]?.[cellPath];
         if (nestedGrid) {
           renderFaceGridRegion(loopIdx, face, cellPath, cellFrame, nestedGrid);
@@ -1380,6 +1815,8 @@
           boundaryOpacity: 0.7
         });
         if (piece) app.paintFaceGroup.add(piece);
+        const hit = buildSelectableFaceRegionMesh(cellFace, row, col, grid.rows, grid.cols, cellFrame);
+        if (hit) app.paintFaceGroup.add(hit);
       }
     }
   }
@@ -1432,6 +1869,8 @@
     app.renderer.domElement.style.height = '100%';
     app.renderer.domElement.style.cursor = 'crosshair';
     app.renderer.domElement.style.touchAction = 'none';
+    app.renderer.domElement.tabIndex = 0;
+    app.renderer.domElement.addEventListener('pointerdown', () => app.renderer?.domElement?.focus(), { passive: true });
     app.renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
     viewport.appendChild(app.renderer.domElement);
 
@@ -1635,9 +2074,9 @@
         const extrData = s.loopExtrusions?.[loopIdx];
         if (!loop || !extrData) return;
         Object.entries(faces || {}).forEach(([facePath, grid]) => {
-          if (facePath.includes('__')) return;
           if (!grid) return;
           const parsed = parseFacePath(facePath);
+          if (facePath.includes('__') && !parsed.merge && parsed.segments.length) return;
           const faceType = parsed.baseFaceKey === 'top' || parsed.baseFaceKey === 'bottom' ? parsed.baseFaceKey : 'side';
           const face = {
             loopIdx,
@@ -1815,10 +2254,12 @@
     }
     if (s.mode === 'paint') {
       const noExtrusion = !s.extrusion && !(s.loopExtrusions && Object.keys(s.loopExtrusions).length);
+      const selectedFaces = Array.isArray(s.selectedPaintFaces) ? s.selectedPaintFaces.length : 0;
       return `
         <button class="fn-btn${s.activeFunction === 'paint-select' ? ' active' : ''}" data-action="set-function" data-fn="paint-select" ${noExtrusion ? 'disabled title="Extrude a model in 3D mode first"' : ''}>Select</button>
         <button class="fn-btn${s.activeFunction === 'paint' ? ' active' : ''}" data-action="set-function" data-fn="paint" ${noExtrusion ? 'disabled title="Extrude a model in 3D mode first"' : ''}>Paint</button>
         <button class="fn-btn${s.activeFunction === 'meshify' ? ' active' : ''}" data-action="meshify-face" ${noExtrusion ? 'disabled title="Extrude a model in 3D mode first"' : ''}>Meshify</button>
+        <button class="fn-btn" data-action="merge-faces" ${noExtrusion || selectedFaces < 2 ? 'disabled title="Select a rectangular block of at least 2 faces"' : ''}>Merge</button>
         <button class="fn-btn" disabled>Unpaint</button>
         <div style="flex:1"></div>
         <button class="fn-btn" data-action="clear-paints">Clear all</button>
@@ -1902,11 +2343,14 @@
       const cellText = face && Number.isInteger(face.row) && Number.isInteger(face.col)
         ? `Cell ${face.row + 1}, ${face.col + 1}`
         : '';
+      const mergedText = face && Number.isInteger(face.rows) && Number.isInteger(face.cols) && (face.rows > 1 || face.cols > 1)
+        ? `Merged ${face.rows}x${face.cols}`
+        : '';
       const faceText = selectedCount > 1
         ? `${selectedCount} faces selected`
-        : face ? `Loop ${face.loopIdx + 1} · ${face.faceLabel || face.faceKey}${cellText ? ` · ${cellText}` : ''}` : 'No face selected';
+        : face ? `Loop ${face.loopIdx + 1} · ${face.faceLabel || face.faceKey}${mergedText ? ` · ${mergedText}` : cellText ? ` · ${cellText}` : ''}` : 'No face selected';
       return `
-        <span class="ln3-hint">Click a face or grid cell to select it · Meshify splits faces into selectable cells</span>
+        <span class="ln3-hint">Click a face or grid cell to select it · Meshify splits faces into selectable cells · Merge works on rectangular blocks</span>
         <span class="ln3-readout">${escapeHtml(faceText)}</span>
       `;
     }
@@ -2031,6 +2475,10 @@
     const root = document.getElementById('zone-modeling-root');
     if (!root || root.dataset.bound === '1') return;
     root.dataset.bound = '1';
+    root.tabIndex = 0;
+    root.addEventListener('pointerdown', event => {
+      if (event.target === root) root.focus();
+    }, { passive: true });
 
     root.addEventListener('click', event => {
       const actionEl = event.target.closest('[data-action]');
@@ -2047,6 +2495,7 @@
       if (action === 'reset-model')    { resetModel(); return; }
       if (action === 'confirm-extrude'){ confirmExtrude(); return; }
       if (action === 'confirm-meshify') { confirmMeshify(); return; }
+      if (action === 'merge-faces')    { mergeSelectedFaces(); return; }
       if (action === 'cancel-extrude') { cancelExtrude(); return; }
       if (action === 'set-paint-zone') { setPaintZone(actionEl.dataset.zone); return; }
       if (action === 'clear-paints')   { clearPaints(); return; }
@@ -2085,6 +2534,8 @@
       }
       event.preventDefault();
     });
+
+    document.addEventListener('keydown', handleModelUndoShortcut);
 
     // Delete key removes selected loop
     document.addEventListener('keydown', e => {
@@ -2279,7 +2730,8 @@
     return { x: clamp(p.x, -WORLD_HALF, WORLD_HALF), y: clamp(p.y, -WORLD_HALF, WORLD_HALF) };
   }
 
-  function setView(view) {
+  function setView(view, skipHistory = false) {
+    if (!skipHistory) pushHistoryState();
     if (!app.camera || !app.controls) return;
     const dist = 220;
     const center = new THREE.Vector3(0, 0, 0);
@@ -2304,7 +2756,7 @@
     if (app.animateHandle) cancelAnimationFrame(app.animateHandle);
     createScene();
     initialized = true;
-    setView('top');
+    setView('top', true);
     updateScene();
   }
 
@@ -2409,6 +2861,7 @@
     init,
     render,
     reset: resetModel,
+    undo: undoHistory,
     getState,
     getSummaryData,
     getSummaryHtml,
