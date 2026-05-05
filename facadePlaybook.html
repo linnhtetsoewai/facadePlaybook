@@ -795,6 +795,86 @@ body {
   overflow: hidden;
   background: #f8f4ed;
 }
+.scale-ruler {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+}
+.scale-ruler[hidden] {
+  display: none !important;
+}
+.scale-ruler .scale-label {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  backdrop-filter: blur(6px);
+}
+.scale-ruler .scale-bar {
+  position: relative;
+  height: 14px;
+  min-width: 72px;
+}
+.scale-ruler .scale-bar-line {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  height: 2px;
+  background: rgba(26, 24, 20, 0.82);
+}
+.scale-ruler .scale-bar-line::before,
+.scale-ruler .scale-bar-line::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 10px;
+  background: rgba(26, 24, 20, 0.82);
+}
+.scale-ruler .scale-bar-line::before { left: 0; }
+.scale-ruler .scale-bar-line::after { right: 0; }
+.plan-pointer-marker {
+  position: absolute;
+  z-index: 4;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(26, 24, 20, 0.72);
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8), 0 0 0 6px rgba(26, 24, 20, 0.05);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.three-hint:empty {
+  display: none;
+}
+.plan-pointer-marker::before,
+.plan-pointer-marker::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(26, 24, 20, 0.72);
+  transform: translate(-50%, -50%);
+}
+.plan-pointer-marker::before {
+  width: 2px;
+  height: 12px;
+}
+.plan-pointer-marker::after {
+  width: 12px;
+  height: 2px;
+}
 .viewcube {
   position: absolute;
   right: 12px;

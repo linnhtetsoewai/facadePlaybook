@@ -31,6 +31,10 @@
     extrudeInput: {
       floors: 40,
       typicalFloorHeight: 3.3
+    },
+    planCoordInput: {
+      x: '',
+      y: ''
     }
   };
 
@@ -40,6 +44,8 @@
     gold: 2100,
     platinum: 3000
   };
+
+  const METER_SNAP = 1;
 
   const ZONE_COLORS = {
     tower:          0x1f77b4,
@@ -63,7 +69,8 @@
 
   const WORLD_SIZE = 1200;
   const WORLD_HALF = WORLD_SIZE / 2;
-  const GRID_SIZE = 300;
+  const GRID_SIZE = 200;
+  const GRID_DIVISIONS = 200;
   const MODULE_BASE = new URL('./', document.currentScript && document.currentScript.src ? document.currentScript.src : location.href).href;
 
   let THREE = null;
@@ -84,15 +91,18 @@
     raycaster: null,
     ground: null,
     viewport: null,
+    planPointer: null,
     animateHandle: 0,
     resizeObserver: null,
     pointGroup: null,
     loopGroup: null,
     line: null,
+    draftPreviewGroup: null,
     extrudedGroup: null,
     footprintMeshGroup: null,
     paintFaceGroup: null,
     gizmoGroup: null,
+    draftMeasureGroup: null,
     axes: null,
     grid: null
   };
@@ -161,6 +171,9 @@
     if (!s.extrudeInput || typeof s.extrudeInput !== 'object') s.extrudeInput = { ...DEFAULTS.extrudeInput };
     s.extrudeInput.floors = clamp(round(num(s.extrudeInput.floors, DEFAULTS.extrudeInput.floors)), 1, 120);
     s.extrudeInput.typicalFloorHeight = clamp(num(s.extrudeInput.typicalFloorHeight, DEFAULTS.extrudeInput.typicalFloorHeight), 2.4, 6.0);
+    if (!s.planCoordInput || typeof s.planCoordInput !== 'object') s.planCoordInput = { ...DEFAULTS.planCoordInput };
+    if (typeof s.planCoordInput.x !== 'string') s.planCoordInput.x = String(s.planCoordInput.x ?? '');
+    if (typeof s.planCoordInput.y !== 'string') s.planCoordInput.y = String(s.planCoordInput.y ?? '');
     s.loops = s.loops
       .map(loop => Array.isArray(loop) ? loop : [])
       .map(loop => loop
@@ -205,6 +218,285 @@
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+  }
+
+  function snapToMeters(value, step = METER_SNAP) {
+    return Math.round(value / step) * step;
+  }
+
+  function parseSignedDecimal(value, fallback = 0) {
+    const parsed = Number(String(value ?? '').trim());
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  function samePlanPoint(a, b) {
+    return !!a && !!b && Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) < 1e-6;
+  }
+
+  function setPlanPointer(point) {
+    const next = point ? { x: point.x, y: point.y } : null;
+    if (samePlanPoint(app.planPointer, next)) return;
+    app.planPointer = next;
+    updatePlanPointerUi();
+  }
+
+  function updatePlanPointerUi() {
+    const root = document.getElementById('zone-modeling-root');
+    if (!root) return;
+    const readout = root.querySelector('[data-role="plan-pointer-readout"]');
+    const marker = root.querySelector('[data-role="plan-pointer-marker"]');
+    const s = state();
+    const showPointer = s.mode === '2d' && s.activeFunction === 'draw' && !!app.planPointer && !!app.camera && !!app.renderer;
+    if (readout) {
+      if (app.planPointer) {
+        readout.textContent = `X ${app.planPointer.x.toFixed(2)} m · Y ${app.planPointer.y.toFixed(2)} m · snap ${METER_SNAP.toFixed(2)} m`;
+      } else {
+        readout.textContent = `snap ${METER_SNAP.toFixed(2)} m`;
+      }
+    }
+    if (!marker) return;
+    if (!showPointer) {
+      marker.hidden = true;
+      return;
+    }
+    const rect = app.renderer.domElement.getBoundingClientRect();
+    const projected = new THREE.Vector3(app.planPointer.x, app.planPointer.y, 0).project(app.camera);
+    const x = ((projected.x + 1) / 2) * rect.width;
+    const y = ((1 - projected.y) / 2) * rect.height;
+    marker.hidden = false;
+    marker.style.left = `${x.toFixed(1)}px`;
+    marker.style.top = `${y.toFixed(1)}px`;
+  }
+
+  function niceScaleLength(targetWorldLength) {
+    if (!Number.isFinite(targetWorldLength) || targetWorldLength <= 0) return 1;
+    const exponent = Math.floor(Math.log10(targetWorldLength));
+    const base = Math.pow(10, exponent);
+    const choices = [1, 2, 5, 10];
+    let best = base;
+    let bestDiff = Infinity;
+    for (const multiplier of choices) {
+      const candidate = multiplier * base;
+      const diff = Math.abs(candidate - targetWorldLength);
+      if (diff < bestDiff) {
+        best = candidate;
+        bestDiff = diff;
+      }
+    }
+    return best;
+  }
+
+  function formatScaleLabel(value) {
+    if (value >= 1000) {
+      const km = value / 1000;
+      return `${Number.isInteger(km) ? km : km.toFixed(1)} km`;
+    }
+    return `${Number.isInteger(value) ? value : value.toFixed(value < 10 ? 1 : 0)} m`;
+  }
+
+  function updateScaleRulerUi() {
+    const root = document.getElementById('zone-modeling-root');
+    if (!root || !app.renderer || !app.camera || !app.controls) return;
+    const ruler = root.querySelector('[data-role="scale-ruler"]');
+    if (!ruler) return;
+    const label = ruler.querySelector('[data-role="scale-ruler-label"]');
+    const bar = ruler.querySelector('[data-role="scale-ruler-bar"]');
+    if (!label || !bar) return;
+
+    const view = app.currentView || 'top';
+    const showRuler = view !== 'iso';
+    ruler.hidden = !showRuler;
+    ruler.style.display = showRuler ? 'flex' : 'none';
+    if (!showRuler) return;
+
+    const rect = app.renderer.domElement.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const dist = app.camera.position.distanceTo(app.controls.target);
+    const worldHeight = 2 * dist * Math.tan((app.camera.fov * Math.PI / 180) / 2);
+    const worldPerPixel = worldHeight / rect.height;
+    const desiredPx = 120;
+    const desiredWorld = desiredPx * worldPerPixel;
+    const worldLength = niceScaleLength(desiredWorld);
+    const barWidth = Math.max(56, Math.min(180, worldLength / worldPerPixel));
+
+    label.textContent = formatScaleLabel(worldLength);
+    bar.style.width = `${barWidth.toFixed(1)}px`;
+  }
+
+  function getDrawAnchorPoint(s) {
+    if (!s || s.mode !== '2d' || s.activeFunction !== 'draw') return null;
+    if (s.drawTool === 'rectangle' && s.rectStart) return { x: s.rectStart.x, y: s.rectStart.y };
+    if (Array.isArray(s.points) && s.points.length) {
+      const last = s.points[s.points.length - 1];
+      return last ? { x: last.x, y: last.y } : null;
+    }
+    return null;
+  }
+
+  function lockPointOrthogonally(point, anchor) {
+    if (!point || !anchor) return point;
+    const dx = point.x - anchor.x;
+    const dy = point.y - anchor.y;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      return { x: point.x, y: anchor.y };
+    }
+    return { x: anchor.x, y: point.y };
+  }
+
+  function getDrawPointerPoint(event, surface) {
+    const point = pickPlanPoint(event, surface);
+    if (!point) return null;
+    const s = state();
+    const anchor = getDrawAnchorPoint(s);
+    if (anchor && event.shiftKey) return lockPointOrthogonally(point, anchor);
+    return point;
+  }
+
+  function getSelectionFocusData() {
+    if (!THREE) return null;
+    const s = state();
+    const faceSelections = Array.isArray(s.selectedPaintFaces)
+      ? s.selectedPaintFaces.filter(face => face && Number.isInteger(face.loopIdx) && typeof face.faceKey === 'string')
+      : [];
+    const singleFaceSelection = (!faceSelections.length && s.selectedPaintFace && Number.isInteger(s.selectedPaintFace.loopIdx) && typeof s.selectedPaintFace.faceKey === 'string')
+      ? [s.selectedPaintFace]
+      : [];
+    const resolvedFaces = faceSelections.length ? faceSelections : singleFaceSelection;
+    const loopSelections = getSelectedLoopIndices(s);
+
+    if (resolvedFaces.length) {
+      const centers = [];
+      const normals = [];
+      let maxRadius = 0;
+      resolvedFaces.forEach(face => {
+        const region = getFaceFrameForPath(face, face.facePath || face.faceKey);
+        if (!region || !region.frame) return;
+        const frame = region.frame;
+        const normal = new THREE.Vector3().crossVectors(frame.uVec, frame.vVec);
+        if (normal.lengthSq() > 1e-8) {
+          normals.push(normal.normalize());
+        }
+        const center = frame.origin.clone()
+          .add(frame.uVec.clone().multiplyScalar(0.5))
+          .add(frame.vVec.clone().multiplyScalar(0.5));
+        centers.push(center);
+        const radius = Math.max(frame.width || 0, frame.height || 0) * 0.5;
+        if (radius > maxRadius) maxRadius = radius;
+      });
+      if (!centers.length) return null;
+      const center = centers.reduce((acc, v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1 / centers.length);
+      let normal = normals.length
+        ? normals.reduce((acc, v) => acc.add(v), new THREE.Vector3())
+        : new THREE.Vector3(0, 0, 1);
+      if (!Number.isFinite(normal.lengthSq()) || normal.lengthSq() < 1e-8) normal = new THREE.Vector3(0, 0, 1);
+      else normal.normalize();
+      return { center, radius: Math.max(maxRadius, 1), normal };
+    }
+
+    if (loopSelections.length) {
+      const centers = [];
+      let maxRadius = 0;
+      loopSelections.forEach(idx => {
+        const loop = s.loops[idx];
+        if (!loop || loop.length < 3) return;
+        const c = centroid(loop);
+        const offset = s.loopOffsets?.[idx] || { x: 0, y: 0, z: 0 };
+        const center = new THREE.Vector3(c.x + offset.x, c.y + offset.y, offset.z);
+        centers.push(center);
+        loop.forEach(p => {
+          const dist = Math.hypot((p.x + offset.x) - center.x, (p.y + offset.y) - center.y);
+          if (dist > maxRadius) maxRadius = dist;
+        });
+      });
+      if (!centers.length) return null;
+      const center = centers.reduce((acc, v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1 / centers.length);
+      return { center, radius: Math.max(maxRadius, 1), normal: new THREE.Vector3(0, 0, 1) };
+    }
+
+    return null;
+  }
+
+  function hasAnySelection() {
+    const s = state();
+    return getSelectedLoopIndices(s).length > 0 ||
+      (Array.isArray(s.selectedPaintFaces) && s.selectedPaintFaces.length > 0) ||
+      !!s.selectedPaintFace;
+  }
+
+  function zoomToSelection() {
+    const focus = getSelectionFocusData();
+    if (!focus || !app.camera || !app.controls) {
+      if (typeof window.notify === 'function') window.notify('Select a loop or face first');
+      return false;
+    }
+
+    const dist = clamp(focus.radius * 3.2, 18, 420);
+    const center = focus.center.clone();
+    const worldUp = new THREE.Vector3(0, 0, 1);
+    let direction = focus.normal && Number.isFinite(focus.normal.lengthSq?.()) ? focus.normal.clone() : null;
+    if (!direction || !Number.isFinite(direction.lengthSq()) || direction.lengthSq() < 1e-6) {
+      direction = worldUp.clone();
+    } else {
+      direction.normalize();
+    }
+    if (Math.abs(direction.dot(worldUp)) > 0.999) {
+      direction = direction.clone().add(new THREE.Vector3(0.001, 0, 0)).normalize();
+    }
+
+    app.camera.up.copy(worldUp);
+    app.controls.target.copy(center);
+    app.camera.position.copy(center).add(direction.multiplyScalar(dist));
+    app.camera.updateProjectionMatrix?.();
+    app.controls.update();
+    updateScaleRulerUi();
+    updatePlanPointerUi();
+    return true;
+  }
+
+  function getZoomFocusPoint(event, surface) {
+    if (!surface || !app.renderer || !app.camera || !app.raycaster || !app.controls) return null;
+    const rect = surface.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return null;
+
+    const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+    app.raycaster.setFromCamera({ x: nx, y: ny }, app.camera);
+
+    const normal = app.camera.getWorldDirection(new THREE.Vector3()).normalize();
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, app.controls.target);
+    const hit = new THREE.Vector3();
+    if (app.raycaster.ray.intersectPlane(plane, hit)) {
+      return hit;
+    }
+    return app.controls.target.clone();
+  }
+
+  function zoomToCursor(event, surface) {
+    if (!app.camera || !app.controls) return false;
+    const focus = getZoomFocusPoint(event, surface);
+    if (!focus) return false;
+
+    const deltaY = Number(event.deltaY || 0);
+    if (!Number.isFinite(deltaY) || deltaY === 0) return false;
+
+    const scale = deltaY > 0 ? 1.12 : 0.89;
+    const cameraOffset = app.camera.position.clone().sub(focus).multiplyScalar(scale);
+    const targetOffset = app.controls.target.clone().sub(focus).multiplyScalar(scale);
+
+    app.camera.position.copy(focus).add(cameraOffset);
+    app.controls.target.copy(focus).add(targetOffset);
+    app.controls.update();
+    updateScaleRulerUi();
+    updatePlanPointerUi();
+    return true;
+  }
+
+  function formatSegmentLength(value) {
+    const rounded = Math.round(value);
+    const text = Math.abs(value - rounded) < 0.05 ? String(rounded) : value.toFixed(1);
+    return `${text} m`;
   }
 
   function escapeHtml(value) {
@@ -453,6 +745,7 @@
     s.mode = mode;
     s.rectStart = null;
     if (mode !== 'paint') setPaintHoverFace(null);
+    setPlanPointer(null);
     if (mode === '2d') {
       s.activeFunction = 'draw';
       render();
@@ -475,9 +768,9 @@
     const s = state();
     s.drawTool = tool === 'rectangle' ? 'rectangle' : 'polyline';
     s.rectStart = null;
+    setPlanPointer(null);
     if (s.mode !== '2d') { s.mode = '2d'; s.activeFunction = 'draw'; }
     render();
-    setView('top', true);
     updateMode();
   }
 
@@ -602,8 +895,50 @@
       if (inputEl && inputEl.value !== cleaned) inputEl.value = cleaned;
       s.meshifyInput.cols = clamp(round(num(cleaned || s.meshifyInput.cols, s.meshifyInput.cols)), 1, 40);
     }
+    if (field === 'coord-x' || field === 'coord-y') {
+      const cleaned = raw.replace(/[^\d.\-]/g, '').replace(/(?!^)-/g, '').replace(/^(-?\d*\.?\d*).*$/, '$1');
+      if (inputEl && inputEl.value !== cleaned) inputEl.value = cleaned;
+      if (!s.planCoordInput || typeof s.planCoordInput !== 'object') s.planCoordInput = { x: '', y: '' };
+      s.planCoordInput[field === 'coord-x' ? 'x' : 'y'] = cleaned;
+    }
     if (field === 'meshify-rows' || field === 'meshify-cols') s.meshifyPending = { rows: s.meshifyInput.rows, cols: s.meshifyInput.cols };
     if (shouldRender) render();
+  }
+
+  function addPointFromExactCoordinates() {
+    const s = state();
+    const coordX = s.planCoordInput?.x ?? '';
+    const coordY = s.planCoordInput?.y ?? '';
+    const fallbackX = app.planPointer?.x ?? 0;
+    const fallbackY = app.planPointer?.y ?? 0;
+    const x = snapToMeters(clamp(parseSignedDecimal(coordX, fallbackX), -WORLD_HALF, WORLD_HALF));
+    const y = snapToMeters(clamp(parseSignedDecimal(coordY, fallbackY), -WORLD_HALF, WORLD_HALF));
+    const point = { x, y };
+
+    if (s.drawTool === 'rectangle') {
+      if (!s.rectStart) {
+        setRectangleStart(point);
+      } else {
+        completeRectangle(point);
+      }
+    } else if (s.points.length >= 3) {
+      const first = s.points[0];
+      if (Math.hypot(point.x - first.x, point.y - first.y) <= 2.25) {
+        closeLoop();
+      } else {
+        addPoint(point);
+      }
+    } else {
+      addPoint(point);
+    }
+
+    s.planCoordInput.x = '';
+    s.planCoordInput.y = '';
+
+    if (typeof window.notify === 'function') {
+      window.notify(`Placed point at ${x.toFixed(2)} m, ${y.toFixed(2)} m`);
+    }
+    return true;
   }
 
   function setFunction(fn) {
@@ -2433,9 +2768,12 @@
     app.controls.target.set(0, 0, 0);
     app.controls.enableDamping = true;
     app.controls.dampingFactor = 0.08;
+    app.controls.rotateSpeed = 0.6;
+    app.controls.zoomSpeed = 0.9;
+    app.controls.panSpeed = 0.7;
     app.controls.screenSpacePanning = true;
     app.controls.minPolarAngle = 0.01;
-    app.controls.maxPolarAngle = Math.PI - 0.01;
+    app.controls.maxPolarAngle = Math.PI / 2;
     app.controls.minDistance = 20;
     app.controls.maxDistance = 500;
 
@@ -2447,7 +2785,7 @@
     sun.position.set(160, 220, 90);
     app.scene.add(sun);
 
-    app.grid = new THREE.GridHelper(GRID_SIZE, 30, 0x9d9588, 0xd9d0cf);
+    app.grid = new THREE.GridHelper(GRID_SIZE, GRID_DIVISIONS, 0x9d9588, 0xd9d0cf);
     app.grid.rotation.x = Math.PI / 2;
     const gridMaterials = Array.isArray(app.grid.material) ? app.grid.material : [app.grid.material];
     gridMaterials.forEach(mat => { mat.transparent = true; mat.opacity = 0.5; });
@@ -2465,6 +2803,10 @@
     app.scene.add(app.pointGroup);
     app.loopGroup = new THREE.Group();
     app.scene.add(app.loopGroup);
+    app.draftPreviewGroup = new THREE.Group();
+    app.scene.add(app.draftPreviewGroup);
+    app.draftMeasureGroup = new THREE.Group();
+    app.scene.add(app.draftMeasureGroup);
     app.extrudedGroup = new THREE.Group();
     app.scene.add(app.extrudedGroup);
     app.footprintMeshGroup = new THREE.Group();
@@ -2505,6 +2847,8 @@
 
     clearThreeObject(app.pointGroup);
     clearThreeObject(app.loopGroup);
+    if (app.draftPreviewGroup) clearThreeObject(app.draftPreviewGroup);
+    if (app.draftMeasureGroup) clearThreeObject(app.draftMeasureGroup);
     clearThreeObject(app.extrudedGroup);
     if (app.footprintMeshGroup) clearThreeObject(app.footprintMeshGroup);
     if (app.paintFaceGroup) clearThreeObject(app.paintFaceGroup);
@@ -2538,6 +2882,7 @@
         label.position.set(p.x + 1.1, p.y + 1.1, 1.55);
         loopGroupI.add(label);
       });
+      addSegmentDimensionLabels(loopGroupI, loop, { closed: true, offset: 3.25, lift: 1.75 });
 
       app.loopGroup.add(loopGroupI);
 
@@ -2571,6 +2916,7 @@
     if (app.line.geometry) app.line.geometry.dispose();
     app.line.geometry = buildPointLine(points, false);
     app.line.material.color.set(0x7e7362);
+    if (app.draftMeasureGroup) addSegmentDimensionLabels(app.draftMeasureGroup, points, { closed: false, offset: 3.25, lift: 1.75 });
 
     // Per-loop extruded meshes
     loops.forEach((loop, loopIdx) => {
@@ -2716,6 +3062,9 @@
     if (!app.renderer || !app.scene || !app.camera) return;
     app.animateHandle = window.requestAnimationFrame(animate);
     if (app.controls) app.controls.update();
+    updateScaleRulerUi();
+    if (app.planPointer) updatePlanPointerUi();
+    updateDrawPreviewOverlay();
     app.renderer.render(app.scene, app.camera);
   }
 
@@ -2756,6 +3105,113 @@
     return group;
   }
 
+  function addSegmentDimensionLabels(group, points, options = {}) {
+    if (!group || !Array.isArray(points) || points.length < 2) return;
+    const closed = !!options.closed;
+    const offset = options.offset ?? 3.25;
+    const lift = options.lift ?? 1.8;
+    const segmentCount = closed ? points.length : points.length - 1;
+    for (let i = 0; i < segmentCount; i++) {
+      const a = points[i];
+      const b = points[(i + 1) % points.length];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 1e-6) continue;
+      const midX = (a.x + b.x) / 2;
+      const midY = (a.y + b.y) / 2;
+      const nx = -dy / length;
+      const ny = dx / length;
+      const label = createLabel(formatSegmentLength(length));
+      label.position.set(midX + nx * offset, midY + ny * offset, lift);
+      group.add(label);
+    }
+  }
+
+  function updateDrawPreviewOverlay() {
+    if (!THREE || !app.draftPreviewGroup) return;
+    clearThreeObject(app.draftPreviewGroup);
+
+    const s = state();
+    if (s.mode !== '2d' || s.activeFunction !== 'draw' || !app.planPointer) return;
+
+    const anchor = getDrawAnchorPoint(s);
+    if (!anchor) return;
+
+    const previewPoint = app.planPointer;
+    const z = 0.22;
+
+    if (s.drawTool === 'rectangle') {
+      const minX = Math.min(anchor.x, previewPoint.x);
+      const maxX = Math.max(anchor.x, previewPoint.x);
+      const minY = Math.min(anchor.y, previewPoint.y);
+      const maxY = Math.max(anchor.y, previewPoint.y);
+      const width = maxX - minX;
+      const height = maxY - minY;
+      if (width < 1e-6 || height < 1e-6) return;
+
+      const rectPoints = [
+        new THREE.Vector3(minX, minY, z),
+        new THREE.Vector3(maxX, minY, z),
+        new THREE.Vector3(maxX, maxY, z),
+        new THREE.Vector3(minX, maxY, z),
+        new THREE.Vector3(minX, minY, z)
+      ];
+      const geo = new THREE.BufferGeometry().setFromPoints(rectPoints);
+      const line = new THREE.Line(
+        geo,
+        new THREE.LineDashedMaterial({
+          color: 0x7d7468,
+          transparent: true,
+          opacity: 0.82,
+          dashSize: 2.5,
+          gapSize: 1.5
+        })
+      );
+      line.computeLineDistances();
+      app.draftPreviewGroup.add(line);
+
+      const widthLabel = createLabel(formatSegmentLength(width));
+      widthLabel.position.set((minX + maxX) / 2, maxY + 3.25, 1.8);
+      app.draftPreviewGroup.add(widthLabel);
+
+      const heightLabel = createLabel(formatSegmentLength(height));
+      heightLabel.position.set(maxX + 3.25, (minY + maxY) / 2, 1.8);
+      app.draftPreviewGroup.add(heightLabel);
+      return;
+    }
+
+    const dx = previewPoint.x - anchor.x;
+    const dy = previewPoint.y - anchor.y;
+    const length = Math.hypot(dx, dy);
+    if (length < 1e-6) return;
+
+    const geo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(anchor.x, anchor.y, z),
+      new THREE.Vector3(previewPoint.x, previewPoint.y, z)
+    ]);
+    const line = new THREE.Line(
+      geo,
+      new THREE.LineDashedMaterial({
+        color: 0x7d7468,
+        transparent: true,
+        opacity: 0.78,
+        dashSize: 2.5,
+        gapSize: 1.5
+      })
+    );
+    line.computeLineDistances();
+    app.draftPreviewGroup.add(line);
+
+    const midX = (anchor.x + previewPoint.x) / 2;
+    const midY = (anchor.y + previewPoint.y) / 2;
+    const nx = -dy / length;
+    const ny = dx / length;
+    const label = createLabel(formatSegmentLength(length));
+    label.position.set(midX + nx * 3.25, midY + ny * 3.25, 1.8);
+    app.draftPreviewGroup.add(label);
+  }
+
   function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -2782,10 +3238,12 @@
   }
 
   function buildViewButtonsHtml() {
-    const currentView = app.currentView || 'top';
-    return ['top','front','iso','left','right','back'].map(v =>
-      `<button class="fn-btn${currentView === v ? ' active' : ''}" data-action="view" data-view="${v}">${v.charAt(0).toUpperCase() + v.slice(1)}</button>`
-    ).join('');
+    return [
+      ...['top','front','iso','left','right','back'].map(v =>
+        `<button class="fn-btn" data-action="view" data-view="${v}">${v.charAt(0).toUpperCase() + v.slice(1)}</button>`
+      ),
+      `<button class="fn-btn" data-action="zoom-selection" title="Zoom to the current loop or face selection">Zoom Sel</button>`
+    ].join('');
   }
 
   function buildLine2Html(s) {
@@ -2859,6 +3317,7 @@
         <button class="fn-btn" data-action="undo-point">Undo point</button>
         <button class="fn-btn" data-action="close-loop">Close loop</button>
         <div style="flex:1"></div>
+        <span class="ln3-readout" data-role="plan-pointer-readout">${escapeHtml(app.planPointer ? `X ${app.planPointer.x.toFixed(2)} m · Y ${app.planPointer.y.toFixed(2)} m · snap ${METER_SNAP.toFixed(2)} m` : `snap ${METER_SNAP.toFixed(2)} m`)}</span>
         <button class="fn-btn" data-action="reset-model">Reset</button>
       `;
     }
@@ -2898,24 +3357,10 @@
       `;
     }
     if (s.mode === 'paint' && s.activeFunction === 'paint-select') {
-      const face = s.selectedPaintFace;
-      const selectedFaces = Array.isArray(s.selectedPaintFaces) ? s.selectedPaintFaces : [];
-      const selectedCount = selectedFaces.length;
-      const cellText = face && Number.isInteger(face.row) && Number.isInteger(face.col)
-        ? `Cell ${face.row + 1}, ${face.col + 1}`
-        : '';
-      const mergedText = face && Number.isInteger(face.rows) && Number.isInteger(face.cols) && (face.rows > 1 || face.cols > 1)
-        ? `Merged ${face.rows}x${face.cols}`
-        : '';
-      const faceText = selectedCount > 1
-        ? `${selectedCount} faces selected`
-        : face ? `Loop ${face.loopIdx + 1} Â· ${face.faceLabel || face.faceKey}${mergedText ? ` Â· ${mergedText}` : cellText ? ` Â· ${cellText}` : ''}` : 'No face selected';
       return `
-        <span class="ln3-hint">Click a face or grid cell to select it Â· Meshify splits faces into selectable cells Â· Merge works on rectangular blocks</span>
-        <span class="ln3-readout">${escapeHtml(faceText)}</span>
         <div style="flex:1"></div>
-        <button class="fn-btn fn-primary" data-action="apply-selected-paint" ${!selectedCount || !s.paintZone ? 'disabled title="Select faces and choose a zone first"' : ''}>Apply</button>
-        <button class="fn-btn" data-action="clear-selected-paint" ${!selectedCount ? 'disabled title="Select faces first"' : ''}>Clear</button>
+        <button class="fn-btn fn-primary" data-action="apply-selected-paint">Apply</button>
+        <button class="fn-btn" data-action="clear-selected-paint">Clear</button>
       `;
     }
     if (s.mode === 'paint' && s.activeFunction === 'meshify') {
@@ -2938,11 +3383,11 @@
 
   function buildHintText(s) {
     const selectedCount = getSelectedLoopIndices(s).length;
-    if (s.mode === '2d' && s.activeFunction === 'draw') return 'Click the viewport to place points - Close to finish the loop';
+    if (s.mode === '2d' && s.activeFunction === 'draw') return '';
     if (s.mode === '2d' && s.activeFunction === 'select') return selectedCount ? 'Drag the gizmo to move all selected - Delete removes the selection' : 'Click a footprint to select it - Shift-click adds more';
     if (s.mode === '3d' && s.activeFunction === 'select') return selectedCount ? 'Delete removes the selection - Shift-click adds more objects' : 'Click an object to select it - Shift-click adds more';
     if (s.mode === '3d' && s.activeFunction === 'extrude') return selectedCount ? 'Extruding the selected objects - Click Extrude to confirm' : 'Click objects to select them, or extrude all loops';
-    if (s.mode === 'paint' && s.activeFunction === 'paint-select') return 'Click a face or a divided cell to select it Â· Hover previews the target';
+    if (s.mode === 'paint' && s.activeFunction === 'paint-select') return '';
     if (s.mode === 'paint' && s.activeFunction === 'meshify') return 'Adjust rows and columns, then click a face or cell to subdivide it';
     if (s.mode === 'paint' && s.activeFunction === 'paint') return s.selectedPaintFace ? 'Choose a zone and click Apply to paint the selected faces' : 'Select faces, choose a zone, then click Apply';
     return '';
@@ -2955,7 +3400,7 @@
       <div class="zone-modeling">
         <div class="zone-modeling-head">
           <div>
-            <div class="zone-modeling-title">Massing from scratch</div>
+            <div class="zone-modeling-title">Massing</div>
             <div class="zone-modeling-sub">Draw footprints in 2D, extrude in 3D, assign facade zones in Paint.</div>
           </div>
           <span class="badge badge-${metrics.extrusion ? 'green' : 'blue'}" data-role="status-badge">${metrics.extrusion ? 'Extruded' : 'Draft'}</span>
@@ -2970,8 +3415,13 @@
             </div>
             <div class="three-shell">
               <div class="three-viewport-wrap">
+                <div class="scale-ruler" data-role="scale-ruler" hidden>
+                  <div class="scale-label" data-role="scale-ruler-label">10 m</div>
+                  <div class="scale-bar"><div class="scale-bar-line" data-role="scale-ruler-bar"></div></div>
+                </div>
                 <div class="viewcube">${buildViewButtonsHtml()}</div>
                 <div class="three-hint" data-role="three-hint">${buildHintText(s)}</div>
+                <div class="plan-pointer-marker" data-role="plan-pointer-marker" hidden></div>
                 <div class="three-viewport" id="massing-viewport"></div>
               </div>
             </div>
@@ -3060,6 +3510,7 @@
       if (action === 'set-mode')       { setMode(actionEl.dataset.mode); return; }
       if (action === 'set-function')   { setFunction(actionEl.dataset.fn); return; }
       if (action === 'view')           { setView(actionEl.dataset.view); return; }
+      if (action === 'zoom-selection') { zoomToSelection(); return; }
       if (action === 'draw-tool')      { setDrawTool(actionEl.dataset.tool); return; }
       if (action === 'undo-point')     { undoPoint(); return; }
       if (action === 'close-loop')     { closeLoop(); return; }
@@ -3076,6 +3527,7 @@
       if (action === 'meshify-face')    { meshifyFace(); return; }
       if (action === 'cancel-meshify')  { cancelMeshify(); return; }
       if (action === 'delete-loop')    { deleteSelectedLoop(); return; }
+      if (action === 'add-point-exact') { addPointFromExactCoordinates(); return; }
     });
 
     root.addEventListener('input', event => {
@@ -3103,10 +3555,21 @@
         if (/^[0-9]$/.test(event.key)) return;
       } else if (input.dataset.field === 'typicalFloorHeight') {
         if (/^[0-9.]$/.test(event.key)) return;
+      } else if (input.dataset.field === 'coord-x' || input.dataset.field === 'coord-y') {
+        if (/^[0-9.-]$/.test(event.key)) return;
       } else if (input.dataset.field === 'meshify-rows' || input.dataset.field === 'meshify-cols') {
         if (/^[0-9]$/.test(event.key)) return;
       }
       event.preventDefault();
+    });
+
+    root.addEventListener('keydown', event => {
+      const input = event.target.closest('input[data-field="coord-x"], input[data-field="coord-y"]');
+      if (!input) return;
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        addPointFromExactCoordinates();
+      }
     });
 
     document.addEventListener('keydown', handleModelUndoShortcut);
@@ -3122,12 +3585,15 @@
     document.addEventListener('keydown', e => {
       if (e.key !== 'Escape' || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
       const s = state();
-      if (Array.isArray(s.selectedPaintFaces) && s.selectedPaintFaces.length) {
-        e.preventDefault();
-        clearSelectedPaintFace();
-        render();
-        updateScene();
-      }
+      const hasFaces = Array.isArray(s.selectedPaintFaces) && s.selectedPaintFaces.length;
+      const hasLoops = getSelectedLoopIndices(s).length > 0;
+      if (!hasFaces && !hasLoops && !s.selectedPaintFace) return;
+      e.preventDefault();
+      clearSelectedPaintFace();
+      clearSelection();
+      render();
+      updateScene();
+      updateMode();
     });
   }
 
@@ -3181,6 +3647,11 @@
         } else if (paintHoverFace) {
           setPaintHoverFace(null);
         }
+        if (s.mode === '2d' && s.activeFunction === 'draw') {
+          setPlanPointer(getDrawPointerPoint(event, canvas));
+        } else if (app.planPointer) {
+          setPlanPointer(null);
+        }
       }
       if (!gizmoDrag) return;
       const selectedIndices = Array.isArray(gizmoDrag.selectedIndices) ? gizmoDrag.selectedIndices : [gizmoDrag.loopIdx];
@@ -3213,6 +3684,15 @@
       if (paintHoverFace) setPaintHoverFace(null);
     });
 
+    canvas.addEventListener('wheel', event => {
+      const s = state();
+      if (!app.controls || !app.controls.enabled) return;
+      if (s.mode === '2d' && s.activeFunction === 'draw' && gizmoDrag) return;
+      if (!zoomToCursor(event, canvas)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, { passive: false, capture: true });
+
       window.addEventListener('mouseup', event => {
       if (gizmoDrag) {
         gizmoDrag = null;
@@ -3224,34 +3704,35 @@
       const moved = Math.hypot(event.clientX - mouseDown.x, event.clientY - mouseDown.y);
       mouseDown = null;
       if (moved > 6) return;
+    });
 
+    canvas.addEventListener('click', event => {
       const s = state();
-
-      // 2D draw: place points
+      if (event.button !== 0) return;
       if (s.mode === '2d' && s.activeFunction === 'draw') {
-        const point = pickPlanPoint(event, canvas);
+        const point = getDrawPointerPoint(event, canvas);
         if (!point) return;
         if (s.drawTool === 'rectangle') {
           if (!s.rectStart) { setRectangleStart(point); }
           else { completeRectangle(point); }
+          event.preventDefault();
+          event.stopPropagation();
           return;
         }
         if (s.points.length >= 3) {
           const first = s.points[0];
           if (Math.hypot(point.x - first.x, point.y - first.y) <= 2.25) {
             closeLoop();
+            event.preventDefault();
+            event.stopPropagation();
             return;
           }
         }
         addPoint(point);
+        event.preventDefault();
+        event.stopPropagation();
         return;
       }
-
-    });
-
-    canvas.addEventListener('click', event => {
-      const s = state();
-      if (event.button !== 0) return;
       if (s.mode === '2d' && s.activeFunction === 'select') {
         const loopIdx = pickSelectableLoop(event, canvas, s);
         if (loopIdx !== null) {
@@ -3304,26 +3785,58 @@
     const hits = app.raycaster.intersectObject(app.ground, false);
     if (!hits.length) return null;
     const p = hits[0].point;
-    return { x: clamp(p.x, -WORLD_HALF, WORLD_HALF), y: clamp(p.y, -WORLD_HALF, WORLD_HALF) };
+    return {
+      x: snapToMeters(clamp(p.x, -WORLD_HALF, WORLD_HALF)),
+      y: snapToMeters(clamp(p.y, -WORLD_HALF, WORLD_HALF))
+    };
   }
 
   function setView(view, skipHistory = false) {
     if (!skipHistory) pushHistoryState();
     if (!app.camera || !app.controls) return;
     const dist = 220;
-    const center = new THREE.Vector3(0, 0, 0);
+    const metrics = getMetrics();
+    const centerZ = Number.isFinite(metrics.height) ? metrics.height * 0.5 : 0;
+    const center = new THREE.Vector3(0, 0, centerZ);
+    const up = new THREE.Vector3(0, 0, 1);
+    let offset = new THREE.Vector3(0.9, 0.7, 0.9).normalize().multiplyScalar(dist);
     app.currentView = view;
-    app.controls.target.copy(center);
     switch (view) {
-      case 'top':   app.camera.position.set(0, 0, dist);   app.camera.up.set(0, 1, 0); break;
-      case 'front': app.camera.position.set(0, dist, 0);   app.camera.up.set(0, 0, 1); break;
-      case 'back':  app.camera.position.set(0, -dist, 0);  app.camera.up.set(0, 0, 1); break;
-      case 'left':  app.camera.position.set(-dist, 0, 0);   app.camera.up.set(0, 0, 1); break;
-      case 'right': app.camera.position.set(dist, 0, 0);    app.camera.up.set(0, 0, 1); break;
+      case 'top':
+        offset = new THREE.Vector3(0, 0, dist);
+        up.set(0, 1, 0);
+        break;
+      case 'front':
+        offset = new THREE.Vector3(0, -dist, 0);
+        break;
+      case 'back':
+        offset = new THREE.Vector3(0, dist, 0);
+        break;
+      case 'left':
+        offset = new THREE.Vector3(-dist, 0, 0);
+        break;
+      case 'right':
+        offset = new THREE.Vector3(dist, 0, 0);
+        break;
       case 'iso':
-      default:      app.camera.position.set(dist * 0.9, dist * 0.7, dist * 0.9); app.camera.up.set(0, 0, 1); break;
+      default:
+        offset = new THREE.Vector3(0.9, 0.7, 0.9).normalize().multiplyScalar(dist);
+        break;
     }
-    app.controls.update();
+    app.camera.up.copy(up);
+    app.controls.target.copy(center);
+    app.camera.position.copy(center).add(offset);
+    app.camera.lookAt(center);
+    app.camera.updateMatrixWorld(true);
+    app.controls.saveState?.();
+    const root = document.getElementById('zone-modeling-root');
+    const ruler = root?.querySelector('[data-role="scale-ruler"]');
+    if (ruler) {
+      const showRuler = view !== 'iso';
+      ruler.hidden = !showRuler;
+      ruler.style.display = showRuler ? 'flex' : 'none';
+    }
+    updateScaleRulerUi();
   }
 
   function initScene() {
@@ -3351,7 +3864,31 @@
       shell.classList.toggle('is-paint',    s.mode === 'paint');
     }
     if (app.controls && !gizmoDrag) {
-      app.controls.enabled = s.mode !== '2d';
+      if (s.mode === '2d') {
+        app.controls.enabled = true;
+        app.controls.enableRotate = false;
+        app.controls.enablePan = true;
+        app.controls.enableZoom = true;
+        app.controls.screenSpacePanning = true;
+        if (THREE) {
+          app.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+          app.controls.mouseButtons.MIDDLE = THREE.MOUSE.DOLLY;
+          app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
+        }
+      } else {
+        app.controls.enabled = true;
+        app.controls.enableRotate = true;
+        app.controls.enablePan = true;
+        app.controls.enableZoom = true;
+        app.controls.screenSpacePanning = true;
+        app.controls.minPolarAngle = 0.01;
+        app.controls.maxPolarAngle = Math.PI / 2 - 0.01;
+        if (THREE) {
+          app.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+          app.controls.mouseButtons.MIDDLE = THREE.MOUSE.DOLLY;
+          app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
+        }
+      }
     }
     if (app.renderer) {
       const isSelect =
@@ -3362,10 +3899,12 @@
                    : s.mode === '3d' && s.activeFunction === 'extrude' ? 'pointer'
                    : s.mode === 'paint' && (s.activeFunction === 'paint-select' || s.activeFunction === 'meshify') ? 'pointer'
                    : s.mode === 'paint' ? 'crosshair'
-                   : s.mode === 'navigate' ? 'grab'
-                   : 'default';
+                  : s.mode === 'navigate' ? 'grab'
+                  : 'default';
       app.renderer.domElement.style.cursor = cursor;
     }
+    updateScaleRulerUi();
+    updatePlanPointerUi();
   }
 
   async function bootstrap() {
