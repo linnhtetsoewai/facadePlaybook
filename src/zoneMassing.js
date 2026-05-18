@@ -739,6 +739,125 @@
     updateScene();
   }
 
+  function loadExampleModel() {
+    pushHistoryState();
+    const s = state();
+    const podiumHeight = 12.6;
+    const towerHeight = 51.0;
+    const tower2Height = 61.2;
+    const bridgeHeight = 6.0;
+    const bridgeZ = podiumHeight + (towerHeight * 0.5) - (bridgeHeight * 0.5);
+    const totalHeight = podiumHeight + tower2Height;
+
+    const podiumLoop = [
+      { x: -36, y: -20 },
+      { x: 36, y: -20 },
+      { x: 36, y: 20 },
+      { x: -36, y: 20 }
+    ];
+    const towerOneLoop = [
+      { x: -26, y: -8 },
+      { x: -14, y: -8 },
+      { x: -14, y: 8 },
+      { x: -26, y: 8 }
+    ];
+    const towerTwoLoop = [
+      { x: 14, y: -8 },
+      { x: 26, y: -8 },
+      { x: 26, y: 8 },
+      { x: 14, y: 8 }
+    ];
+    const bridgeLoop = [
+      { x: -14, y: -3 },
+      { x: 14, y: -3 },
+      { x: 14, y: 3 },
+      { x: -14, y: 3 }
+    ];
+
+    s.loops = [podiumLoop, towerOneLoop, towerTwoLoop, bridgeLoop];
+    s.points = [];
+    s.closed = false;
+    s.selected = true;
+    s.mode = 'paint';
+    s.activeFunction = 'paint-select';
+    s.drawTool = 'polyline';
+    s.rectStart = null;
+    s.paintZone = null;
+    s.loopPaints = {
+      0: 'podium',
+      1: 'tower',
+      2: 'tower',
+      3: 'bridge'
+    };
+    const facePaints = {
+      '0:top': 'amenity_deck',
+      '1:top': 'roof_crown',
+      '2:top': 'roof_crown',
+      '3:top': 'bridge'
+    };
+    [0, 1, 2, 3].forEach(loopIdx => {
+      const zone = s.loopPaints[loopIdx];
+      const loop = s.loops[loopIdx];
+      if (!loop || loop.length < 3) return;
+      loop.forEach((_, edgeIdx) => {
+        facePaints[`${loopIdx}:side-${edgeIdx}`] = zone;
+      });
+    });
+    facePaints['0:side-1'] = 'retail';
+    s.facePaints = facePaints;
+    s.faceMergedRegions = {};
+    s.faceGrids = {};
+    s.loopOffsets = {
+      0: { x: 0, y: 0, z: 0 },
+      1: { x: 0, y: 0, z: podiumHeight },
+      2: { x: 0, y: 0, z: podiumHeight },
+      3: { x: 0, y: 0, z: bridgeZ }
+    };
+    s.loopExtrusions = {
+      0: { floors: 3, typicalFloorHeight: 4.2, height: podiumHeight },
+      1: { floors: 15, typicalFloorHeight: 3.4, height: towerHeight },
+      2: { floors: 18, typicalFloorHeight: 3.4, height: tower2Height },
+      3: { floors: 2, typicalFloorHeight: 3.0, height: bridgeHeight }
+    };
+    s.extrusion = { floors: 21, typicalFloorHeight: 3.42, height: totalHeight };
+    s.selectedPaintFace = null;
+    s.selectedPaintFaces = [];
+    s.selectedLoopIndices = [2];
+    s.selectedLoopIdx = 2;
+    s.meshifyPending = null;
+    s.meshifyInput = { rows: 3, cols: 4 };
+    s.paintStatsCollapsed = false;
+    s.paintOverallCollapsed = false;
+    s.paintSelectedCollapsed = false;
+    setPaintHoverFace(null);
+    setPlanPointer(null);
+    render();
+    updateScene();
+    updateMode();
+    updateContinueButton();
+
+    if (app.camera && app.controls && THREE) {
+      const dist = 250;
+      const center = new THREE.Vector3(0, 0, totalHeight * 0.5);
+      const offset = new THREE.Vector3(0.9, 0.7, 0.9).normalize().multiplyScalar(dist);
+      app.currentView = 'iso';
+      app.camera.up.set(0, 0, 1);
+      app.controls.target.copy(center);
+      app.camera.position.copy(center).add(offset);
+      app.camera.lookAt(center);
+      app.camera.updateMatrixWorld(true);
+      app.controls.saveState?.();
+      app.controls.update();
+      updateScaleRulerUi();
+    } else {
+      setView('iso', true);
+    }
+
+    if (typeof window.notify === 'function') {
+      window.notify('Loaded example podium + tower massing');
+    }
+  }
+
   function setMode(mode) {
     pushHistoryState();
     const s = state();
@@ -3403,7 +3522,9 @@
             <div class="zone-modeling-title">Massing</div>
             <div class="zone-modeling-sub">Draw footprints in 2D, extrude in 3D, assign facade zones in Paint.</div>
           </div>
-          <span class="badge badge-${metrics.extrusion ? 'green' : 'blue'}" data-role="status-badge">${metrics.extrusion ? 'Extruded' : 'Draft'}</span>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+            <button class="btn btn-sm btn-primary" data-action="load-example" title="Load a ready-made 15-storey tower with a 3-storey podium">Load example</button>
+          </div>
         </div>
 
         <div class="plan-layout">
@@ -3515,6 +3636,7 @@
       if (action === 'undo-point')     { undoPoint(); return; }
       if (action === 'close-loop')     { closeLoop(); return; }
       if (action === 'reset-model')    { resetModel(); return; }
+      if (action === 'load-example')   { loadExampleModel(); return; }
       if (action === 'confirm-extrude'){ confirmExtrude(); return; }
       if (action === 'confirm-meshify') { confirmMeshify(); return; }
       if (action === 'merge-faces')    { mergeSelectedFaces(); return; }
@@ -3977,6 +4099,7 @@
     init,
     render,
     reset: resetModel,
+    loadExample: loadExampleModel,
     undo: undoHistory,
     getState,
     getSummaryData,
