@@ -2061,7 +2061,7 @@ function syncSystemData() {
       access: derivedAccess,
       budgets: (sys.budgets || (sys.min_budget ? [sys.min_budget] : [])).map(normalizeBudgetValue).filter(Boolean)
     };
-    FOLLOW_UPS[id] = (sys.questions || sys.follow_ups || []).map(q => ({
+    FOLLOW_UPS[id] = (sys.questions || sys.follow_ups || []).slice(0, 3).map(q => ({
       id: q.id,
       q: q.q || q.label || q.question || q.id,
       note: q.note || ''
@@ -2301,7 +2301,7 @@ function scoreOptionAgainstAnswers(option, answers, ignoreKey = null) {
   return { score, matched };
 }
 
-function narrowScoredOptions(scored, maxItems = 4, minItems = 2) {
+function narrowScoredOptions(scored, maxItems = 4, minItems = 3) {
   const sorted = [...scored].sort((a,b)=> b.score - a.score || a.label.localeCompare(b.label));
   if(!sorted.length) return [];
 
@@ -2325,7 +2325,7 @@ function getQuestionOptions(systemId, questionId, answers) {
     const match = scoreOptionAgainstAnswers(opt, answers, questionId);
     return { ...opt, score: match.score, matched: match.matched };
   });
-  return narrowScoredOptions(scored, 4, 2);
+  return narrowScoredOptions(scored, 4, 3);
 }
 
 function getSuggestedOptions(systemId, answers) {
@@ -2337,7 +2337,7 @@ function getSuggestedOptions(systemId, answers) {
     return { ...opt, score: match.score, matched: match.matched };
   });
   const matched = scored.filter(opt => opt.score > 0);
-  return matched.length ? narrowScoredOptions(matched, 4, 2) : [];
+  return matched.length ? narrowScoredOptions(matched, 4, 3) : [];
 }
 
 function getRecommendationSummary(systemId, answers) {
@@ -2657,7 +2657,20 @@ function renderSystemQuestions(id) {
           }).join('')}
         </div>
         ${suggestions.length > 4 ? `<div class="sys-question-note">Showing 4 of ${suggestions.length} matched options.</div>` : ''}
-      ` : `<div class="sys-question-note">${answeredCount ? 'Answer more questions to narrow the facade options.' : 'No recommendations yet. Answer at least one question to begin narrowing options.'}</div>`}
+      ` : `
+        <div class="sys-question-note">${answeredCount ? 'No ranked recommendations yet. Choose from the available options below.' : 'No recommendations yet. Choose from the available options below.'}</div>
+        <div class="sys-option-grid">
+          ${options.slice(0, 4).map(opt => {
+            const label = opt.label || opt.name || opt;
+            const sel = answers[q.id] === label;
+            const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
+            return `<button type="button" class="sys-option-card${sel ? ' sel' : ''}" data-system="${id}" data-question="${q.id}" data-value="${String(label).replace(/"/g,'&quot;')}">
+              <div style="font-weight:500">${label}</div>
+              ${chips ? `<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${chips}</div>` : ''}
+            </button>`;
+          }).join('')}
+        </div>
+      `}
     </div>
     <div class="sys-answer-list">
       ${(questions.slice(0, idx).map(prev => `<div class="sys-answer-row"><div class="sys-answer-k">${prev.q}</div><div class="sys-answer-v">${answers[prev.id] || '—'}</div></div>`).join(''))}
