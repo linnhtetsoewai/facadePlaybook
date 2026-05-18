@@ -805,9 +805,6 @@ body {
   gap: 4px;
   pointer-events: none;
 }
-.scale-ruler[hidden] {
-  display: none !important;
-}
 .scale-ruler .scale-label {
   display: inline-flex;
   align-self: flex-start;
@@ -1590,6 +1587,11 @@ body {
       Subcontractors
       <span class="nav-count" id="nc-subs">0</span>
     </button>
+    <button class="nav-item" data-page="suppliers" onclick="showPage('suppliers',this)">
+      <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="9" width="12" height="5" rx="1"/><path d="M4 9V5a4 4 0 018 0v4"/><circle cx="8" cy="5" r="1"/></svg>
+      Suppliers
+      <span class="nav-count" id="nc-suppliers">0</span>
+    </button>
     <div class="nav-section">Actions</div>
     <button class="nav-item" onclick="openAddProjectModal()">
       <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
@@ -1821,6 +1823,17 @@ body {
       <div id="subs-content"></div>
     </div>
 
+    <!-- PAGE: SUPPLIERS -->
+    <div class="page page-hidden" id="page-suppliers">
+      <div class="flex-between mb-24">
+        <div>
+          <h2 style="font-family:var(--serif);font-size:22px">Supplier register</h2>
+          <p class="text-muted mt-4" style="font-size:13px">Facade material &amp; product suppliers — UAE region</p>
+        </div>
+      </div>
+      <div id="suppliers-content"></div>
+    </div>
+
   </main>
 </div>
 
@@ -1927,13 +1940,16 @@ body {
 
 <div class="notif" id="notif"></div>
 
-<script src="projectsData.js"></script>
+<script src="src/projectsData.js"></script>
+<script src="src/subcontractors.js"></script>
+<script src="src/suppliers.js"></script>
 <script src="src/vendor/three.min.js"></script>
 <script src="src/vendor/OrbitControls.legacy.js"></script>
 <script src="src/zoneMassing.js"></script>
 <script>
 // ── DATA ──
 let DB = { meta:{}, projects:[], subcontractor_register:[], facade_systems:[] };
+let SUPPLIER_DB = [];
 let CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null, massing:null };
 let editingId = null;
 let DETAIL_PROJECT_ID = null;
@@ -1977,10 +1993,13 @@ async function init() {
   if(window.ZoneMassing && typeof window.ZoneMassing.init === 'function') window.ZoneMassing.init();
   if(window.FACADE_DB) {
     DB = window.FACADE_DB;
+    DB.subcontractor_register = window.SUBCONTRACTOR_REGISTER || DB.subcontractor_register || [];
     syncSystemData();
     document.getElementById('db-status-text').textContent = `${DB.projects.length} projects loaded`;
     document.getElementById('nc-projects').textContent = DB.projects.length;
     document.getElementById('nc-subs').textContent = DB.subcontractor_register.length;
+    SUPPLIER_DB = window.SUPPLIER_REGISTER || [];
+    document.getElementById('nc-suppliers').textContent = SUPPLIER_DB.length;
     renderSystemTagInputs();
     bindSystemModalEvents();
     renderProjectsTable();
@@ -1998,9 +2017,12 @@ async function init() {
     DB = { meta:{organisation:'Company'}, projects:[], subcontractor_register:[], facade_systems:[] };
     syncSystemData();
   }
+  DB.subcontractor_register = window.SUBCONTRACTOR_REGISTER || DB.subcontractor_register || [];
+  SUPPLIER_DB = window.SUPPLIER_REGISTER || [];
   document.getElementById('db-status-text').textContent = `${DB.projects.length} projects loaded`;
   document.getElementById('nc-projects').textContent = DB.projects.length;
   document.getElementById('nc-subs').textContent = DB.subcontractor_register.length;
+  document.getElementById('nc-suppliers').textContent = SUPPLIER_DB.length;
   renderSystemTagInputs();
   bindSystemModalEvents();
   renderProjectsTable();
@@ -2343,13 +2365,14 @@ function showPage(id, btn) {
   document.getElementById('page-'+id).classList.remove('page-hidden');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   if(btn) btn.classList.add('active');
-  const titles = { configurator:'New project', projects:'Project database', subcontractors:'Subcontractors', detail:'Project detail' };
-  const subs   = { configurator:'Facade system configurator', projects:`${DB.projects.length} projects`, subcontractors:'Approved contractor register', detail:'' };
+  const titles = { configurator:'New project', projects:'Project database', subcontractors:'Subcontractors', suppliers:'Suppliers', detail:'Project detail' };
+  const subs   = { configurator:'Facade system configurator', projects:`${DB.projects.length} projects`, subcontractors:'Approved contractor register', suppliers:'Material & product suppliers — UAE region', detail:'' };
   document.getElementById('tb-title').textContent = titles[id]||id;
   document.getElementById('tb-sub').textContent   = subs[id]||'';
   document.getElementById('tb-actions').innerHTML = '';
   if(id==='projects') renderProjectsTable();
   if(id==='subcontractors') renderSubcontractors();
+  if(id==='suppliers') renderSuppliers();
   if(id==='configurator') refreshZoneMassing();
 }
 
@@ -2969,6 +2992,46 @@ function renderSubcontractors() {
             <td><strong>${s.name}</strong></td>
             <td>${(s.speciality||[]).map(x=>SYSTEM_INFO[x]?.label||x).map(x=>`<span class="badge badge-gray" style="margin-right:4px">${x}</span>`).join('')}</td>
             <td><span class="badge ${tierBadge[s.tier]}">${tierLabel[s.tier]}</span></td>
+            <td style="font-size:12px;color:var(--text-2)">${s.contact||'—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+// ── SUPPLIERS ──
+function renderSuppliers() {
+  const categories = [
+    { key:'glass',    label:'Glass' },
+    { key:'aluminum', label:'Aluminum & Framing' },
+    { key:'panel',    label:'Composite & Cladding Panels' },
+    { key:'stone',    label:'Stone & Terracotta' },
+    { key:'sealant',  label:'Sealants & Silicone' },
+    { key:'fixing',   label:'Fixings & Anchors' }
+  ];
+  const tierBadge = { gold:'badge-gold', silver:'badge-silver', bronze:'badge-bronze' };
+  const tierLabel = { gold:'Gold', silver:'Silver', bronze:'Bronze' };
+  document.getElementById('suppliers-content').innerHTML = categories.map(cat => {
+    const rows = SUPPLIER_DB.filter(s => s.category === cat.key);
+    if (!rows.length) return '';
+    return `<div class="section-heading">${cat.label}</div>
+    <div class="card mb-16" style="padding:0;overflow:hidden">
+      <table class="data-table fixed-layout subcontractor-table">
+        <colgroup>
+          <col style="width:22%">
+          <col style="width:38%">
+          <col style="width:10%">
+          <col style="width:12%">
+          <col style="width:18%">
+        </colgroup>
+        <thead><tr><th>Name</th><th>Products</th><th>Tier</th><th>Office</th><th>Contact</th></tr></thead>
+        <tbody>${rows.map(s => `
+          <tr>
+            <td><strong>${s.name}</strong></td>
+            <td>${(s.products||[]).map(p=>`<span class="badge badge-gray" style="margin-right:4px">${p}</span>`).join('')}</td>
+            <td><span class="badge ${tierBadge[s.tier]||'badge-gray'}">${tierLabel[s.tier]||s.tier}</span></td>
+            <td style="font-size:12px;color:var(--text-2)">${s.lead_office||'—'}</td>
             <td style="font-size:12px;color:var(--text-2)">${s.contact||'—'}</td>
           </tr>`).join('')}
         </tbody>
