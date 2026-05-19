@@ -1513,6 +1513,20 @@ body {
 .sys-answer-k { color: var(--text-2); }
 .sys-answer-v { font-weight: 500; text-align: right; }
 
+/* ── REF IMAGE LIGHTBOX ── */
+.refimg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.refimg-thumb { aspect-ratio: 4/3; overflow: hidden; border-radius: var(--radius); border: 2px solid transparent; cursor: pointer; background: var(--surface2); }
+.refimg-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.15s; }
+.refimg-thumb:hover { border-color: var(--accent-mid); }
+.refimg-thumb.active { border-color: var(--accent); }
+.refimg-preview { margin-bottom: 16px; border-radius: var(--radius); overflow: hidden; background: var(--surface2); }
+.refimg-preview img { width: 100%; max-height: 50vh; object-fit: contain; display: block; }
+.refimg-empty { text-align: center; padding: 40px 24px; color: var(--text-2); }
+.refimg-empty .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+.refimg-empty .empty-title { font-family: var(--serif); font-size: 18px; color: var(--text); margin-bottom: 6px; font-weight: 700; letter-spacing: -0.03em; }
+.refimg-empty .empty-path { font-size: 12px; color: var(--text-3); font-family: monospace; margin-top: 4px; }
+#modal-refimg { z-index: 201; }
+
 /* ── NOTIFICATION ── */
 .notif {
   position: fixed;
@@ -1934,6 +1948,28 @@ body {
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-system')">Close</button>
       <button class="btn btn-primary" onclick="closeModal('modal-system')">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-refimg">
+  <div class="modal modal-wide">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <button class="btn" onclick="closeRefImages()" style="padding:6px 12px;flex-shrink:0;">&#8592; Back</button>
+      <div class="modal-title" id="refimg-title" style="margin-bottom:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+    </div>
+    <div id="refimg-grid" class="refimg-grid"></div>
+    <div id="refimg-preview" class="refimg-preview" style="display:none;">
+      <img id="refimg-preview-img" src="" alt="">
+    </div>
+    <div id="refimg-empty" class="refimg-empty" style="display:none;">
+      <div class="empty-icon">&#128444;</div>
+      <div class="empty-title">No reference images yet</div>
+      <div class="empty-path" id="refimg-empty-path"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeRefImages()">Back</button>
+      <button class="btn btn-primary" onclick="confirmRefSelection()">Choose this system</button>
     </div>
   </div>
 </div>
