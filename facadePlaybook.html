@@ -3251,6 +3251,67 @@ function notify(msg) {
   setTimeout(()=>el.classList.remove('show'), 2800);
 }
 
+function openRefImages(systemId, optionLabel) {
+  const suggestions = SYSTEM_SUGGESTIONS[systemId] || [];
+  const opt = suggestions.find(o => o.label === optionLabel) || {};
+  const images = opt.ref_images || [];
+
+  document.getElementById('refimg-title').textContent = optionLabel;
+
+  const modal = document.getElementById('modal-refimg');
+  modal.dataset.systemId = systemId;
+  modal.dataset.optionLabel = optionLabel;
+
+  const grid = document.getElementById('refimg-grid');
+  const preview = document.getElementById('refimg-preview');
+  const empty = document.getElementById('refimg-empty');
+
+  if (images.length === 0) {
+    grid.innerHTML = '';
+    preview.style.display = 'none';
+    empty.style.display = 'block';
+    const groupSlug = systemId.replace(/_/g, '-');
+    const optSlug = optionLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    document.getElementById('refimg-empty-path').textContent = `src/ref-images/${groupSlug}/${optSlug}/`;
+  } else {
+    empty.style.display = 'none';
+    preview.style.display = 'none';
+    document.getElementById('refimg-preview-img').src = '';
+    grid.innerHTML = images.map((img, i) =>
+      `<div class="refimg-thumb" onclick="selectRefThumb(${i}, '${img.src.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
+        <img src="${img.src}" alt="${img.caption || optionLabel}" loading="lazy">
+      </div>`
+    ).join('');
+  }
+
+  modal.classList.add('open');
+}
+
+function selectRefThumb(index, src) {
+  document.querySelectorAll('#refimg-grid .refimg-thumb').forEach((el, i) =>
+    el.classList.toggle('active', i === index)
+  );
+  const preview = document.getElementById('refimg-preview');
+  document.getElementById('refimg-preview-img').src = src;
+  preview.style.display = 'block';
+}
+
+function closeRefImages() {
+  document.getElementById('modal-refimg').classList.remove('open');
+}
+
+function confirmRefSelection() {
+  const modal = document.getElementById('modal-refimg');
+  const systemId = modal.dataset.systemId;
+  const optionLabel = modal.dataset.optionLabel;
+  if (!systemId || !optionLabel) return;
+  CFG.finalSelections[systemId] = optionLabel;
+  modal.classList.remove('open');
+  closeModal('modal-system');
+  buildConfigQuestions();
+  checkConfigComplete();
+}
+
 // close modals on backdrop click
 document.querySelectorAll('.modal-backdrop').forEach(bd=>{
   bd.addEventListener('click', e=>{ if(e.target===bd) bd.classList.remove('open'); });
