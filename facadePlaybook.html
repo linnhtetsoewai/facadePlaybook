@@ -1950,7 +1950,7 @@ body {
 // ── DATA ──
 let DB = { meta:{}, projects:[], subcontractor_register:[], facade_systems:[] };
 let SUPPLIER_DB = [];
-let CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null, massing:null };
+let CFG = { step:0, type:null, budget:null, zones:[], systems:[], access:[], configs:{}, activeSystem:null, massing:null, finalSelections:{} };
 let editingId = null;
 let DETAIL_PROJECT_ID = null;
 
@@ -2092,12 +2092,13 @@ function normalizeSystemOption(opt, systemId) {
 
 function normalizeFacadeOption(opt, systemId) {
   if(typeof opt === 'string') {
-    return { label: opt, tags: {}, note: '', systemId };
+    return { label: opt, tags: {}, note: '', ref_images: [], systemId };
   }
   return {
     label: opt.label || opt.name || opt.title || '',
     tags: opt.tags || opt.when || {},
     note: opt.note || '',
+    ref_images: opt.ref_images || [],
     systemId
   };
 }
