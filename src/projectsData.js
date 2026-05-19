@@ -835,7 +835,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Cable Railing Balustrade System",
@@ -878,7 +879,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Stainless Steel Vertical Balustrade System",
@@ -924,7 +926,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Floor-Mounted Glazed Balustrade System",
@@ -966,7 +969,8 @@ window.FACADE_DB = {
               "residential_apartment",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Face-Mounted Glazed Balustrade System",
@@ -1008,7 +1012,8 @@ window.FACADE_DB = {
               "residential_apartment",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Face-Mounted Metal Balustrade System",
@@ -1051,7 +1056,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -1425,7 +1431,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Glass Fiber Reinforced Concrete (GFRC) System",
@@ -1488,7 +1495,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Glass Reinforced Acrylic (GRA) System",
@@ -1550,7 +1558,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Exterior Insulation Finish System (EIFS)",
@@ -1611,7 +1620,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -2253,7 +2263,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Glass Fiber Reinforced Concrete (GFRC)",
@@ -2300,7 +2311,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Glass Reinforced Acrylic (GRA) System",
@@ -2347,7 +2359,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Exterior Insulation Finish System (EIFS)",
@@ -2393,7 +2406,8 @@ window.FACADE_DB = {
               "residential_apartment",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -2861,7 +2875,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Glass Fiber Reinforced Concrete (GFRC) System",
@@ -2918,7 +2933,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Glass Reinforced Acrylic (GRA) System",
@@ -2975,7 +2991,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -3480,7 +3497,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Cement Board with Render Finish System",
@@ -3526,7 +3544,8 @@ window.FACADE_DB = {
               "residential_apartment",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -3926,7 +3945,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Aluminium Stick Curtain Wall Toggle System",
@@ -3979,7 +3999,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Steel Mullion with Add-on Curtain Wall System",
@@ -4032,7 +4053,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Glass Fin Curtain Wall System",
@@ -4080,7 +4102,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Structural Silicone Glazed (SSG) - Stick System",
@@ -4130,7 +4153,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Unitised-Stick Hybrid (Semi-unitised) System",
@@ -4181,7 +4205,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Unitised Curtain Wall System",
@@ -4232,7 +4257,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Spider Glazing System",
@@ -4281,7 +4307,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Routel-Supported Glass System",
@@ -4330,7 +4357,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Cable-Net System",
@@ -4379,7 +4407,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Slab-to-Slab Window Wall System",
@@ -4432,7 +4461,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Double Skin Facade System",
@@ -4483,7 +4513,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Adaptive/Dynamic Facade System",
@@ -4535,7 +4566,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Blast-Resistant Curtain Wall System",
@@ -4589,7 +4621,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Fire-Rated Curtain Wall System",
@@ -4642,7 +4675,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -5113,7 +5147,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Automatic Sliding Door System",
@@ -5158,7 +5193,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Revolving Door System",
@@ -5197,7 +5233,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -5507,7 +5544,8 @@ window.FACADE_DB = {
               "residential_apartment",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Lift and Slide Door System",
@@ -5546,7 +5584,8 @@ window.FACADE_DB = {
               "residential_apartment",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -5789,7 +5828,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Frosted Glass",
@@ -5832,7 +5872,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -6205,7 +6246,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Horizontal MEP Louver",
@@ -6253,7 +6295,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
@@ -6604,7 +6647,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         },
         {
           "label": "Cladded Metal Louver",
@@ -6649,7 +6693,8 @@ window.FACADE_DB = {
               "commercial",
               "mixed_use"
             ]
-          }
+          },
+          "ref_images": []
         }
       ],
       "questions": [
