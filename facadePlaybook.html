@@ -2600,10 +2600,12 @@ function renderSystemQuestions(id) {
             <div class="sys-suggest-grid">
               ${suggestions.slice(0, 4).map(opt => {
                 const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
-                return `<div class="sys-suggest-card">
+                const chosen = CFG.finalSelections[id] === opt.label;
+                return `<div class="sys-suggest-card" style="cursor:pointer" data-sysid="${id}" data-optlabel="${opt.label.replace(/"/g,'&quot;')}" role="button" tabindex="0">
                   <div class="sys-suggest-name">${opt.label}</div>
                   <div class="sys-suggest-sub">${opt.note || 'Matches your current answers'}</div>
                   ${chips ? `<div class="sys-chip-row">${chips}</div>` : ''}
+                  ${chosen ? `<div style="margin-top:6px"><span class="sys-chip" style="background:var(--green-light);border-color:var(--green-mid);color:var(--green)">&#10003; Selected</span></div>` : ''}
                 </div>`;
               }).join('')}
             </div>
@@ -2636,10 +2638,12 @@ function renderSystemQuestions(id) {
           <div class="sys-suggest-grid">
             ${suggestions.slice(0, 4).map(opt => {
               const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
-              return `<div class="sys-suggest-card">
+              const chosen = CFG.finalSelections[id] === opt.label;
+              return `<div class="sys-suggest-card" style="cursor:pointer" data-sysid="${id}" data-optlabel="${opt.label.replace(/"/g,'&quot;')}" role="button" tabindex="0">
                 <div class="sys-suggest-name">${opt.label}</div>
                 <div class="sys-suggest-sub">${opt.note || 'Matches your current answers'}</div>
                 ${chips ? `<div class="sys-chip-row">${chips}</div>` : ''}
+                ${chosen ? `<div style="margin-top:6px"><span class="sys-chip" style="background:var(--green-light);border-color:var(--green-mid);color:var(--green)">&#10003; Selected</span></div>` : ''}
               </div>`;
             }).join('')}
           </div>
@@ -2686,10 +2690,12 @@ function renderSystemQuestions(id) {
         <div class="sys-suggest-grid">
           ${suggestions.slice(0, 4).map(opt => {
             const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
-            return `<div class="sys-suggest-card">
+            const chosen = CFG.finalSelections[id] === opt.label;
+            return `<div class="sys-suggest-card" style="cursor:pointer" data-sysid="${id}" data-optlabel="${opt.label.replace(/"/g,'&quot;')}" role="button" tabindex="0">
               <div class="sys-suggest-name">${opt.label}</div>
               <div class="sys-suggest-sub">${opt.note || 'Matches your current answers'}</div>
               ${chips ? `<div class="sys-chip-row">${chips}</div>` : ''}
+              ${chosen ? `<div style="margin-top:6px"><span class="sys-chip" style="background:var(--green-light);border-color:var(--green-mid);color:var(--green)">&#10003; Selected</span></div>` : ''}
             </div>`;
           }).join('')}
         </div>
@@ -2727,6 +2733,11 @@ function bindSystemModalEvents() {
   if(!body || body.dataset.bound === '1') return;
   body.dataset.bound = '1';
   body.addEventListener('click', e => {
+    const card = e.target.closest('.sys-suggest-card');
+    if(card && card.dataset.sysid) {
+      openRefImages(card.dataset.sysid, card.dataset.optlabel);
+      return;
+    }
     const btn = e.target.closest('.sys-option-card');
     if(!btn) return;
     e.preventDefault();
@@ -2759,10 +2770,12 @@ function buildConfigQuestions() {
           <div class="config-suggestions-grid">
             ${suggestions.slice(0, 4).map(opt => {
               const chips = (opt.matched || []).map(k => `<span class="sys-chip">${k}</span>`).join('');
-              return `<div class="config-suggestion-card">
+              const chosen = CFG.finalSelections[sid] === opt.label;
+              return `<div class="config-suggestion-card" style="cursor:pointer" onclick="openRefImages('${sid}','${opt.label.replace(/'/g,"\\'")}')" role="button" tabindex="0">
                 <div class="config-suggestion-name">${opt.label}</div>
                 <div class="config-suggestion-sub">${opt.note || 'Matches your current answers'}</div>
                 ${chips ? `<div class="sys-chip-row">${chips}</div>` : ''}
+                ${chosen ? `<div style="margin-top:6px"><span class="sys-chip" style="background:var(--green-light);border-color:var(--green-mid);color:var(--green)">&#10003; Selected</span></div>` : ''}
               </div>`;
             }).join('')}
           </div>
