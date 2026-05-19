@@ -3321,8 +3321,7 @@ function confirmRefSelection() {
   CFG.finalSelections[systemId] = optionLabel;
   modal.classList.remove('open');
   closeModal('modal-system');
-  buildConfigQuestions();
-  checkConfigComplete();
+  refreshSystemState();
 }
 
 // close modals on backdrop click
